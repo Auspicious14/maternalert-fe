@@ -105,7 +105,7 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
   },
   tabBarLabel: {
-    fontFamily: Theme.typography.fontFamily,
+    fontFamily: Theme.typography.fontFamilies.regular,
     fontSize: 12,
   },
   iconContainer: {

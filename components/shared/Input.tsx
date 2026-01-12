@@ -48,7 +48,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   input: {
-    fontFamily: Theme.typography.fontFamily,
+    fontFamily: Theme.typography.fontFamilies.regular,
     fontSize: Theme.typography.baseSize,
     color: Theme.colors.text,
   },

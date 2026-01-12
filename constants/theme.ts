@@ -1,4 +1,3 @@
-import { Platform } from "react-native";
 import { Colors } from "./Colors";
 
 export const Theme = {
@@ -6,11 +5,13 @@ export const Theme = {
 
   // Typography
   typography: {
-    fontFamily: Platform.select({
-      ios: "Quicksand-Regular", // Approximating rounded sans-serif
-      android: "sans-serif-condensed",
-      default: "System",
-    }),
+    fontFamilies: {
+      regular: "Lexend-Regular",
+      medium: "Lexend-Medium",
+      semiBold: "Lexend-SemiBold",
+      bold: "Lexend-Bold",
+    },
+    fontFamily: "Lexend-Regular",
     baseSize: 16,
     headerSize: 24,
     subHeaderSize: 20,

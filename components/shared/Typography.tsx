@@ -40,30 +40,25 @@ export const Typography: React.FC<TypographyProps> = ({
 
 const styles = StyleSheet.create({
   h1: {
-    fontFamily: Theme.typography.fontFamily,
+    fontFamily: Theme.typography.fontFamilies.bold,
     fontSize: Theme.typography.headerSize,
-    fontWeight: Theme.typography.fontWeight.bold as any,
   },
   h2: {
-    fontFamily: Theme.typography.fontFamily,
+    fontFamily: Theme.typography.fontFamilies.bold,
     fontSize: Theme.typography.subHeaderSize,
-    fontWeight: Theme.typography.fontWeight.bold as any,
   },
   h3: {
-    fontFamily: Theme.typography.fontFamily,
+    fontFamily: Theme.typography.fontFamilies.medium,
     fontSize: 18,
-    fontWeight: Theme.typography.fontWeight.medium as any,
   },
   body: {
-    fontFamily: Theme.typography.fontFamily,
+    fontFamily: Theme.typography.fontFamilies.regular,
     fontSize: Theme.typography.baseSize,
-    fontWeight: Theme.typography.fontWeight.regular as any,
     lineHeight: 24,
   },
   caption: {
-    fontFamily: Theme.typography.fontFamily,
+    fontFamily: Theme.typography.fontFamilies.regular,
     fontSize: 14,
-    fontWeight: Theme.typography.fontWeight.regular as any,
     color: Theme.colors.textLight,
   },
 });

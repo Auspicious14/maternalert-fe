@@ -68,8 +68,7 @@ const styles = StyleSheet.create({
     marginLeft: Theme.spacing.s,
   },
   text: {
-    fontFamily: Theme.typography.fontFamily,
-    fontWeight: Theme.typography.fontWeight.bold as any,
+    fontFamily: Theme.typography.fontFamilies.semiBold,
     fontSize: 16,
   },
   small: {
