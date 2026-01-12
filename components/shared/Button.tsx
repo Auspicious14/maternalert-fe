@@ -1,6 +1,7 @@
 import React from 'react';
-import { StyleSheet, Text, TextStyle, TouchableOpacity, TouchableOpacityProps, View, ViewStyle } from 'react-native';
+import { StyleSheet, TextStyle, TouchableOpacity, TouchableOpacityProps, View, ViewStyle } from 'react-native';
 import Theme from '../../constants/theme';
+import { Typography } from './Typography';
 
 interface ButtonProps extends TouchableOpacityProps {
   title: string;
@@ -44,9 +45,13 @@ export const Button: React.FC<ButtonProps> = ({
       {...props}
     >
       <View style={styles.content}>
-        <Text style={[styles.text, { color: getTextColor() }, textStyle]}>
+        <Typography 
+          variant="body" 
+          weight="semiBold" 
+          style={[{ color: getTextColor() }, textStyle]}
+        >
           {title}
-        </Text>
+        </Typography>
         {icon && <View style={styles.iconContainer}>{icon}</View>}
       </View>
     </TouchableOpacity>
@@ -66,10 +71,6 @@ const styles = StyleSheet.create({
   },
   iconContainer: {
     marginLeft: Theme.spacing.s,
-  },
-  text: {
-    fontFamily: Theme.typography.fontFamilies.semiBold,
-    fontSize: 16,
   },
   small: {
     paddingVertical: Theme.spacing.s,

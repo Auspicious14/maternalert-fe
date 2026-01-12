@@ -207,12 +207,12 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     fontSize: 22,
-    fontWeight: 'bold',
+    fontFamily: Theme.typography.fontFamilies.bold,
     color: Theme.colors.primary,
   },
   unitText: {
     color: 'rgba(45, 228, 116, 0.6)',
-    fontWeight: 'bold',
+    fontFamily: Theme.typography.fontFamilies.bold,
   },
   rangeText: {
     color: Theme.colors.textLight,

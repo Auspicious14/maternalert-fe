@@ -4,12 +4,14 @@ import Theme from '../../constants/theme';
 
 interface TypographyProps extends TextProps {
   variant?: 'h1' | 'h2' | 'h3' | 'body' | 'caption';
+  weight?: 'regular' | 'medium' | 'semiBold' | 'bold' | '900';
   color?: string;
 }
 
 export const Typography: React.FC<TypographyProps> = ({ 
   children, 
   variant = 'body', 
+  weight,
   color, 
   style, 
   ...props 
@@ -24,12 +26,33 @@ export const Typography: React.FC<TypographyProps> = ({
     }
   };
 
+  const flattenedStyle = StyleSheet.flatten(style) || {};
+  let { fontWeight, fontFamily: styleFontFamily, ...cleanStyle } = flattenedStyle as any;
+
+  const finalWeight = weight || fontWeight;
+
+  const getWeightStyle = () => {
+    if (!finalWeight) return null;
+    const w = String(finalWeight);
+    if (w === 'bold' || w === '700' || w === '800' || w === '900') {
+      return { fontFamily: Theme.typography.fontFamilies.bold };
+    }
+    if (w === '600' || w === 'semi-bold' || w === 'semiBold') {
+      return { fontFamily: Theme.typography.fontFamilies.semiBold };
+    }
+    if (w === '500' || w === 'medium') {
+      return { fontFamily: Theme.typography.fontFamilies.medium };
+    }
+    return { fontFamily: Theme.typography.fontFamilies.regular };
+  };
+
   return (
     <Text 
       style={[
         getVariantStyle(), 
+        getWeightStyle(),
         { color: color || Theme.colors.text }, 
-        style
+        cleanStyle
       ]} 
       {...props}
     >

@@ -162,6 +162,7 @@ const styles = StyleSheet.create({
     marginLeft: 12,
     fontSize: 16,
     color: '#1A212E',
+    fontFamily: Theme.typography.fontFamilies.regular,
   },
   mapContainer: {
     paddingHorizontal: Theme.spacing.l,
