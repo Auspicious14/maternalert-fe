@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { SafeAreaView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { TouchableOpacity, View } from 'react-native';
 import { Button } from '../components/shared/Button';
 import { Input } from '../components/shared/Input';
 import { Screen } from '../components/shared/Screen';
@@ -19,125 +19,70 @@ export default function RegisterScreen() {
   const handleRegister = async () => {
     try {
       await register({ name, email, password });
-      // onSuccess in useAuth redirects to /profile-setup
     } catch (error) {
       console.error('Registration failed', error);
     }
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <Screen style={styles.container} backgroundColor="#F9FAFB">
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-            <Ionicons name="arrow-back" size={28} color="#1A212E" />
+    <Screen backgroundColor="#F9FAFB" safe={true} scrollable={true}>
+      <View className="px-6 pt-4">
+        <TouchableOpacity onPress={() => router.back()} className="w-11 h-11 justify-center items-center">
+          <Ionicons name="arrow-back" size={28} color="#1A212E" />
+        </TouchableOpacity>
+      </View>
+
+      <View className="px-10 pt-5">
+        <Typography variant="h1" className="text-[32px] font-black mb-2 shadow-lexend-bold">Create Account</Typography>
+        <Typography variant="body" className="text-gray-500 mb-10">
+          Join us to track your pregnancy safely.
+        </Typography>
+
+        <View className="gap-4 mb-8">
+          <Input 
+            label="Full Name" 
+            placeholder="Jane Doe" 
+            value={name}
+            onChangeText={setName}
+          />
+          <Input 
+            label="Email Address" 
+            placeholder="example@email.com" 
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+            autoCapitalize="none"
+          />
+          <Input 
+            label="Password" 
+            placeholder="••••••••" 
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+          />
+          {registerError && (
+            <Typography variant="caption" color={Theme.colors.emergencyText} className="text-center">
+              Registration failed. Please try again.
+            </Typography>
+          )}
+        </View>
+
+        <Button 
+          title={isRegistering ? "Creating Account..." : "Continue"} 
+          onPress={handleRegister}
+          disabled={isRegistering || !email || !password || !name}
+          className="mb-6"
+        />
+
+        <View className="flex-row justify-center items-center">
+          <Typography variant="body" className="text-gray-500">
+            Already have an account?{' '}
+          </Typography>
+          <TouchableOpacity onPress={() => router.push('/login')}>
+            <Typography variant="body" className="text-primary font-bold">Sign In</Typography>
           </TouchableOpacity>
         </View>
-
-        <View style={styles.content}>
-          <Typography variant="h1" style={styles.title}>Create Account</Typography>
-          <Typography variant="body" style={styles.subtitle}>
-            Join us to track your pregnancy safely.
-          </Typography>
-
-          <View style={styles.form}>
-            <Input 
-              label="Full Name" 
-              placeholder="Jane Doe" 
-              value={name}
-              onChangeText={setName}
-            />
-            <Input 
-              label="Email Address" 
-              placeholder="example@email.com" 
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
-              autoCapitalize="none"
-            />
-            <Input 
-              label="Password" 
-              placeholder="••••••••" 
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-            />
-            {registerError && (
-              <Typography variant="caption" color={Theme.colors.emergencyText} style={styles.errorText}>
-                Registration failed. Please try again.
-              </Typography>
-            )}
-          </View>
-
-          <Button 
-            title={isRegistering ? "Creating Account..." : "Continue"} 
-            onPress={handleRegister}
-            disabled={isRegistering || !email || !password || !name}
-            containerStyle={styles.registerButton}
-          />
-
-          <View style={styles.footer}>
-            <Typography variant="body" color={Theme.colors.textLight}>
-              Already have an account?{' '}
-            </Typography>
-            <TouchableOpacity onPress={() => router.push('/login')}>
-              <Typography variant="body" style={styles.link}>Sign In</Typography>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Screen>
-    </SafeAreaView>
+      </View>
+    </Screen>
   );
 }
-
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#F9FAFB',
-  },
-  container: {
-    paddingHorizontal: 0,
-  },
-  header: {
-    paddingHorizontal: Theme.spacing.l,
-    paddingTop: Theme.spacing.m,
-  },
-  backButton: {
-    width: 44,
-    height: 44,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  content: {
-    paddingHorizontal: Theme.spacing.xl,
-    paddingTop: 20,
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: '900',
-    marginBottom: 8,
-  },
-  subtitle: {
-    color: Theme.colors.textLight,
-    marginBottom: 40,
-  },
-  form: {
-    gap: 16,
-    marginBottom: 32,
-  },
-  errorText: {
-    textAlign: 'center',
-  },
-  registerButton: {
-    marginBottom: 24,
-  },
-  footer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  link: {
-    color: Theme.colors.primary,
-    fontWeight: 'bold',
-  }
-});

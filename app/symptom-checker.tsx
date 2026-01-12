@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { SafeAreaView, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView, ScrollView, TouchableOpacity, View } from 'react-native';
 import { Screen } from '../components/shared/Screen';
 import { Typography } from '../components/shared/Typography';
 import Theme from '../constants/theme';
@@ -32,12 +32,9 @@ export default function SymptomCheckerScreen() {
     if (selected.length === 0) return;
 
     try {
-      // Backend handles one symptom per record, so we submit sequentially
-      // This ensures each symptom gets its own timestamped record
       for (const symptomId of selected) {
         await addSymptom(symptomId);
       }
-      
       router.push('/symptom-results');
     } catch (error) {
       console.error('Failed to submit symptoms', error);
@@ -45,227 +42,80 @@ export default function SymptomCheckerScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <Screen style={styles.container} backgroundColor="#F9FAFB">
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+    <SafeAreaView className="flex-1 bg-[#F9FAFB]">
+      <Screen backgroundColor="#F9FAFB">
+        <View className="flex-row items-center justify-between px-6 pt-4 mb-10">
+          <TouchableOpacity onPress={() => router.back()} className="w-11 h-11 justify-center items-center">
             <Ionicons name="arrow-back" size={28} color="#1A212E" />
           </TouchableOpacity>
-          <Typography variant="h2" style={styles.headerTitle}>Check Symptoms</Typography>
-          <View style={{ width: 28 }} />
+          <Typography variant="h2" weight="bold" className="text-[22px]">Check Symptoms</Typography>
+          <View className="w-7" />
         </View>
 
-        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-          <Typography variant="h1" style={styles.title}>How are you feeling today?</Typography>
-          <Typography variant="body" style={styles.subtitle}>
+        <ScrollView contentContainerStyle={{ paddingHorizontal: 40, paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
+          <Typography variant="h1" className="text-[36px] font-black leading-[44px] mb-3 shadow-lexend-bold">How are you feeling today?</Typography>
+          <Typography variant="body" className="text-gray-500 text-lg leading-6 mb-10">
             Select any symptoms you are experiencing right now.
           </Typography>
 
-          <View style={styles.optionsContainer}>
+          <View className="gap-4">
             {SYMPTOMS.map((symptom) => (
               <TouchableOpacity 
                 key={symptom.id}
-                style={[styles.optionCard, selected.includes(symptom.id) && styles.optionCardSelected]}
+                className={`bg-white rounded-[40px] py-6 px-[30px] flex-row items-center border shadow-sm ${selected.includes(symptom.id) ? 'border-primary' : 'border-[#F1F5F9]'}`}
                 onPress={() => toggleSymptom(symptom.id)}
                 activeOpacity={0.7}
               >
-                <View style={[styles.iconBg, { backgroundColor: Theme.colors.primaryLight }]}>
+                <View className="w-11 h-11 rounded-full bg-primary-light justify-center items-center mr-4">
                   <Ionicons name={symptom.icon as any} size={24} color={Theme.colors.primary} />
                 </View>
-                <View style={styles.optionInfo}>
-                  <Typography variant="h3" style={styles.optionTitle}>{symptom.title}</Typography>
+                <View className="flex-1">
+                  <Typography variant="h3" weight="bold" className="text-lg">{symptom.title}</Typography>
                   {symptom.subtitle && (
-                    <Typography variant="caption" style={styles.optionSubtitle}>{symptom.subtitle}</Typography>
+                    <Typography variant="caption" className="text-gray-400">{symptom.subtitle}</Typography>
                   )}
                 </View>
-                <View style={[styles.radio, selected.includes(symptom.id) && styles.radioSelected]}>
-                  {selected.includes(symptom.id) && <View style={styles.radioDot} />}
+                <View className={`w-7 h-7 rounded-full border-2 justify-center items-center ${selected.includes(symptom.id) ? 'border-gray-300' : 'border-gray-300'}`}>
+                  {selected.includes(symptom.id) && <View className="w-4 h-4 rounded-full bg-gray-300" />}
                 </View>
               </TouchableOpacity>
             ))}
           </View>
         </ScrollView>
 
-        <View style={styles.footer}>
+        <View className="px-10 pb-[100px] items-center">
           <TouchableOpacity 
-            style={[styles.submitButton, (isAddingSymptom || selected.length === 0) && { opacity: 0.7 }]} 
+            className={`bg-primary w-full h-[70px] rounded-[35px] flex-row items-center justify-center gap-3 mb-4 shadow-md ${isAddingSymptom || selected.length === 0 ? 'opacity-70' : ''}`}
             activeOpacity={0.8}
             onPress={handleSubmit}
             disabled={isAddingSymptom || selected.length === 0}
           >
-            <Typography variant="h2" style={styles.submitText}>
+            <Typography variant="h2" weight="bold" className="text-[22px] text-[#1A212E]">
               {isAddingSymptom ? 'Reporting...' : 'Submit Report'}
             </Typography>
             {!isAddingSymptom && <Ionicons name="arrow-forward" size={24} color="#1A212E" />}
           </TouchableOpacity>
-          <Typography variant="caption" style={styles.footerText}>All data is kept private and secure.</Typography>
+          <Typography variant="caption" className="text-gray-500">All data is kept private and secure.</Typography>
         </View>
 
         {/* Tab Mockup for fidelity */}
-        <View style={styles.tabBarMock}>
-           <View style={styles.tabItem}>
+        <View className="absolute bottom-0 w-full h-20 bg-white flex-row border-t border-[#F1F5F9] px-10 pt-2.5 justify-between">
+           <View className="items-center gap-1">
               <Ionicons name="home" size={24} color={Theme.colors.textLight} />
-              <Typography variant="caption" style={{ color: Theme.colors.textLight }}>Home</Typography>
+              <Typography variant="caption" className="text-gray-500">Home</Typography>
            </View>
-           <View style={styles.tabItemActive}>
-              <View style={styles.activeIndicator}>
+           <View className="items-center gap-1">
+              <View className="bg-[#E8FCF1] px-5 py-1 rounded-[20px]">
                 <Ionicons name="medical" size={24} color={Theme.colors.primary} />
               </View>
-              <Typography variant="caption" style={{ color: Theme.colors.primary, fontWeight: 'bold' }}>Checkup</Typography>
+              <Typography variant="caption" weight="bold" className="text-primary">Checkup</Typography>
            </View>
-           <View style={styles.tabItem}>
+           <View className="items-center gap-1">
               <Ionicons name="person" size={24} color={Theme.colors.textLight} />
-              <Typography variant="caption" style={{ color: Theme.colors.textLight }}>Profile</Typography>
+              <Typography variant="caption" className="text-gray-500">Profile</Typography>
            </View>
         </View>
       </Screen>
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#F9FAFB',
-  },
-  container: {
-    paddingHorizontal: 0,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: Theme.spacing.l,
-    marginTop: Theme.spacing.m,
-    marginBottom: 40,
-  },
-  backButton: {
-    width: 44,
-    height: 44,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  headerTitle: {
-    fontSize: 22,
-    fontWeight: 'bold',
-  },
-  scrollContent: {
-    paddingHorizontal: Theme.spacing.xl,
-    paddingBottom: 40,
-  },
-  title: {
-    fontSize: 36,
-    fontWeight: '900',
-    lineHeight: 44,
-    marginBottom: 12,
-  },
-  subtitle: {
-    color: Theme.colors.textLight,
-    lineHeight: 24,
-    fontSize: 18,
-    marginBottom: 40,
-  },
-  optionsContainer: {
-    gap: 16,
-  },
-  optionCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 40,
-    paddingVertical: 24,
-    paddingHorizontal: 30,
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#F1F5F9',
-    ...Theme.shadows.light,
-  },
-  optionCardSelected: {
-    borderColor: Theme.colors.primary,
-  },
-  iconBg: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: Theme.spacing.m,
-  },
-  optionInfo: {
-    flex: 1,
-  },
-  optionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  optionSubtitle: {
-    color: '#94A3B8',
-  },
-  radio: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    borderWidth: 2,
-    borderColor: '#CBD5E0',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  radioSelected: {
-    borderColor: '#CBD5E0',
-  },
-  radioDot: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    backgroundColor: '#CBD5E0',
-  },
-  footer: {
-    paddingHorizontal: Theme.spacing.xl,
-    paddingBottom: 100,
-    alignItems: 'center',
-  },
-  submitButton: {
-    backgroundColor: Theme.colors.primary,
-    width: '100%',
-    height: 70,
-    borderRadius: 35,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 12,
-    marginBottom: 16,
-  },
-  submitText: {
-    fontWeight: 'bold',
-    fontSize: 22,
-  },
-  footerText: {
-    color: Theme.colors.textLight,
-  },
-  tabBarMock: {
-    position: 'absolute',
-    bottom: 0,
-    width: '100%',
-    height: 80,
-    backgroundColor: '#FFFFFF',
-    flexDirection: 'row',
-    borderTopWidth: 1,
-    borderTopColor: '#F1F5F9',
-    paddingHorizontal: 40,
-    paddingTop: 10,
-    justifyContent: 'space-between',
-  },
-  tabItem: {
-    alignItems: 'center',
-    gap: 4,
-  },
-  tabItemActive: {
-    alignItems: 'center',
-    gap: 4,
-  },
-  activeIndicator: {
-    backgroundColor: '#E8FCF1',
-    paddingHorizontal: 20,
-    paddingVertical: 4,
-    borderRadius: 20,
-  },
-});

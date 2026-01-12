@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { SafeAreaView, ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView, ScrollView, TextInput, TouchableOpacity, View } from 'react-native';
 import { Card } from '../components/shared/Card';
 import { Screen } from '../components/shared/Screen';
 import { Typography } from '../components/shared/Typography';
@@ -18,82 +18,84 @@ export default function ClinicFinderScreen() {
   const [search, setSearch] = useState('');
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <Screen style={styles.container} backgroundColor="#F9FAFB">
+    <SafeAreaView className="flex-1 bg-[#F9FAFB]">
+      <Screen backgroundColor="#F9FAFB">
         {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+        <View className="flex-row items-center justify-between px-6 pt-4 mb-5">
+          <TouchableOpacity onPress={() => router.back()} className="w-11 h-11 justify-center items-center">
             <Ionicons name="arrow-back" size={28} color="#1A212E" />
           </TouchableOpacity>
-          <Typography variant="h2" style={styles.headerTitle}>Nearest Clinics</Typography>
-          <View style={{ width: 28 }} />
+          <Typography variant="h2" weight="bold" className="text-[22px]">Nearest Clinics</Typography>
+          <View className="w-7" />
         </View>
 
         {/* Search Bar Refined */}
-        <View style={styles.searchWrapper}>
-          <View style={styles.searchContainer}>
+        <View className="px-6 mb-8">
+          <View className="flex-row items-center bg-white h-[60px] rounded-[30px] px-6 border border-[#F1F5F9] shadow-sm">
             <Ionicons name="search" size={20} color="#94A3B8" />
             <TextInput 
-              style={styles.searchInput}
+              className="flex-1 ml-3 text-base text-[#1A212E]"
               placeholder="Search by clinic name..."
               value={search}
               onChangeText={setSearch}
               placeholderTextColor="#94A3B8"
+              style={{ fontFamily: 'Lexend-Regular' }}
             />
           </View>
         </View>
 
         {/* Map Area Refined */}
-        <View style={styles.mapContainer}>
-          <View style={styles.mapBackground}>
-             {/* Mock Map Lines/Shapes for visual interest */}
-             <View style={[styles.mapLine, { top: 40, width: '100%' }]} />
-             <View style={[styles.mapLine, { left: 100, height: '100%', width: 1 }]} />
+        <View className="px-6 mb-10">
+          <View className="h-72 bg-[#EEF2F6] rounded-[40px] overflow-hidden relative border border-[#E2E8F0]">
+             {/* Mock Map Lines/Shapes */}
+             <View className="absolute top-10 w-full h-[1px] bg-gray-300" />
+             <View className="absolute left-[100px] h-full w-[1px] bg-gray-300" />
              
              {/* Vibrant Pins */}
-             <View style={[styles.pin, { top: 60, left: 140 }]}>
-                <View style={styles.pinCircle}>
+             <View className="absolute top-[60px] left-[140px] items-center">
+                <View className="w-11 h-11 rounded-full bg-[#E8FCF1] justify-center items-center shadow-md">
                   <Ionicons name="location" size={24} color={Theme.colors.primary} />
                 </View>
-                <View style={styles.pinLabel}>
-                  <Typography variant="caption" style={styles.pinText}>West Health</Typography>
+                <View className="bg-white px-3 py-1 rounded-xl mt-2 border border-[#E2E8F0]">
+                  <Typography variant="caption" weight="bold" className="text-[10px]">West Health</Typography>
                 </View>
              </View>
 
-             <View style={[styles.pin, { top: 180, left: 240 }]}>
-                <View style={[styles.pinCircle, { backgroundColor: '#1E6BFF' }]}>
+             <View className="absolute top-[180px] left-[240px] items-center">
+                <View className="w-11 h-11 rounded-full bg-blue-600 justify-center items-center shadow-md">
                   <Ionicons name="location" size={24} color="#FFFFFF" />
                 </View>
              </View>
           </View>
         </View>
 
-        <View style={styles.listHeader}>
-          <Typography variant="h2" style={styles.listTitle}>Nearby Facilities</Typography>
+        <View className="flex-row justify-between items-center px-10 mb-5">
+          <Typography variant="h2" weight="bold" className="text-lg">Nearby Facilities</Typography>
           <TouchableOpacity>
-             <Typography variant="body" style={styles.seeAll}>See All</Typography>
+             <Typography variant="body" weight="bold" className="text-primary text-sh-lexend-medium">See All</Typography>
           </TouchableOpacity>
         </View>
 
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 40, paddingBottom: 40 }}>
           {CLINICS.map((clinic) => (
             <TouchableOpacity key={clinic.id} activeOpacity={0.9}>
-              <Card style={styles.clinicCard}>
-                <View style={styles.clinicIconBg}>
+              <Card className="flex-row items-center p-6 rounded-[30px] mb-4 bg-white border border-[#F1F5F9] shadow-sm">
+                <View className="w-[50px] h-[50px] bg-slate-50 rounded-2xl justify-center items-center mr-4">
                    <Ionicons 
                     name={clinic.type === 'Hospital' ? 'business' : 'medical'} 
                     size={24} 
                     color={clinic.status === 'Closed' ? '#94A3B8' : Theme.colors.primary} 
                    />
                 </View>
-                <View style={styles.clinicDetails}>
-                  <Typography variant="h3" style={styles.clinicName}>{clinic.name}</Typography>
-                  <View style={styles.metaRow}>
-                    <Typography variant="caption" style={styles.distance}>{clinic.distance}</Typography>
-                    <View style={styles.dot} />
+                <View className="flex-1">
+                  <Typography variant="h3" weight="bold" className="text-lg font-black mb-1">{clinic.name}</Typography>
+                  <View className="flex-row items-center gap-2">
+                    <Typography variant="caption" className="text-gray-500">{clinic.distance}</Typography>
+                    <View className="w-1 h-1 rounded-full bg-slate-300" />
                     <Typography 
                       variant="caption" 
-                      style={[styles.status, { color: clinic.status === 'Open Now' ? Theme.colors.primary : '#F43F5E' }]}
+                      weight="bold"
+                      className={`${clinic.status === 'Open Now' ? 'text-primary' : 'text-rose-500'}`}
                     >
                       {clinic.status}
                     </Typography>
@@ -105,188 +107,13 @@ export default function ClinicFinderScreen() {
           ))}
         </ScrollView>
 
-        <View style={styles.footer}>
-           <TouchableOpacity style={styles.callAllButton}>
+        <View className="px-10 pb-8 pt-2">
+           <TouchableOpacity className="bg-slate-900 h-[70px] rounded-[35px] flex-row items-center justify-center gap-3">
               <Ionicons name="call" size={24} color="#FFFFFF" />
-              <Typography variant="h2" style={styles.callText}>Call Center</Typography>
+              <Typography variant="h2" weight="bold" className="text-white text-lg">Call Center</Typography>
            </TouchableOpacity>
         </View>
       </Screen>
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#F9FAFB',
-  },
-  container: {
-    paddingHorizontal: 0,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: Theme.spacing.l,
-    marginTop: Theme.spacing.m,
-    marginBottom: 20,
-  },
-  backButton: {
-    width: 44,
-    height: 44,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  headerTitle: {
-    fontSize: 22,
-    fontWeight: 'bold',
-  },
-  searchWrapper: {
-    paddingHorizontal: Theme.spacing.l,
-    marginBottom: 30,
-  },
-  searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    height: 60,
-    borderRadius: 30,
-    paddingHorizontal: 24,
-    borderWidth: 1,
-    borderColor: '#F1F5F9',
-    ...Theme.shadows.light,
-  },
-  searchInput: {
-    flex: 1,
-    marginLeft: 12,
-    fontSize: 16,
-    color: '#1A212E',
-    fontFamily: Theme.typography.fontFamilies.regular,
-  },
-  mapContainer: {
-    paddingHorizontal: Theme.spacing.l,
-    marginBottom: 40,
-  },
-  mapBackground: {
-    height: 280,
-    backgroundColor: '#EEF2F6',
-    borderRadius: 40,
-    overflow: 'hidden',
-    position: 'relative',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-  },
-  mapLine: {
-    position: 'absolute',
-    backgroundColor: '#D1D5DB',
-    height: 1,
-  },
-  pin: {
-    position: 'absolute',
-    alignItems: 'center',
-  },
-  pinCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#E8FCF1',
-    justifyContent: 'center',
-    alignItems: 'center',
-    ...Theme.shadows.medium,
-  },
-  pinLabel: {
-    backgroundColor: '#FFFFFF',
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
-    marginTop: 8,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-  },
-  pinText: {
-    fontWeight: 'bold',
-    fontSize: 10,
-  },
-  listHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: Theme.spacing.xl,
-    marginBottom: 20,
-  },
-  listTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  seeAll: {
-    color: Theme.colors.primary,
-    fontWeight: 'bold',
-  },
-  scrollContent: {
-    paddingHorizontal: Theme.spacing.xl,
-    paddingBottom: 40,
-  },
-  clinicCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 24,
-    borderRadius: 30,
-    marginBottom: 16,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#F1F5F9',
-  },
-  clinicIconBg: {
-    width: 50,
-    height: 50,
-    backgroundColor: '#F8FAFC',
-    borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 16,
-  },
-  clinicDetails: {
-    flex: 1,
-  },
-  clinicName: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  metaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  distance: {
-    color: '#64748B',
-  },
-  dot: {
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: '#CBD5E0',
-  },
-  status: {
-    fontWeight: 'bold',
-  },
-  footer: {
-    paddingHorizontal: Theme.spacing.xl,
-    paddingBottom: 30,
-    paddingTop: 10,
-  },
-  callAllButton: {
-    backgroundColor: '#1E293B',
-    height: 70,
-    borderRadius: 35,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 12,
-  },
-  callText: {
-    color: '#FFFFFF',
-    fontWeight: 'bold',
-  },
-});

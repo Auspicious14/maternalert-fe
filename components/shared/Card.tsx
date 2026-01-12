@@ -1,3 +1,4 @@
+import { cssInterop } from 'nativewind';
 import React from 'react';
 import { StyleSheet, View, ViewProps } from 'react-native';
 import Theme from '../../constants/theme';
@@ -5,6 +6,7 @@ import Theme from '../../constants/theme';
 interface CardProps extends ViewProps {
   variant?: 'white' | 'routine' | 'urgent' | 'emergency';
   elevation?: 'none' | 'light' | 'medium';
+  className?: string;
 }
 
 export const Card: React.FC<CardProps> = ({ 
@@ -37,6 +39,10 @@ export const Card: React.FC<CardProps> = ({
     </View>
   );
 };
+
+cssInterop(Card, {
+  className: 'style',
+});
 
 const styles = StyleSheet.create({
   card: {

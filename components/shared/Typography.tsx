@@ -1,11 +1,13 @@
+import { cssInterop } from 'nativewind';
 import React from 'react';
 import { StyleSheet, Text, TextProps } from 'react-native';
 import Theme from '../../constants/theme';
 
 interface TypographyProps extends TextProps {
   variant?: 'h1' | 'h2' | 'h3' | 'body' | 'caption';
-  weight?: 'regular' | 'medium' | 'semiBold' | 'bold' | '900';
+  weight?: 'regular' | 'medium' | 'semiBold' | 'bold' | '900' | 'black';
   color?: string;
+  className?: string;
 }
 
 export const Typography: React.FC<TypographyProps> = ({ 
@@ -27,17 +29,34 @@ export const Typography: React.FC<TypographyProps> = ({
   };
 
   const flattenedStyle = StyleSheet.flatten(style) || {};
-  let { fontWeight, fontFamily: styleFontFamily, ...cleanStyle } = flattenedStyle as any;
+  
+  // Extract and clean up styles to avoid conflicts between fontFamily and fontWeight
+  // In React Native, using a specific fontFamily file (like Lexend-Bold) 
+  // usually means we shouldn't apply a separate fontWeight or it might fallback to system fonts.
+  const { 
+    fontWeight: styleFontWeight, 
+    fontFamily: styleFontFamily, 
+    color: styleColor,
+    ...restStyle 
+  } = flattenedStyle as any;
 
-  const finalWeight = weight || fontWeight;
+  const finalWeight = weight || styleFontWeight;
+  const hasInjectedFont = !!styleFontFamily;
 
   const getWeightStyle = () => {
-    if (!finalWeight) return null;
-    const w = String(finalWeight);
-    if (w === 'bold' || w === '700' || w === '800' || w === '900') {
+    if (hasInjectedFont) return { fontFamily: styleFontFamily };
+    
+    if (!finalWeight) {
+      // Fallback to variant's default font if no weight is provided
+      const variantDefault = getVariantStyle();
+      return { fontFamily: variantDefault.fontFamily };
+    }
+    
+    const w = String(finalWeight).toLowerCase();
+    if (w === 'bold' || w === '700' || w === '800' || w === '900' || w === 'black') {
       return { fontFamily: Theme.typography.fontFamilies.bold };
     }
-    if (w === '600' || w === 'semi-bold' || w === 'semiBold') {
+    if (w === '600' || w === 'semi-bold' || w === 'semibold') {
       return { fontFamily: Theme.typography.fontFamilies.semiBold };
     }
     if (w === '500' || w === 'medium') {
@@ -51,8 +70,8 @@ export const Typography: React.FC<TypographyProps> = ({
       style={[
         getVariantStyle(), 
         getWeightStyle(),
-        { color: color || Theme.colors.text }, 
-        cleanStyle
+        { color: color || styleColor || Theme.colors.text }, 
+        restStyle // Apply everything BUT the font settings from style to avoid overrides
       ]} 
       {...props}
     >
@@ -61,27 +80,31 @@ export const Typography: React.FC<TypographyProps> = ({
   );
 };
 
+cssInterop(Typography, {
+  className: 'style',
+});
+
 const styles = StyleSheet.create({
   h1: {
-    fontFamily: Theme.typography.fontFamilies.bold,
     fontSize: Theme.typography.headerSize,
+    fontFamily: Theme.typography.fontFamilies.bold,
   },
   h2: {
-    fontFamily: Theme.typography.fontFamilies.bold,
     fontSize: Theme.typography.subHeaderSize,
+    fontFamily: Theme.typography.fontFamilies.bold,
   },
   h3: {
-    fontFamily: Theme.typography.fontFamilies.medium,
     fontSize: 18,
+    fontFamily: Theme.typography.fontFamilies.medium,
   },
   body: {
-    fontFamily: Theme.typography.fontFamilies.regular,
     fontSize: Theme.typography.baseSize,
     lineHeight: 24,
+    fontFamily: Theme.typography.fontFamilies.regular,
   },
   caption: {
-    fontFamily: Theme.typography.fontFamilies.regular,
     fontSize: 14,
     color: Theme.colors.textLight,
+    fontFamily: Theme.typography.fontFamilies.regular,
   },
 });

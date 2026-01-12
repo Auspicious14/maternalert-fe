@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { Image, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Image, ScrollView, TouchableOpacity, View } from 'react-native';
 import { Card } from '../../components/shared/Card';
 import { Screen } from '../../components/shared/Screen';
 import { Typography } from '../../components/shared/Typography';
@@ -36,28 +36,28 @@ export default function HomeScreen() {
   }, [priorityData?.priority]);
 
   return (
-    <Screen style={styles.container} scrollable backgroundColor={Theme.colors.darkBg}>
+    <Screen className="pt-6" scrollable backgroundColor={Theme.colors.darkBg}>
       {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.menuButton}>
-          <Ionicons name="menu-outline" size={28} color={Theme.colors.white} />
+      <View className="flex-row items-center justify-between px-6 mb-6">
+        <TouchableOpacity className="w-11 h-11 rounded-full bg-white/10 justify-center items-center">
+          <Ionicons name="menu-outline" size={28} color="white" />
         </TouchableOpacity>
-        <Typography variant="h2" style={styles.headerTitle}>Priority Dashboard</Typography>
-        <View style={styles.headerRight}>
-          <TouchableOpacity style={styles.iconButton}>
-            <Ionicons name="notifications" size={24} color={Theme.colors.white} />
-            <View style={styles.notificationDot} />
+        <Typography variant="h2" className="text-white text-xl">Priority Dashboard</Typography>
+        <View className="flex-row items-center gap-4">
+          <TouchableOpacity className="relative w-11 h-11 rounded-full bg-white/10 justify-center items-center">
+            <Ionicons name="notifications" size={24} color="white" />
+            <View className="absolute top-3 right-3 w-2 h-2 rounded-full bg-accent border-2 border-[#1A1512]" />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.profileAvatar}>
+          <TouchableOpacity className="w-11 h-11 rounded-full overflow-hidden border-2 border-white/20">
             <Image 
               source={{ uri: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=150&auto=format&fit=crop' }} 
-              style={styles.avatarImage} 
+              className="w-full h-full"
             />
           </TouchableOpacity>
         </View>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 120 }}>
         {/* Urgent Status Card */}
         <TouchableOpacity 
           activeOpacity={0.9} 
@@ -65,111 +65,114 @@ export default function HomeScreen() {
         >
           <LinearGradient
             colors={(statusColors as any) || Theme.colors.greenGradient as any}
-            style={styles.statusCard}
+            className="rounded-[28px] p-6 mb-6"
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
           >
-            <View style={styles.statusBadge}>
+            <View className="flex-row items-center gap-1.5 mb-4">
               <Ionicons 
                 name={priorityData?.priority === 'EMERGENCY' || priorityData?.priority === 'URGENT_REVIEW' ? 'alert-circle' : 'checkmark-circle'} 
                 size={18} 
-                color={Theme.colors.darkBg} 
+                color="#1A1512" 
               />
-              <Typography variant="caption" style={styles.statusBadgeText}>{statusLabel}</Typography>
+              <Typography variant="caption" weight="bold" className="text-[#1A1512] text-xs tracking-widest">{statusLabel}</Typography>
             </View>
-            <Typography variant="h1" style={styles.statusTitle}>
+            <Typography variant="h1" className="text-[#1A1512] leading-8 mb-2 font-black">
               {priorityData?.message || 'Fetching your health status...'}
             </Typography>
             {priorityData?.reasons && priorityData.reasons.length > 0 && (
-              <Typography variant="body" style={styles.statusDescription}>
+              <Typography variant="body" className="text-[#1A1512CC] text-[15px] leading-[22px] mb-6">
                 Based on: {priorityData.reasons.join(', ')}
               </Typography>
             )}
             
-            <View style={styles.statusImagePlaceholder}>
+            <View className="h-[140px] bg-white/10 rounded-[30px] overflow-hidden">
                <LinearGradient 
                 colors={['rgba(255,255,255,0.2)', 'rgba(255,255,255,0.05)']} 
-                style={styles.innerGradient}
+                className="flex-1"
                />
             </View>
           </LinearGradient>
         </TouchableOpacity>
 
         {/* Stats Row */}
-        <Card style={styles.statCard}>
-          <View style={styles.statInfo}>
-             <Typography variant="caption" style={styles.statLabel}>Last BP Reading</Typography>
-             <View style={styles.statValueRow}>
-                <Typography variant="h1" style={styles.statNumber}>
+        <Card className="bg-card-dark border border-white/10 p-6 flex-row items-center justify-between mb-6 rounded-[24px]">
+          <View className="flex-1">
+             <Typography variant="caption" className="text-white/50 mb-1">Last BP Reading</Typography>
+             <View className="flex-row items-baseline gap-2 my-1">
+                <Typography variant="h1" weight="bold" className="text-white text-[32px]">
                   {latestBP ? `${latestBP.systolic}/${latestBP.diastolic}` : '--/--'}
                 </Typography>
-                <Typography variant="body" style={styles.statSubText}>
+                <Typography variant="body" weight="bold" className="text-accent">
                   {latestBP?.systolic && latestBP.systolic > 140 ? 'High' : 'Normal'}
                 </Typography>
              </View>
-             <Typography variant="caption" style={styles.statTime}>
+             <Typography variant="caption" className="text-white/30">
                {latestBP?.timestamp ? new Date(latestBP.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'No readings yet'}
              </Typography>
           </View>
-          <View style={styles.statIconContainer}>
+          <View className="w-12 h-12 rounded-full bg-accent/10 justify-center items-center">
              <Ionicons name="pulse" size={24} color={Theme.colors.accent} />
           </View>
         </Card>
 
         {/* Quick Actions */}
-        <View style={styles.quickActions}>
+        <View className="gap-3 mb-6">
           <TouchableOpacity 
-            style={styles.primaryActionButton} 
+            className="bg-primary h-12 rounded-full flex-row items-center justify-center gap-2 shadow-sm"
             onPress={() => router.push('/bp-entry')}
           >
-            <Ionicons name="add" size={20} color={Theme.colors.darkBg} />
-            <Typography variant="h3" style={styles.actionButtonText}>Add BP</Typography>
+            <Ionicons name="add" size={20} color="#1A1512" />
+            <Typography variant="h3" weight="bold" className="text-[#1A1512]">Add BP</Typography>
           </TouchableOpacity>
 
           <TouchableOpacity 
-            style={styles.secondaryActionButton}
+            className="border border-white/10 bg-transparent h-12 rounded-full flex-row items-center justify-center gap-2"
             onPress={() => router.push('/symptom-checker')}
           >
             <Ionicons name="list" size={18} color={Theme.colors.accent} />
-            <Typography variant="h3" style={styles.secondaryActionText}>Log Symptoms</Typography>
+            <Typography variant="h3" weight="bold" className="text-accent">Log Symptoms</Typography>
           </TouchableOpacity>
         </View>
 
         {/* Unwell Banner */}
-        <TouchableOpacity style={styles.unwellBanner} onPress={() => router.push('/emergency')}>
-          <View style={styles.unwellIcon}>
-            <Ionicons name="medical" size={20} color={Theme.colors.white} />
+        <TouchableOpacity 
+          className="bg-card-dark p-4 rounded-[24px] flex-row items-center mb-10 border border-red-500/20 shadow-lexend-medium" 
+          onPress={() => router.push('/emergency')}
+        >
+          <View className="w-11 h-11 rounded-full bg-emergency justify-center items-center mr-4">
+            <Ionicons name="medical" size={20} color="white" />
           </View>
-          <View style={styles.unwellContent}>
-            <Typography variant="h3" style={styles.unwellTitle}>Feeling unwell?</Typography>
-            <Typography variant="caption" style={styles.unwellSubtitle}>Tap for immediate help</Typography>
+          <View className="flex-1">
+            <Typography variant="h3" weight="bold" className="text-white text-base">Feeling unwell?</Typography>
+            <Typography variant="caption" className="text-white/50">Tap for immediate help</Typography>
           </View>
           <Ionicons name="chevron-forward" size={24} color={Theme.colors.emergency} />
         </TouchableOpacity>
 
         {/* Recent Activity */}
-        <View style={styles.sectionHeader}>
-          <Typography variant="h2" style={styles.sectionTitle}>Recent Activity</Typography>
+        <View className="flex-row justify-between items-center mb-4">
+          <Typography variant="h2" className="text-white text-lg">Recent Activity</Typography>
           <TouchableOpacity>
-             <Typography variant="body" style={styles.viewAll}>View all</Typography>
+             <Typography variant="body" weight="bold" className="text-accent">View all</Typography>
           </TouchableOpacity>
         </View>
 
         {(recentSymptoms?.length || 0) > 0 ? recentSymptoms?.map((symptom) => (
-          <Card key={symptom.id} style={styles.activityCard}>
-            <View style={[styles.activityIcon, { backgroundColor: '#4C2456' }]}>
+          <Card key={symptom.id} className="bg-card-dark border border-white/10 p-4 flex-row items-center mb-2 rounded-[20px]">
+            <View className="w-10 h-10 rounded-full bg-[#4C2456] justify-center items-center mr-4">
               <Ionicons name="alert-circle" size={20} color="#E879F9" />
             </View>
-            <View style={styles.activityInfo}>
-              <Typography variant="h3" style={styles.activityTitle}>{symptom.symptomType.replace(/_/g, ' ')}</Typography>
-              <Typography variant="caption" style={styles.activitySubtitle}>Reported</Typography>
+            <View className="flex-1">
+              <Typography variant="h3" className="text-white text-[15px]">{symptom.symptomType.replace(/_/g, ' ')}</Typography>
+              <Typography variant="caption" className="text-white/40">Reported</Typography>
             </View>
-            <Typography variant="caption" style={styles.activityTime}>
+            <Typography variant="caption" className="text-white/30">
               {new Date(symptom.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
             </Typography>
           </Card>
         )) : (
-          <Typography variant="body" style={{ color: 'rgba(255,255,255,0.3)', textAlign: 'center', marginTop: 20 }}>
+          <Typography variant="body" className="text-white/30 text-center mt-5">
             No recent activity recorded
           </Typography>
         )}
@@ -177,260 +180,3 @@ export default function HomeScreen() {
     </Screen>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    paddingTop: Theme.spacing.l,
-    paddingHorizontal: 0,
-  },
-  scrollContent: {
-    paddingHorizontal: Theme.spacing.l,
-    paddingBottom: 120,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: Theme.spacing.l,
-    marginBottom: Theme.spacing.l,
-  },
-  menuButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  headerTitle: {
-    color: Theme.colors.white,
-    fontSize: 20,
-  },
-  headerRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Theme.spacing.m,
-  },
-  iconButton: {
-    position: 'relative',
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  notificationDot: {
-    position: 'absolute',
-    top: 12,
-    right: 12,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: Theme.colors.accent,
-    borderWidth: 2,
-    borderColor: Theme.colors.darkBg,
-  },
-  profileAvatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    overflow: 'hidden',
-    borderWidth: 2,
-    borderColor: 'rgba(255,255,255,0.2)',
-  },
-  avatarImage: {
-    width: '100%',
-    height: '100%',
-  },
-  statusCard: {
-    borderRadius: 28,
-    padding: Theme.spacing.l,
-    marginBottom: Theme.spacing.l,
-  },
-  statusBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginBottom: Theme.spacing.m,
-  },
-  statusBadgeText: {
-    color: Theme.colors.darkBg,
-    fontWeight: 'bold',
-    fontSize: 12,
-    letterSpacing: 0.5,
-  },
-  statusTitle: {
-    color: Theme.colors.darkBg,
-    lineHeight: 32,
-    marginBottom: Theme.spacing.s,
-    fontWeight: '900',
-  },
-  statusDescription: {
-    color: 'rgba(26, 21, 18, 0.8)',
-    fontSize: 15,
-    lineHeight: 22,
-    marginBottom: Theme.spacing.l,
-  },
-  statusImagePlaceholder: {
-    height: 140,
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    borderRadius: 30,
-    overflow: 'hidden',
-  },
-  innerGradient: {
-    flex: 1,
-  },
-  statCard: {
-    backgroundColor: Theme.colors.cardDark,
-    borderColor: Theme.colors.borderDark,
-    borderWidth: 1,
-    padding: Theme.spacing.l,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: Theme.spacing.l,
-    borderRadius: 24,
-  },
-  statInfo: {
-    flex: 1,
-  },
-  statLabel: {
-    color: 'rgba(255,255,255,0.5)',
-    marginBottom: Theme.spacing.xs,
-  },
-  statValueRow: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    gap: 8,
-    marginVertical: 4,
-  },
-  statNumber: {
-    color: Theme.colors.white,
-    fontSize: 32,
-    fontWeight: 'bold',
-  },
-  statSubText: {
-    color: Theme.colors.accent,
-    fontWeight: 'bold',
-  },
-  statTime: {
-    color: 'rgba(255,255,255,0.3)',
-  },
-  statIconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: 'rgba(255,155,62,0.1)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  quickActions: {
-    flexDirection: 'column',
-    gap: Theme.spacing.s,
-    marginBottom: Theme.spacing.l,
-  },
-  primaryActionButton: {
-    backgroundColor: Theme.colors.primary,
-    height: 48,
-    borderRadius: 24,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-  },
-  actionButtonText: {
-    color: Theme.colors.darkBg,
-    fontWeight: 'bold',
-  },
-  secondaryActionButton: {
-    borderColor: Theme.colors.borderDark,
-    borderWidth: 1,
-    backgroundColor: 'transparent',
-    height: 48,
-    borderRadius: 24,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-  },
-  secondaryActionText: {
-    color: Theme.colors.accent,
-    fontWeight: 'bold',
-  },
-  unwellBanner: {
-    backgroundColor: Theme.colors.cardDark,
-    padding: Theme.spacing.m,
-    borderRadius: 24,
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: Theme.spacing.xl,
-    borderWidth: 1,
-    borderColor: 'rgba(255,75,75,0.2)',
-  },
-  unwellIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: Theme.colors.emergency,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: Theme.spacing.m,
-  },
-  unwellContent: {
-    flex: 1,
-  },
-  unwellTitle: {
-    color: Theme.colors.white,
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
-  unwellSubtitle: {
-    color: 'rgba(255,255,255,0.5)',
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: Theme.spacing.m,
-  },
-  sectionTitle: {
-    color: Theme.colors.white,
-    fontSize: 18,
-  },
-  viewAll: {
-    color: Theme.colors.accent,
-    fontWeight: 'bold',
-  },
-  activityCard: {
-    backgroundColor: Theme.colors.cardDark,
-    borderColor: Theme.colors.borderDark,
-    borderWidth: 1,
-    padding: Theme.spacing.m,
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: Theme.spacing.s,
-    borderRadius: 20,
-  },
-  activityIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: Theme.spacing.m,
-  },
-  activityInfo: {
-    flex: 1,
-  },
-  activityTitle: {
-    color: Theme.colors.white,
-    fontSize: 15,
-  },
-  activitySubtitle: {
-    color: 'rgba(255,255,255,0.4)',
-  },
-  activityTime: {
-    color: 'rgba(255,255,255,0.3)',
-  },
-});

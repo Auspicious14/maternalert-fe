@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
+import { cssInterop } from 'nativewind';
 import React from 'react';
-import { StyleSheet, View, ViewStyle } from 'react-native';
+import { View, ViewStyle } from 'react-native';
 import Theme from '../../constants/theme';
 import { Typography } from './Typography';
 
@@ -9,13 +10,16 @@ interface StatusBannerProps {
   variant?: 'info' | 'success' | 'warning' | 'error' | 'urgent';
   icon?: React.ReactNode | keyof typeof Ionicons.glyphMap;
   containerStyle?: ViewStyle;
+  style?: ViewStyle; // NativeWind style injection
+  className?: string;
 }
 
 export const StatusBanner: React.FC<StatusBannerProps> = ({ 
   message, 
   variant = 'info', 
   icon,
-  containerStyle 
+  containerStyle,
+  style,
 }) => {
   const getVariantStyles = () => {
     switch (variant) {
@@ -30,31 +34,30 @@ export const StatusBanner: React.FC<StatusBannerProps> = ({
   const { bg, text, defaultIcon } = getVariantStyles();
 
   const renderIcon = () => {
-    if (React.isValidElement(icon)) return icon;
-    return <Ionicons name={(icon as any) || defaultIcon} size={20} color={text} style={styles.icon} />;
+    return (
+      <View className="mr-2 items-center justify-center">
+        {React.isValidElement(icon) ? (
+          icon
+        ) : (
+          <Ionicons name={(icon as any) || defaultIcon} size={20} color={text} />
+        )}
+      </View>
+    );
   };
 
   return (
-    <View style={[styles.banner, { backgroundColor: bg }, containerStyle]}>
+    <View 
+      className="flex-row items-center justify-center py-2 px-4 rounded-xl my-2"
+      style={[{ backgroundColor: bg }, containerStyle, style]}
+    >
       {renderIcon()}
-      <Typography variant="caption" style={{ color: text, fontWeight: 'bold' }}>
+      <Typography variant="caption" weight="bold" style={{ color: text }}>
         {message.toUpperCase()}
       </Typography>
     </View>
   );
 };
 
-const styles = StyleSheet.create({
-  banner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: Theme.spacing.s,
-    paddingHorizontal: Theme.spacing.m,
-    borderRadius: Theme.borderRadius.large,
-    marginVertical: Theme.spacing.s,
-  },
-  icon: {
-    marginRight: Theme.spacing.s,
-  },
+cssInterop(StatusBanner, {
+  className: 'style',
 });

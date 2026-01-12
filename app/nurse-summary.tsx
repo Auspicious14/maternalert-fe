@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { SafeAreaView, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView, ScrollView, TouchableOpacity, View } from 'react-native';
 import { Card } from '../components/shared/Card';
 import { Screen } from '../components/shared/Screen';
 import { Typography } from '../components/shared/Typography';
@@ -14,57 +14,57 @@ export default function NurseSummaryScreen() {
   const { latestBP, recentSymptoms } = useHealthData();
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <Screen style={styles.container} backgroundColor="#FFFFFF">
+    <SafeAreaView className="flex-1 bg-emergency">
+      <Screen backgroundColor="#FFFFFF">
         {/* Urgent Header Banner */}
-        <View style={styles.banner}>
-          <View style={styles.bannerIconContainer}>
-            <Ionicons name="warning" size={60} color="#FFFFFF" opacity={0.3} style={styles.bannerIconBg} />
+        <View className="bg-emergency py-10 px-10 items-center rounded-b-[60px]">
+          <View className="relative mb-5 justify-center items-center">
+            <Ionicons name="warning" size={60} color="#FFFFFF" className="absolute opacity-30" />
             <Ionicons name="alert-circle" size={80} color="#FFFFFF" />
           </View>
-          <Typography variant="h1" style={styles.bannerTitle}>
+          <Typography variant="h1" className="text-white text-center text-[28px] font-black leading-[38px]">
             GO TO THE NEAREST HEALTH FACILITY NOW
           </Typography>
         </View>
 
-        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 30, paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
           {/* Nurse Card */}
-          <Card style={styles.nurseCard}>
-            <View style={styles.cardHeader}>
-              <View style={styles.cardIconBg}>
+          <Card className="rounded-[32px] p-6 mb-10 border-l-8 border-l-emergency bg-white shadow-md">
+            <View className="flex-row items-center gap-3 mb-5">
+              <View className="w-11 h-11 rounded-xl bg-red-50 justify-center items-center">
                 <Ionicons name="medical" size={24} color={Theme.colors.emergency} />
               </View>
-              <Typography variant="h2" style={styles.cardTitle}>SHOW THIS TO THE NURSE</Typography>
+              <Typography variant="h2" weight="bold" className="text-lg font-black tracking-tight">SHOW THIS TO THE NURSE</Typography>
             </View>
 
-            <View style={styles.divider} />
+            <View className="h-[1px] bg-gray-100 mb-6" />
 
             {/* Clinical Data Section */}
-            <View style={styles.dataRow}>
+            <View className="flex-row items-start gap-3 mb-5">
               <Ionicons name="checkmark-circle" size={24} color={Theme.colors.emergency} />
-              <View style={styles.dataContent}>
-                <Typography variant="h3" style={styles.dataLabel}>
-                  Blood Pressure: <Typography variant="h3" style={{ fontWeight: '900' }}>{latestBP ? `${latestBP.systolic}/${latestBP.diastolic}` : 'Not recorded'}</Typography>
+              <View className="flex-1">
+                <Typography variant="h3" className="text-lg">
+                  Blood Pressure: <Typography weight="bold" className="font-extrabold">{latestBP ? `${latestBP.systolic}/${latestBP.diastolic}` : 'Not recorded'}</Typography>
                 </Typography>
-                <Typography variant="caption" style={styles.statusLabel}>
+                <Typography variant="caption" weight="bold" className="text-emergency text-xs mt-0.5 tracking-[1px]">
                   ({latestBP?.systolic && latestBP.systolic > 140 ? 'CRITICAL' : 'ELEVATED'})
                 </Typography>
               </View>
             </View>
 
             {recentSymptoms?.map((symptom) => (
-              <View key={symptom.id} style={styles.dataRow}>
+              <View key={symptom.id} className="flex-row items-start gap-3 mb-5">
                 <Ionicons name="checkmark-circle-outline" size={24} color={Theme.colors.text} />
-                <Typography variant="h3" style={styles.dataText}>
+                <Typography variant="h3" className="text-lg">
                   {symptom.symptomType.replace(/_/g, ' ')} detected
                 </Typography>
               </View>
             ))}
 
             {(!recentSymptoms || recentSymptoms.length === 0) && (
-              <View style={styles.dataRow}>
+              <View className="flex-row items-start gap-3 mb-5">
                 <Ionicons name="information-circle-outline" size={24} color={Theme.colors.textLight} />
-                <Typography variant="h3" style={[styles.dataText, { color: Theme.colors.textLight }]}>
+                <Typography variant="h3" className="text-lg text-gray-400">
                   No other symptoms reported
                 </Typography>
               </View>
@@ -72,27 +72,27 @@ export default function NurseSummaryScreen() {
           </Card>
 
           {/* Action Buttons */}
-          <View style={styles.actions}>
-            <TouchableOpacity style={styles.emergencyButton} activeOpacity={0.8}>
+          <View className="gap-4">
+            <TouchableOpacity className="bg-[#121915] h-20 rounded-[40px] flex-row items-center px-[30px] gap-4" activeOpacity={0.8}>
                <Ionicons name="call" size={24} color="#FFFFFF" />
-               <View style={styles.buttonContent}>
-                 <Typography variant="h3" style={styles.buttonText}>Call Emergency</Typography>
-                 <Typography variant="caption" style={styles.buttonSubtext}>Contacting: Husband (David)</Typography>
+               <View className="flex-1">
+                 <Typography variant="h3" weight="bold" className="text-white text-lg">Call Emergency</Typography>
+                 <Typography variant="caption" className="text-white/60 text-xs text-sh-lexend-medium">Contacting: Husband (David)</Typography>
                </View>
             </TouchableOpacity>
 
             <TouchableOpacity 
-              style={styles.midwifeButton} 
+              className="bg-primary h-[70px] rounded-[35px] flex-row items-center justify-center gap-3" 
               activeOpacity={0.8}
               onPress={() => router.push('/clinic-finder')}
             >
                <Ionicons name="people" size={24} color="#FFFFFF" />
-               <Typography variant="h3" style={styles.buttonText}>Show to Midwife</Typography>
+               <Typography variant="h3" weight="bold" className="text-white text-lg">Show to Midwife</Typography>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.backHome} onPress={() => router.replace('/(tabs)')}>
+            <TouchableOpacity className="flex-row items-center justify-center mt-5 gap-2" onPress={() => router.replace('/(tabs)')}>
                <Ionicons name="home" size={18} color={Theme.colors.textLight} />
-               <Typography variant="body" style={styles.backHomeText}>False Alarm? Return to Home</Typography>
+               <Typography variant="body" weight="bold" className="text-gray-500">False Alarm? Return to Home</Typography>
             </TouchableOpacity>
           </View>
         </ScrollView>
@@ -100,142 +100,3 @@ export default function NurseSummaryScreen() {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: Theme.colors.emergency,
-  },
-  container: {
-    paddingHorizontal: 0,
-  },
-  banner: {
-    backgroundColor: Theme.colors.emergency,
-    paddingVertical: 40,
-    paddingHorizontal: 40,
-    alignItems: 'center',
-    borderBottomLeftRadius: 60,
-    borderBottomRightRadius: 60,
-  },
-  bannerIconContainer: {
-    position: 'relative',
-    marginBottom: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  bannerIconBg: {
-    position: 'absolute',
-  },
-  bannerTitle: {
-    color: '#FFFFFF',
-    textAlign: 'center',
-    fontSize: 28,
-    fontWeight: '900',
-    lineHeight: 38,
-  },
-  scrollContent: {
-    paddingHorizontal: Theme.spacing.l,
-    paddingTop: 30,
-    paddingBottom: 40,
-  },
-  nurseCard: {
-    borderRadius: 32,
-    padding: Theme.spacing.l,
-    marginBottom: 40,
-    borderLeftWidth: 8,
-    borderLeftColor: Theme.colors.emergency,
-    backgroundColor: '#FFFFFF',
-    ...Theme.shadows.medium,
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    marginBottom: 20,
-  },
-  cardIconBg: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    backgroundColor: '#FFF1F2',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  cardTitle: {
-    fontSize: 18,
-    fontWeight: '900',
-    letterSpacing: 0.5,
-  },
-  divider: {
-    height: 1,
-    backgroundColor: '#F1F5F9',
-    marginBottom: 25,
-  },
-  dataRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 12,
-    marginBottom: 20,
-  },
-  dataContent: {
-    flex: 1,
-  },
-  dataLabel: {
-    fontSize: 18,
-  },
-  statusLabel: {
-    color: Theme.colors.emergency,
-    fontWeight: 'bold',
-    fontSize: 12,
-    marginTop: 2,
-    letterSpacing: 1,
-  },
-  dataText: {
-    fontSize: 18,
-    color: Theme.colors.text,
-  },
-  actions: {
-    gap: 16,
-  },
-  emergencyButton: {
-    backgroundColor: '#121915', // Dark charcoal from mockup
-    height: 80,
-    borderRadius: 40,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 30,
-    gap: 16,
-  },
-  midwifeButton: {
-    backgroundColor: Theme.colors.primary,
-    height: 70,
-    borderRadius: 35,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 12,
-  },
-  buttonContent: {
-    flex: 1,
-  },
-  buttonText: {
-    color: '#FFFFFF',
-    fontWeight: 'bold',
-    fontSize: 18,
-  },
-  buttonSubtext: {
-    color: 'rgba(255,255,255,0.6)',
-    fontSize: 12,
-  },
-  backHome: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 20,
-    gap: 8,
-  },
-  backHomeText: {
-    color: Theme.colors.textLight,
-    fontWeight: 'bold',
-  },
-});

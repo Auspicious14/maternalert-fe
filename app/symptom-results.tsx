@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { SafeAreaView, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView, ScrollView, TouchableOpacity, View } from 'react-native';
 import { Card } from '../components/shared/Card';
 import { Screen } from '../components/shared/Screen';
 import { Typography } from '../components/shared/Typography';
@@ -11,76 +11,76 @@ export default function SymptomResultsScreen() {
   const router = useRouter();
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <Screen style={styles.container} scrollable backgroundColor="#F9FAFB">
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+    <SafeAreaView className="flex-1 bg-[#F9FAFB]">
+      <Screen backgroundColor="#F9FAFB">
+        <View className="flex-row items-center justify-between px-6 pt-4 mb-5">
+          <TouchableOpacity onPress={() => router.back()} className="w-11 h-11 justify-center items-center">
             <Ionicons name="arrow-back" size={28} color="#1A212E" />
           </TouchableOpacity>
-          <Typography variant="h2" style={styles.headerTitle}>Care Recommendation</Typography>
-          <View style={{ width: 28 }} />
+          <Typography variant="h2" weight="bold" className="text-xl">Care Recommendation</Typography>
+          <View className="w-7" />
         </View>
 
-        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <ScrollView contentContainerStyle={{ paddingHorizontal: 40, paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
           {/* Level Radial Indicator Mockup */}
-          <View style={styles.radialContainer}>
-            <View style={styles.radialOuter}>
-               <View style={styles.radialInner}>
-                  <View style={styles.iconCircle}>
+          <View className="items-center my-10">
+            <View className="w-[180px] h-[180px] rounded-full bg-[#FFF4E8] justify-center items-center mb-6">
+               <View className="w-[140px] h-[140px] rounded-full bg-[#FFE8D1] justify-center items-center relative">
+                  <View className="w-20 h-20 rounded-full bg-white justify-center items-center shadow-md">
                     <Ionicons name="medical" size={40} color={Theme.colors.accent} />
                   </View>
-                  <View style={styles.warningBadge}>
+                  <View className="absolute bottom-[-5px] bg-white w-8 h-8 rounded-full justify-center items-center border border-[#FEE2E2] shadow-sm">
                     <Ionicons name="warning" size={16} color={Theme.colors.accent} />
                   </View>
                </View>
             </View>
-            <Typography variant="h1" style={styles.levelTitle}>Orange Level</Typography>
-            <Typography variant="h2" style={styles.levelSubTitle}>Medical review recommended soon</Typography>
+            <Typography variant="h1" className="text-[28px] font-black text-accent mb-2 shadow-lexend-bold">Orange Level</Typography>
+            <Typography variant="h2" weight="bold" className="text-xl text-center px-10 leading-7">Medical review recommended soon</Typography>
           </View>
 
-          <Card style={styles.infoCard}>
-             <View style={styles.infoRow}>
+          <Card className="bg-white rounded-[40px] p-[30px] mb-5 border border-[#F1F5F9]">
+             <View className="flex-row gap-4 items-start mb-5">
                <Ionicons name="medical" size={24} color={Theme.colors.primary} />
-               <Typography variant="body" style={styles.infoText}>
-                 Based on your symptoms and blood pressure reading, please visit your clinic <Typography variant="h3" style={{ fontWeight: 'bold' }}>today</Typography>.
+               <Typography variant="body" className="flex-1 leading-6 text-lg">
+                 Based on your symptoms and blood pressure reading, please visit your clinic <Typography weight="bold">today</Typography>.
                </Typography>
              </View>
-             <View style={styles.timeRow}>
+             <View className="flex-row items-center gap-2 border-t border-[#F1F5F9] pt-4">
                 <Ionicons name="time" size={18} color={Theme.colors.textLight} />
-                <Typography variant="caption" style={styles.timeText}>Last reading: 10 mins ago</Typography>
+                <Typography variant="caption" className="text-gray-500">Last reading: 10 mins ago</Typography>
              </View>
           </Card>
 
           {/* Nearest Clinic Mockup */}
-          <View style={styles.clinicCard}>
-             <View style={styles.clinicInfo}>
-               <Typography variant="h3" style={styles.clinicTitle}>Nearest Clinic</Typography>
-               <Typography variant="caption" style={styles.clinicSubtitle}>1.2km away • Open now</Typography>
+          <View className="h-[100px] bg-[#F1F5F9] rounded-[30px] flex-row items-center px-6 mb-10">
+             <View className="flex-1">
+               <Typography variant="h3" weight="bold" className="font-black">Nearest Clinic</Typography>
+               <Typography variant="caption" className="text-gray-500">1.2km away • Open now</Typography>
              </View>
-             <TouchableOpacity style={styles.directionsButton}>
+             <TouchableOpacity className="w-11 h-11 rounded-full bg-white justify-center items-center shadow-sm">
                 <Ionicons name="navigate" size={20} color="#1A212E" />
              </TouchableOpacity>
           </View>
 
-          <View style={styles.actions}>
+          <View className="gap-4">
             <TouchableOpacity 
-              style={styles.findClinicButton} 
+              className="bg-primary h-[70px] rounded-[35px] flex-row items-center justify-center gap-3 shadow-md" 
               onPress={() => router.push('/clinic-finder')}
             >
               <Ionicons name="location" size={24} color="#1A212E" />
-              <Typography variant="h2" style={styles.actionText}>Find nearest clinic</Typography>
+              <Typography variant="h2" weight="bold" className="text-lg text-[#1A212E]">Find nearest clinic</Typography>
             </TouchableOpacity>
 
             <TouchableOpacity 
-              style={styles.callContactButton}
+              className="bg-[#FFF4E8] h-[70px] rounded-[35px] flex-row items-center justify-center gap-3 shadow-sm"
               onPress={() => router.push('/emergency')}
             >
               <Ionicons name="call" size={24} color={Theme.colors.urgentText} />
-              <Typography variant="h2" style={[styles.actionText, { color: Theme.colors.urgentText }]}>Call emergency contact</Typography>
+              <Typography variant="h2" weight="bold" className="text-lg text-urgent-text">Call emergency contact</Typography>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.backHome} onPress={() => router.replace('/(tabs)')}>
-               <Typography variant="h3" style={styles.backHomeText}>Back to Home</Typography>
+            <TouchableOpacity className="items-center mt-2.5" onPress={() => router.replace('/(tabs)')}>
+               <Typography variant="h3" weight="bold" className="text-gray-500">Back to Home</Typography>
             </TouchableOpacity>
           </View>
         </ScrollView>
@@ -88,182 +88,3 @@ export default function SymptomResultsScreen() {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#F9FAFB',
-  },
-  container: {
-    paddingHorizontal: 0,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: Theme.spacing.l,
-    marginTop: Theme.spacing.m,
-    marginBottom: 20,
-  },
-  backButton: {
-    width: 44,
-    height: 44,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  scrollContent: {
-    paddingHorizontal: Theme.spacing.xl,
-    paddingBottom: 40,
-  },
-  radialContainer: {
-    alignItems: 'center',
-    marginVertical: 40,
-  },
-  radialOuter: {
-    width: 180,
-    height: 180,
-    borderRadius: 90,
-    backgroundColor: '#FFF4E8',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  radialInner: {
-    width: 140,
-    height: 140,
-    borderRadius: 70,
-    backgroundColor: '#FFE8D1',
-    justifyContent: 'center',
-    alignItems: 'center',
-    position: 'relative',
-  },
-  iconCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: Theme.colors.white,
-    justifyContent: 'center',
-    alignItems: 'center',
-    ...Theme.shadows.medium,
-  },
-  warningBadge: {
-    position: 'absolute',
-    bottom: -5,
-    backgroundColor: Theme.colors.white,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#FEE2E2',
-    ...Theme.shadows.light,
-  },
-  levelTitle: {
-    fontSize: 28,
-    fontWeight: '900',
-    color: Theme.colors.accent,
-    marginBottom: 8,
-  },
-  levelSubTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    paddingHorizontal: 40,
-    lineHeight: 28,
-  },
-  infoCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 40,
-    padding: 30,
-    marginBottom: 20,
-    borderWidth: 1,
-    borderColor: '#F1F5F9',
-  },
-  infoRow: {
-    flexDirection: 'row',
-    gap: 16,
-    alignItems: 'flex-start',
-    marginBottom: 20,
-  },
-  infoText: {
-    flex: 1,
-    lineHeight: 24,
-    fontSize: 18,
-  },
-  timeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    borderTopWidth: 1,
-    borderTopColor: '#F1F5F9',
-    paddingTop: 16,
-  },
-  timeText: {
-    color: Theme.colors.textLight,
-  },
-  clinicCard: {
-    height: 100,
-    backgroundColor: '#F1F5F9',
-    borderRadius: 30,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 24,
-    marginBottom: 40,
-  },
-  clinicInfo: {
-    flex: 1,
-  },
-  clinicTitle: {
-    fontWeight: '900',
-  },
-  clinicSubtitle: {
-    color: Theme.colors.textLight,
-  },
-  directionsButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#FFFFFF',
-    justifyContent: 'center',
-    alignItems: 'center',
-    ...Theme.shadows.light,
-  },
-  actions: {
-    gap: 16,
-  },
-  findClinicButton: {
-    backgroundColor: Theme.colors.primary,
-    height: 70,
-    borderRadius: 35,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 12,
-  },
-  callContactButton: {
-    backgroundColor: '#FFF4E8',
-    height: 70,
-    borderRadius: 35,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 12,
-  },
-  actionText: {
-    fontWeight: 'bold',
-    fontSize: 18,
-  },
-  backHome: {
-    alignItems: 'center',
-    marginTop: 10,
-  },
-  backHomeText: {
-    color: Theme.colors.textLight,
-    fontWeight: 'bold',
-  },
-});

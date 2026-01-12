@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { Dimensions, Image, SafeAreaView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Dimensions, Image, TouchableOpacity, View } from 'react-native';
 import { Screen } from '../components/shared/Screen';
 import { Typography } from '../components/shared/Typography';
 import Theme from '../constants/theme';
@@ -10,216 +10,88 @@ const { height } = Dimensions.get('window');
 
 export default function OnboardingScreen() {
   const router = useRouter();
+  const isSmallScreen = height < 700;
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <Screen style={styles.container} backgroundColor="#F9FAFB">
-        <View style={styles.content}>
-          {/* Header */}
-          <View style={styles.topHeader}>
-            <TouchableOpacity style={styles.languageSelector} activeOpacity={0.7}>
-              <Ionicons name="language" size={20} color={Theme.colors.primary} />
-              <Typography variant="body" weight="bold" style={styles.languageText}>English</Typography>
-              <Ionicons name="chevron-down" size={16} color={Theme.colors.textLight} />
-            </TouchableOpacity>
-          </View>
+    <Screen backgroundColor="#F9FAFB" safe={true} scrollable={true}>
+      <View className="flex-1 px-6 pb-10">
+        
+        {/* Header - Fixed to top right */}
+        <View className="flex-row justify-end pt-4 mb-4">
+          <TouchableOpacity 
+            className="flex-row items-center gap-2 bg-white py-2 px-4 rounded-full shadow-sm"
+            activeOpacity={0.7}
+          >
+            <Ionicons name="language" size={20} color={Theme.colors.primary} />
+            <Typography variant="body" weight="bold" className="text-[#1A212E]">English</Typography>
+            <Ionicons name="chevron-down" size={16} color={Theme.colors.textLight} />
+          </TouchableOpacity>
+        </View>
 
-          {/* Illustration */}
-          <View style={styles.illustrationContainer}>
-            <View style={styles.imageCard}>
-              <Image 
-                source={require('../assets/images/maternal_onboarding_illustration.png')} 
-                style={styles.image} 
-                resizeMode="contain"
-              />
-            </View>
-          </View>
+        {/* Text Section - Moved Above Image as requested */}
+        <View className="px-4 mb-6">
+          <Typography 
+            variant="h1" 
+            weight="black" 
+            className="text-center mb-3 text-[#121915] text-[32px] leading-[42px]"
+          >
+            Safe Pregnancy{"\n"}Tracking
+          </Typography>
+          <Typography variant="body" className="text-center text-gray-500 leading-6 text-base px-2">
+            Notice warning signs early and know exactly when to seek professional care.
+          </Typography>
+        </View>
 
-          {/* Text Content */}
-          <View style={styles.textContent}>
-            <Typography variant="h1" weight="bold" style={styles.title}>Safe Pregnancy{"\n"}Tracking</Typography>
-            <Typography variant="body" style={styles.subtitle}>
-              This app helps you notice warning signs early and know when to seek care.
-            </Typography>
-
-            <View style={styles.importantBox}>
-              <View style={styles.importantIconCircle}>
-                <Ionicons name="medical" size={24} color="#3B82F6" />
-              </View>
-              <View style={styles.importantTextContent}>
-                <Typography variant="h3" weight="bold" style={styles.importantTitle}>Important</Typography>
-                <Typography variant="caption" style={styles.importantSubtitle}>
-                  This app does not replace a doctor or midwife. Please consult a professional for medical advice.
-                </Typography>
-              </View>
-            </View>
-          </View>
-
-          {/* Footer */}
-          <View style={styles.footer}>
-            <TouchableOpacity 
-              style={styles.continueButton} 
-              activeOpacity={0.8}
-              onPress={() => router.push('/disclaimer')}
-            >
-              <Typography variant="h2" weight="bold" style={styles.continueText}>Continue</Typography>
-              <Ionicons name="arrow-forward" size={24} color="#121915" />
-            </TouchableOpacity>
-
-            <View style={styles.loginRow}>
-              <Typography variant="body" color={Theme.colors.textLight}>Already have an account? </Typography>
-              <TouchableOpacity onPress={() => router.push('/login')}>
-                <Typography variant="body" weight="bold" style={styles.footerLink}>Sign In</Typography>
-              </TouchableOpacity>
-            </View>
-
-            <Typography variant="caption" style={styles.termsText}>
-              By continuing, you agree to our <Typography variant="caption" weight="bold" style={styles.link}>Terms of Service</Typography> & <Typography variant="caption" weight="bold" style={styles.link}>Privacy Policy</Typography>
-            </Typography>
+        {/* Content Section - Image BELOW text */}
+        <View className="items-center mb-10">
+          <View className="w-[85%] aspect-square bg-white rounded-[40px] shadow-sm border border-[#E2E8F0] overflow-hidden items-center justify-center">
+            <Image 
+              source={require('../assets/images/maternal_onboarding_illustration.png')} 
+              className="w-full h-full"
+              resizeMode="contain"
+            />
           </View>
         </View>
-      </Screen>
-    </SafeAreaView>
+
+        {/* Medical Info Box */}
+        <View className="px-4 mb-10">
+          <View className="flex-row bg-[#F0F7FF] p-5 rounded-3xl items-center gap-4 border border-[#DBEAFE]">
+            <View className="w-12 h-12 rounded-2xl bg-white justify-center items-center shadow-sm">
+              <Ionicons name="shield-checkmark" size={28} color="#3B82F6" />
+            </View>
+            <View className="flex-1">
+              <Typography variant="body" weight="bold" className="text-blue-900 text-[15px] mb-0.5">Clinical Guidance</Typography>
+              <Typography variant="caption" className="text-blue-800 leading-[18px] text-xs opacity-80">
+                Built on verified clinical safety standards to support your journey.
+              </Typography>
+            </View>
+          </View>
+        </View>
+
+        {/* Footer Actions */}
+        <View className="px-4 mt-auto">
+          <TouchableOpacity 
+            className="bg-primary w-full h-16 rounded-[20px] flex-row items-center justify-center gap-3 mb-5 shadow-sm"
+            activeOpacity={0.8}
+            onPress={() => router.push('/disclaimer')}
+          >
+            <Typography variant="h3" weight="bold" className="text-[#121915]">Get Started</Typography>
+            <Ionicons name="arrow-forward" size={24} color="#121915" />
+          </TouchableOpacity>
+
+          {/* <View className="flex-row justify-center mb-4">
+            <Typography variant="body" className="text-gray-500">Already have an account? </Typography>
+            <TouchableOpacity onPress={() => router.push('/login')}>
+              <Typography variant="body" weight="bold" className="text-primary-dark">Sign In</Typography>
+            </TouchableOpacity>
+          </View> */}
+
+          <Typography variant="caption" className="text-gray-400 text-center text-[11px] leading-4 px-4">
+            By continuing, you acknowledge that this app does not replace medical advice. 
+            See our <Typography variant="caption" className="underline text-gray-500">Terms</Typography> & <Typography variant="caption" className="underline text-gray-500">Privacy Policy</Typography>.
+          </Typography>
+        </View>
+      </View>
+    </Screen>
   );
 }
-
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#F9FAFB',
-  },
-  container: {
-    flex: 1,
-  },
-  content: {
-    flex: 1,
-    justifyContent: 'space-between',
-    paddingBottom: height < 700 ? 10 : 20,
-  },
-  topHeader: {
-    alignItems: 'flex-end',
-    paddingHorizontal: Theme.spacing.l,
-    paddingTop: Theme.spacing.s,
-  },
-  languageSelector: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: '#FFFFFF',
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 20,
-    ...Theme.shadows.light,
-  },
-  languageText: {
-    color: Theme.colors.text,
-  },
-  illustrationContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: height < 700 ? 10 : 20,
-  },
-  imageCard: {
-    width: '90%',
-    aspectRatio: 1.2,
-    // borderRadius: 40,
-    // backgroundColor: '#FFFFFF',
-    // ...Theme.shadows.medium,
-    overflow: 'hidden',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  image: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 120,
-    // aspectRatio: 1.2,
-  },
-  textContent: {
-    paddingHorizontal: Theme.spacing.xl,
-    marginTop: height < 700 ? 15 : 30,
-  },
-  title: {
-    fontSize: height < 700 ? 28 : 34,
-    textAlign: 'center',
-    lineHeight: height < 700 ? 36 : 42,
-    marginBottom: 10,
-    color: '#121915',
-  },
-  subtitle: {
-    textAlign: 'center',
-    color: Theme.colors.textLight,
-    lineHeight: 22,
-    fontSize: 16,
-    marginBottom: height < 700 ? 15 : 25,
-  },
-  importantBox: {
-    flexDirection: 'row',
-    backgroundColor: '#EBF5FF', // Light blue tint
-    padding: Theme.spacing.m,
-    borderRadius: 24,
-    alignItems: 'center',
-    gap: 16,
-    borderWidth: 1,
-    borderColor: '#DBEAFE',
-  },
-  importantIconCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#FFFFFF',
-    justifyContent: 'center',
-    alignItems: 'center',
-    ...Theme.shadows.light,
-  },
-  importantTextContent: {
-    flex: 1,
-  },
-  importantTitle: {
-    fontSize: 16,
-    color: '#1E40AF',
-  },
-  importantSubtitle: {
-    color: '#1E40AF',
-    lineHeight: 18,
-    fontSize: 12,
-    opacity: 0.8,
-  },
-  footer: {
-    paddingHorizontal: Theme.spacing.xl,
-    alignItems: 'center',
-    marginTop: height < 700 ? 10 : 20,
-  },
-  continueButton: {
-    backgroundColor: Theme.colors.primary,
-    width: '100%',
-    height: 64,
-    borderRadius: 32,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 12,
-    marginBottom: 16,
-    ...Theme.shadows.medium,
-  },
-  continueText: {
-    fontSize: 20,
-    color: '#121915',
-  },
-  loginRow: {
-    flexDirection: 'row',
-    marginBottom: 12,
-  },
-  footerLink: {
-    color: Theme.colors.primaryDark,
-  },
-  termsText: {
-    color: Theme.colors.textLight,
-    textAlign: 'center',
-    fontSize: 12,
-  },
-  link: {
-    color: Theme.colors.text,
-    textDecorationLine: 'underline',
-  },
-});

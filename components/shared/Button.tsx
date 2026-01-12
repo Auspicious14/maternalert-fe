@@ -1,3 +1,4 @@
+import { cssInterop } from 'nativewind';
 import React from 'react';
 import { StyleSheet, TextStyle, TouchableOpacity, TouchableOpacityProps, View, ViewStyle } from 'react-native';
 import Theme from '../../constants/theme';
@@ -10,6 +11,8 @@ interface ButtonProps extends TouchableOpacityProps {
   containerStyle?: ViewStyle;
   textStyle?: TextStyle;
   icon?: React.ReactNode;
+  className?: string;
+  style?: ViewStyle; // NativeWind style injection
 }
 
 export const Button: React.FC<ButtonProps> = ({ 
@@ -19,13 +22,14 @@ export const Button: React.FC<ButtonProps> = ({
   containerStyle,
   textStyle,
   icon,
+  style,
   ...props 
 }) => {
   const getVariantStyle = () => {
     switch (variant) {
       case 'secondary': return { backgroundColor: Theme.colors.setupBlue };
       case 'emergency': return { backgroundColor: Theme.colors.emergency };
-      case 'outline': return { backgroundColor: 'transparent', borderWidth: 1, borderColor: Theme.colors.primary };
+      case 'outline': return { backgroundColor: 'transparent', borderWidth: 2, borderColor: Theme.colors.primary };
       default: return { backgroundColor: Theme.colors.primary };
     }
   };
@@ -33,21 +37,21 @@ export const Button: React.FC<ButtonProps> = ({
   const getTextColor = () => {
     switch (variant) {
       case 'emergency': return Theme.colors.white;
-      case 'outline': return Theme.colors.text;
-      default: return Theme.colors.text;
+      case 'outline': return Theme.colors.primaryDark;
+      default: return '#121915'; // Modern charcoal for primary buttons
     }
   };
 
   return (
     <TouchableOpacity 
-      style={[styles.button, styles[size], getVariantStyle(), containerStyle]} 
+      style={[styles.button, styles[size], getVariantStyle(), containerStyle, style]} 
       activeOpacity={0.7}
       {...props}
     >
       <View style={styles.content}>
         <Typography 
-          variant="body" 
-          weight="semiBold" 
+          variant="h3" 
+          weight="bold" 
           style={[{ color: getTextColor() }, textStyle]}
         >
           {title}
@@ -58,11 +62,21 @@ export const Button: React.FC<ButtonProps> = ({
   );
 };
 
+cssInterop(Button, {
+  className: 'style',
+});
+
 const styles = StyleSheet.create({
   button: {
-    borderRadius: Theme.borderRadius.large,
+    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
+    width: '100%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   content: {
     flexDirection: 'row',
@@ -70,18 +84,18 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   iconContainer: {
-    marginLeft: Theme.spacing.s,
+    marginLeft: 12,
   },
   small: {
-    paddingVertical: Theme.spacing.s,
-    paddingHorizontal: Theme.spacing.m,
+    height: 44,
+    paddingHorizontal: 16,
   },
   medium: {
-    paddingVertical: Theme.spacing.m,
-    paddingHorizontal: Theme.spacing.l,
+    height: 56,
+    paddingHorizontal: 24,
   },
   large: {
-    paddingVertical: Theme.spacing.l,
-    paddingHorizontal: Theme.spacing.xl,
+    height: 72,
+    paddingHorizontal: 32,
   },
 });

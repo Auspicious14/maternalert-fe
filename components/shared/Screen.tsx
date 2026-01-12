@@ -1,14 +1,15 @@
+import { cssInterop } from 'nativewind';
 import React from 'react';
 import {
     KeyboardAvoidingView,
     Platform,
-    SafeAreaView,
     ScrollView,
     StatusBar,
     StyleSheet,
     View,
     ViewStyle
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Theme from '../../constants/theme';
 
 interface ScreenProps {
@@ -17,6 +18,7 @@ interface ScreenProps {
   scrollable?: boolean;
   safe?: boolean;
   backgroundColor?: string;
+  className?: string;
 }
 
 export const Screen: React.FC<ScreenProps> = ({ 
@@ -30,16 +32,16 @@ export const Screen: React.FC<ScreenProps> = ({
   const ContentContainer = scrollable ? ScrollView : View;
 
   return (
-    <Container style={[styles.container, { backgroundColor }]}>
-      <StatusBar barStyle="dark-content" />
+    <Container style={[styles.container, { backgroundColor }, style]} edges={safe ? ['top', 'bottom', 'left', 'right'] : []}>
+      <StatusBar barStyle="dark-content" backgroundColor={backgroundColor} />
       <KeyboardAvoidingView 
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.flex}
       >
         <ContentContainer 
-          style={[styles.flex, style]}
+          style={styles.flex}
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={scrollable ? styles.scrollContent : undefined}
+          contentContainerStyle={scrollable ? styles.scrollContent : { flex: 1 }}
         >
           {children}
         </ContentContainer>
@@ -47,6 +49,10 @@ export const Screen: React.FC<ScreenProps> = ({
     </Container>
   );
 };
+
+cssInterop(Screen, {
+  className: 'style',
+});
 
 const styles = StyleSheet.create({
   container: {
@@ -56,6 +62,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
+    flexGrow: 1,
     paddingBottom: Theme.spacing.xl,
   },
 });
