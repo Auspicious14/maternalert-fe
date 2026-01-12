@@ -62,6 +62,13 @@ export default function OnboardingScreen() {
             <Ionicons name="arrow-forward" size={24} color="#1A212E" />
           </TouchableOpacity>
 
+          <View style={styles.loginRow}>
+            <Typography variant="body" color={Theme.colors.textLight}>Already have an account? </Typography>
+            <TouchableOpacity onPress={() => router.push('/login')}>
+              <Typography variant="body" style={styles.footerLink}>Sign In</Typography>
+            </TouchableOpacity>
+          </View>
+
           <Typography variant="caption" style={styles.termsText}>
             By continuing, you agree to our <Typography variant="caption" style={styles.link}>Terms of Service</Typography> & <Typography variant="caption" style={styles.link}>Privacy Policy</Typography>
           </Typography>
@@ -169,6 +176,14 @@ const styles = StyleSheet.create({
     paddingTop: 40,
     paddingBottom: 20,
     alignItems: 'center',
+  },
+  loginRow: {
+    flexDirection: 'row',
+    marginBottom: 20,
+  },
+  footerLink: {
+    color: Theme.colors.primary,
+    fontWeight: 'bold',
   },
   continueButton: {
     backgroundColor: Theme.colors.primary,

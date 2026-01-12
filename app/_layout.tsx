@@ -6,11 +6,12 @@ import {
 } from '@expo-google-fonts/lexend';
 import { DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
-import { Stack } from 'expo-router';
+import { Stack, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import 'react-native-reanimated';
+import { TokenStorage } from '../api/storage';
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -54,8 +55,11 @@ export default function RootLayout() {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider value={DefaultTheme}>
+        <InitialRouteHandler />
         <Stack>
           <Stack.Screen name="onboarding" options={{ headerShown: false }} />
+          <Stack.Screen name="login" options={{ headerShown: false }} />
+          <Stack.Screen name="register" options={{ headerShown: false }} />
           <Stack.Screen name="disclaimer" options={{ headerShown: false }} />
           <Stack.Screen name="profile-setup" options={{ headerShown: false }} />
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
@@ -71,4 +75,36 @@ export default function RootLayout() {
       </ThemeProvider>
     </QueryClientProvider>
   );
+}
+
+function InitialRouteHandler() {
+  const router = useRouter();
+  const segments = useSegments();
+  const [isReady, setIsReady] = useState(false);
+
+  useEffect(() => {
+    const checkNavigation = async () => {
+      const hasLaunched = await TokenStorage.getHasLaunched();
+      const token = await TokenStorage.getToken();
+
+      if (!hasLaunched) {
+        // First time user: show welcome (onboarding)
+        await TokenStorage.setHasLaunched();
+        router.replace('/onboarding');
+      } else if (token) {
+        // Returning user, logged in: show dashboard
+        // Note: we might want to check if profile is completed here too, 
+        // but for now following the prompt's logic.
+        router.replace('/(tabs)');
+      } else {
+        // Returning user, NOT logged in: show login
+        router.replace('/login');
+      }
+      setIsReady(true);
+    };
+
+    checkNavigation();
+  }, []);
+
+  return null;
 }

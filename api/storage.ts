@@ -2,6 +2,7 @@ import * as SecureStore from "expo-secure-store";
 
 const TOKEN_KEY = "maternalert_auth_token";
 const REFRESH_TOKEN_KEY = "maternalert_refresh_token";
+const HAS_LAUNCHED_KEY = "maternalert_has_launched";
 
 export const TokenStorage = {
   async saveToken(token: string) {
@@ -44,6 +45,23 @@ export const TokenStorage = {
       await SecureStore.deleteItemAsync(REFRESH_TOKEN_KEY);
     } catch (error) {
       console.error("Error clearing tokens", error);
+    }
+  },
+
+  async setHasLaunched() {
+    try {
+      await SecureStore.setItemAsync(HAS_LAUNCHED_KEY, "true");
+    } catch (error) {
+      console.error("Error setting launch flag", error);
+    }
+  },
+
+  async getHasLaunched() {
+    try {
+      return await SecureStore.getItemAsync(HAS_LAUNCHED_KEY);
+    } catch (error) {
+      console.error("Error getting launch flag", error);
+      return null;
     }
   },
 };

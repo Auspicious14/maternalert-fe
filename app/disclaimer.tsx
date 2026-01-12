@@ -74,7 +74,7 @@ export default function DisclaimerScreen() {
             variant="primary" 
             size="large"
             disabled={!agreed}
-            onPress={() => router.replace('/profile-setup')}
+            onPress={() => router.replace('/register')}
             containerStyle={styles.button}
           />
         </View>
