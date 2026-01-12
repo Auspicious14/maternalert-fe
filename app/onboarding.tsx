@@ -122,9 +122,9 @@ const styles = StyleSheet.create({
   imageCard: {
     width: '90%',
     aspectRatio: 1.2,
-    borderRadius: 40,
-    backgroundColor: '#FFFFFF',
-    ...Theme.shadows.medium,
+    // borderRadius: 40,
+    // backgroundColor: '#FFFFFF',
+    // ...Theme.shadows.medium,
     overflow: 'hidden',
     justifyContent: 'center',
     alignItems: 'center',
@@ -132,6 +132,8 @@ const styles = StyleSheet.create({
   image: {
     width: '100%',
     height: '100%',
+    borderRadius: 120,
+    // aspectRatio: 1.2,
   },
   textContent: {
     paddingHorizontal: Theme.spacing.xl,
