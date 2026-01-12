@@ -1,0 +1,51 @@
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useRouter } from "expo-router";
+import apiClient from "../api/client";
+import { TokenStorage } from "../api/storage";
+
+export const useAuth = () => {
+  const queryClient = useQueryClient();
+  const router = useRouter();
+
+  const loginMutation = useMutation({
+    mutationFn: async (credentials: any) => {
+      const response = await apiClient.post("/auth/login", credentials);
+      return response.data;
+    },
+    onSuccess: async (data) => {
+      await TokenStorage.saveToken(data.accessToken);
+      await TokenStorage.saveRefreshToken(data.refreshToken);
+      queryClient.setQueryData(["user"], data.user);
+      router.replace("/(tabs)");
+    },
+  });
+
+  const registerMutation = useMutation({
+    mutationFn: async (userData: any) => {
+      const response = await apiClient.post("/auth/register", userData);
+      return response.data;
+    },
+    onSuccess: async (data) => {
+      await TokenStorage.saveToken(data.accessToken);
+      await TokenStorage.saveRefreshToken(data.refreshToken);
+      queryClient.setQueryData(["user"], data.user);
+      router.replace("/profile-setup");
+    },
+  });
+
+  const logout = async () => {
+    await TokenStorage.clearTokens();
+    queryClient.clear();
+    router.replace("/onboarding");
+  };
+
+  return {
+    login: loginMutation.mutateAsync,
+    isLoggingIn: loginMutation.isPending,
+    loginError: loginMutation.error,
+    register: registerMutation.mutateAsync,
+    isRegistering: registerMutation.isPending,
+    registerError: registerMutation.error,
+    logout,
+  };
+};
