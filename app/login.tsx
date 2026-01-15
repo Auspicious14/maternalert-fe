@@ -1,6 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import React from 'react';
+import { Controller, useForm } from 'react-hook-form';
 import { TouchableOpacity, View } from 'react-native';
 import { Button } from '../components/shared/Button';
 import { Input } from '../components/shared/Input';
@@ -8,16 +10,28 @@ import { Screen } from '../components/shared/Screen';
 import { Typography } from '../components/shared/Typography';
 import Theme from '../constants/theme';
 import { useAuth } from '../hooks/useAuth';
+import { LoginFormData, loginSchema } from '../schemas/auth';
 
 export default function LoginScreen() {
   const router = useRouter();
   const { login, isLoggingIn, loginError } = useAuth();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
 
-  const handleLogin = async () => {
+  const {
+    control,
+    handleSubmit,
+    formState: { errors, isValid },
+  } = useForm<LoginFormData>({
+    resolver: zodResolver(loginSchema),
+    mode: 'onChange',
+    defaultValues: {
+      email: '',
+      password: '',
+    },
+  });
+
+  const handleLogin = async (data: LoginFormData) => {
     try {
-      await login({ email, password });
+      await login(data);
     } catch (error) {
       console.error('Login failed', error);
     }
@@ -38,23 +52,41 @@ export default function LoginScreen() {
         </Typography>
 
         <View className="gap-4 mb-8">
-          <Input 
-            label="Email Address" 
-            placeholder="example@email.com" 
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
-            autoCapitalize="none"
+          <Controller
+            control={control}
+            name="email"
+            render={({ field: { onChange, onBlur, value } }) => (
+              <Input 
+                label="Email Address" 
+                placeholder="example@email.com" 
+                value={value}
+                onBlur={onBlur}
+                onChangeText={onChange}
+                error={errors.email?.message}
+                keyboardType="email-address"
+                autoCapitalize="none"
+              />
+            )}
           />
-          <Input 
-            label="Password" 
-            placeholder="••••••••" 
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
+
+          <Controller
+            control={control}
+            name="password"
+            render={({ field: { onChange, onBlur, value } }) => (
+              <Input 
+                label="Password" 
+                placeholder="••••••••" 
+                value={value}
+                onBlur={onBlur}
+                onChangeText={onChange}
+                error={errors.password?.message}
+                secureTextEntry
+              />
+            )}
           />
+
           {loginError && (
-            <Typography variant="caption" color={Theme.colors.emergency} className="text-center">
+            <Typography variant="caption" color={Theme.colors.emergencyText} className="text-center">
               Invalid email or password. Please try again.
             </Typography>
           )}
@@ -62,8 +94,8 @@ export default function LoginScreen() {
 
         <Button 
           title={isLoggingIn ? "Signing In..." : "Sign In"} 
-          onPress={handleLogin}
-          disabled={isLoggingIn || !email || !password}
+          onPress={handleSubmit(handleLogin)}
+          disabled={isLoggingIn || !isValid}
           className="mb-6"
         />
 

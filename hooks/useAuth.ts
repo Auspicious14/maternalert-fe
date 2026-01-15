@@ -31,6 +31,13 @@ export const useAuth = () => {
       queryClient.setQueryData(["user"], data.user);
       router.replace("/profile-setup");
     },
+    onError: (err: any) => {
+      console.log("Registration Error:", {
+        message: err.message,
+        status: err.response?.status,
+        data: err.response?.data
+      });
+    }
   });
 
   const logout = async () => {
