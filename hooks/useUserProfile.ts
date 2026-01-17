@@ -7,6 +7,8 @@ export interface UserProfile {
   pregnancyWeeks: number;
   firstPregnancy: boolean;
   knownConditions: string[];
+  emergencyContactRelationship?: "MIDWIFE" | "PARTNER" | "FAMILY_MEMBER" | "OTHER";
+  emergencyContactPhone?: string;
 }
 
 export const useUserProfile = () => {
