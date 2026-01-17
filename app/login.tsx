@@ -3,7 +3,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'expo-router';
 import React from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import { TouchableOpacity, View } from 'react-native';
+import { Image, TouchableOpacity, View } from 'react-native';
 import { Button } from '../components/shared/Button';
 import { Input } from '../components/shared/Input';
 import { Screen } from '../components/shared/Screen';
@@ -46,8 +46,16 @@ export default function LoginScreen() {
       </View>
 
       <View className="px-10 pt-5">
-        <Typography variant="h1" className="text-[32px] font-black mb-2 shadow-lexend-bold">Sign In</Typography>
-        <Typography variant="body" className="text-gray-500 mb-10">
+        <View className="items-center">
+          <Image 
+            source={require('../assets/images/matern-logo.png')}
+            className="w-32 h-32"
+            resizeMode="cover"
+          />
+        </View>
+
+        <Typography variant="h1" className="text-[32px] font-black mb-2 shadow-lexend-bold text-center">Sign In</Typography>
+        <Typography variant="body" className="text-gray-500 mb-10 text-center">
           Welcome back! Please enter your details.
         </Typography>
 
@@ -99,12 +107,14 @@ export default function LoginScreen() {
           className="mb-6"
         />
 
-        <View className="flex-row justify-center items-center">
+        <View className="flex-row justify-center items-center mb-10">
           <Typography variant="body" className="text-gray-500">
             Don't have an account?{' '}
           </Typography>
-          <TouchableOpacity onPress={() => router.push('/onboarding')}>
-            <Typography variant="body" className="text-primary font-bold">Sign Up</Typography>
+          <TouchableOpacity onPress={() => router.push('/register')}>
+            <Typography variant="body" color={Theme.colors.primary} className="font-bold">
+              Sign Up
+            </Typography>
           </TouchableOpacity>
         </View>
       </View>

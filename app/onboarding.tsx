@@ -28,7 +28,16 @@ export default function OnboardingScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Text Section - Moved Above Image as requested */}
+        {/* Logo Section */}
+        <View className="items-center mb-6">
+          <Image 
+            source={require('../assets/images/matern-logo.png')}
+            className="w-24 h-24"
+            resizeMode="contain"
+          />
+        </View>
+
+        {/* Text Section */}
         <View className="px-4 mb-6">
           <Typography 
             variant="h1" 
@@ -42,7 +51,7 @@ export default function OnboardingScreen() {
           </Typography>
         </View>
 
-        {/* Content Section - Image BELOW text */}
+        {/* Illustration Section */}
         <View className="items-center mb-10">
           <View className="w-[85%] aspect-square bg-white rounded-[40px] shadow-sm border border-[#E2E8F0] overflow-hidden items-center justify-center">
             <Image 
@@ -78,13 +87,6 @@ export default function OnboardingScreen() {
             <Typography variant="h3" weight="bold" className="text-[#121915]">Get Started</Typography>
             <Ionicons name="arrow-forward" size={24} color="#121915" />
           </TouchableOpacity>
-
-          {/* <View className="flex-row justify-center mb-4">
-            <Typography variant="body" className="text-gray-500">Already have an account? </Typography>
-            <TouchableOpacity onPress={() => router.push('/login')}>
-              <Typography variant="body" weight="bold" className="text-primary-dark">Sign In</Typography>
-            </TouchableOpacity>
-          </View> */}
 
           <Typography variant="caption" className="text-gray-400 text-center text-[11px] leading-4 px-4">
             By continuing, you acknowledge that this app does not replace medical advice. 

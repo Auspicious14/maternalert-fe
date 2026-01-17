@@ -3,7 +3,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'expo-router';
 import React from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import { TouchableOpacity, View } from 'react-native';
+import { Image, TouchableOpacity, View } from 'react-native';
 import { Button } from '../components/shared/Button';
 import { Input } from '../components/shared/Input';
 import { Screen } from '../components/shared/Screen';
@@ -58,8 +58,16 @@ export default function RegisterScreen() {
       </View>
 
       <View className="px-10 pt-5">
-        <Typography variant="h1" className="text-[32px] font-black mb-2 shadow-lexend-bold">Create Account</Typography>
-        <Typography variant="body" className="text-gray-500 mb-10">
+        <View className="items-center">
+          <Image 
+            source={require('../assets/images/matern-logo.png')}
+            className="w-32 h-32"
+            resizeMode="cover"
+          />
+        </View>
+
+        <Typography variant="h1" className="text-[32px] font-black mb-2 shadow-lexend-bold text-center">Create Account</Typography>
+        <Typography variant="body" className="text-gray-500 mb-10 text-center">
           Join us to track your pregnancy safely.
         </Typography>
 
@@ -99,7 +107,7 @@ export default function RegisterScreen() {
 
           {errorMessage && (
             <View className="bg-red-50 p-3 rounded-xl border border-red-100">
-              <Typography variant="caption" color={Theme.colors.emergency} className="text-center font-medium">
+              <Typography variant="caption" color={Theme.colors.emergencyText} className="text-center font-medium">
                 {errorMessage}
               </Typography>
             </View>

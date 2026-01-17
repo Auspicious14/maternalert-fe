@@ -2,7 +2,7 @@ import axios from "axios";
 import { Platform } from "react-native";
 import { TokenStorage } from "./storage";
 
-const LOCAL_IP = "192.168.237.47"; 
+const LOCAL_IP = "192.168.67.47"; 
 
 // Priority: Environment Variable > Local IP (for phone) > Localhost (for emulator/web)
 const BASE_URL = process.env.API_URL 
