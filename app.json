@@ -31,7 +31,8 @@
         "expo-splash-screen",
         {
           "image": "./assets/images/matern-splash-screen.png",
-          "resizeMode": "cover"
+          "resizeMode": "cover",
+                "backgroundColor": "#E6F0FF"
         }
       ]
     ],
