@@ -10,11 +10,15 @@ import Theme from '../../constants/theme';
 
 import { useCarePriority } from '../../hooks/useCarePriority';
 import { useHealthData } from '../../hooks/useHealthData';
+import { useUserProfile } from '../../hooks/useUserProfile';
 
 export default function HomeScreen() {
   const router = useRouter();
   const { data: priorityData, isLoading: isLoadingPriority } = useCarePriority();
   const { latestBP, recentSymptoms } = useHealthData();
+  const { profile } = useUserProfile();
+
+  const DEFAULT_AVATAR = 'https://images.unsplash.com/photo-1531123897727-8f129e1688ce?q=80&w=200&auto=format&fit=crop';
 
   // Memoize status colors based on priority
   const statusColors = React.useMemo(() => {
@@ -48,9 +52,12 @@ export default function HomeScreen() {
             <Ionicons name="notifications" size={24} color="white" />
             <View className="absolute top-3 right-3 w-2 h-2 rounded-full bg-accent border-2 border-[#1A1512]" />
           </TouchableOpacity>
-          <TouchableOpacity className="w-11 h-11 rounded-full overflow-hidden border-2 border-white/20">
+          <TouchableOpacity 
+            className="w-11 h-11 rounded-full overflow-hidden border-2 border-white/20"
+            onPress={() => router.push('/(tabs)/profile')}
+          >
             <Image 
-              source={{ uri: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=150&auto=format&fit=crop' }} 
+              source={{ uri: DEFAULT_AVATAR }} 
               className="w-full h-full"
             />
           </TouchableOpacity>
@@ -108,7 +115,13 @@ export default function HomeScreen() {
                 </Typography>
              </View>
              <Typography variant="caption" className="text-white/30">
-               {latestBP?.timestamp ? new Date(latestBP.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'No readings yet'}
+               {latestBP?.timestamp ? new Date(latestBP.timestamp).toLocaleDateString(undefined, { 
+                 weekday: 'short', 
+                 month: 'short', 
+                 day: 'numeric',
+                 hour: '2-digit', 
+                 minute: '2-digit' 
+               }) : 'No readings yet'}
              </Typography>
           </View>
           <View className="w-12 h-12 rounded-full bg-accent/10 justify-center items-center">
@@ -118,13 +131,23 @@ export default function HomeScreen() {
 
         {/* Quick Actions */}
         <View className="gap-3 mb-6">
-          <TouchableOpacity 
-            className="bg-primary h-12 rounded-full flex-row items-center justify-center gap-2 shadow-sm"
-            onPress={() => router.push('/bp-entry')}
-          >
-            <Ionicons name="add" size={20} color="#1A1512" />
-            <Typography variant="h3" weight="bold" className="text-[#1A1512]">Add BP</Typography>
-          </TouchableOpacity>
+          <View className="flex-row gap-3">
+            <TouchableOpacity 
+              className="flex-1 bg-primary h-12 rounded-full flex-row items-center justify-center gap-2 shadow-sm"
+              onPress={() => router.push('/bp-entry')}
+            >
+              <Ionicons name="add" size={20} color="#1A1512" />
+              <Typography variant="h3" weight="bold" className="text-[#1A1512]">Add BP</Typography>
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              className="flex-1 border border-white/10 bg-transparent h-12 rounded-full flex-row items-center justify-center gap-2"
+              onPress={() => router.push('/clinic-finder')}
+            >
+              <Ionicons name="map" size={18} color={Theme.colors.accent} />
+              <Typography variant="h3" weight="bold" className="text-accent">Find Clinic</Typography>
+            </TouchableOpacity>
+          </View>
 
           <TouchableOpacity 
             className="border border-white/10 bg-transparent h-12 rounded-full flex-row items-center justify-center gap-2"
@@ -153,7 +176,7 @@ export default function HomeScreen() {
         {/* Recent Activity */}
         <View className="flex-row justify-between items-center mb-4">
           <Typography variant="h2" className="text-white text-lg">Recent Activity</Typography>
-          <TouchableOpacity>
+          <TouchableOpacity onPress={() => router.push('/symptom-results')}>
              <Typography variant="body" weight="bold" className="text-accent">View all</Typography>
           </TouchableOpacity>
         </View>
@@ -168,7 +191,12 @@ export default function HomeScreen() {
               <Typography variant="caption" className="text-white/40">Reported</Typography>
             </View>
             <Typography variant="caption" className="text-white/30">
-              {new Date(symptom.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              {new Date(symptom.timestamp).toLocaleDateString(undefined, { 
+                month: 'short', 
+                day: 'numeric',
+                hour: '2-digit', 
+                minute: '2-digit' 
+              })}
             </Typography>
           </Card>
         )) : (

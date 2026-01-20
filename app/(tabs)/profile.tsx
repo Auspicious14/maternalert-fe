@@ -7,6 +7,7 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  Image
 } from "react-native";
 import { Badge } from "../../components/shared/Badge";
 import { Button } from "../../components/shared/Button";
@@ -22,12 +23,20 @@ export default function ProfileScreen() {
     useUserProfile();
 
   const [isEditingContact, setIsEditingContact] = useState(false);
-  const [contactRelationship, setContactRelationship] = useState<
-    "MIDWIFE" | "PARTNER" | "FAMILY_MEMBER" | "OTHER" | null
-  >(profile?.emergencyContactRelationship ?? null);
+  const [contactRelationship, setContactRelationship] = useState(
+    profile?.emergencyContactRelationship ?? null
+  );
   const [contactPhone, setContactPhone] = useState(
     profile?.emergencyContactPhone ?? ""
   );
+
+  // Clinic Edit State
+  const [isEditingClinic, setIsEditingClinic] = useState(false);
+  const [clinicName, setClinicName] = useState(profile?.clinicName ?? "");
+  const [clinicAddress, setClinicAddress] = useState(profile?.clinicAddress ?? "");
+  const [clinicPhone, setClinicPhone] = useState(profile?.clinicPhone ?? "");
+
+  const DEFAULT_AVATAR = 'https://images.unsplash.com/photo-1531123897727-8f129e1688ce?q=80&w=200&auto=format&fit=crop';
 
   const relationshipLabel =
     profile?.emergencyContactRelationship === "MIDWIFE"
@@ -49,15 +58,29 @@ export default function ProfileScreen() {
     setIsEditingContact(false);
   };
 
+  const handleSaveClinic = async () => {
+    await updateProfile({
+      clinicName,
+      clinicAddress,
+      clinicPhone,
+    });
+    setIsEditingClinic(false);
+  };
+
   const handleCallContact = () => {
     if (!profile?.emergencyContactPhone) return;
     Linking.openURL(`tel:${profile.emergencyContactPhone}`);
   };
 
+  const handleCallClinic = () => {
+    if (!profile?.clinicPhone) return;
+    Linking.openURL(`tel:${profile.clinicPhone}`);
+  };
+
   if (isLoadingProfile) {
     return (
       <Screen style={styles.container} scrollable={false}>
-        <Typography variant="body">Loading profile…</Typography>
+        <Typography variant="body">Loading profile...</Typography>
       </Screen>
     );
   }
@@ -65,7 +88,7 @@ export default function ProfileScreen() {
     <Screen style={styles.container} scrollable>
       {/* Header Section */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.iconButton}>
+        <TouchableOpacity style={styles.iconButton} onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color={Theme.colors.text} />
         </TouchableOpacity>
         <Typography variant="h2">My Profile</Typography>
@@ -81,7 +104,10 @@ export default function ProfileScreen() {
         <View style={styles.avatarContainer}>
           <View style={styles.avatarOutline}>
             <View style={styles.avatarPlaceholder}>
-              <Ionicons name="person" size={60} color="#CBD5E0" />
+              <Image 
+                source={{ uri: DEFAULT_AVATAR }} 
+                style={{ width: 100, height: 100, borderRadius: 50 }}
+              />
             </View>
           </View>
           <TouchableOpacity style={styles.editAvatarButton}>
@@ -129,175 +155,200 @@ export default function ProfileScreen() {
           variant="secondary"
           containerStyle={styles.historyButton}
           textStyle={{ color: Theme.colors.text }}
+          onPress={() => router.push('/symptom-results')}
         />
       </Card>
 
       {/* Emergency Contacts */}
-     <View style={styles.sectionHeader}>
-  <Typography variant="h2">My Emergency Contact</Typography>
-  <TouchableOpacity
-    onPress={() => {
-      setContactRelationship(
-        profile?.emergencyContactRelationship ?? null
-      );
-      setContactPhone(profile?.emergencyContactPhone ?? "");
-      setIsEditingContact(true);
-    }}
-  >
-    <Typography variant="body" style={styles.actionLinkText}>
-      {profile?.emergencyContactPhone ? "Edit" : "Add New"}
-    </Typography>
-  </TouchableOpacity>
-</View>
-
-{isEditingContact ? (
-  <Card style={styles.contactCard}>
-    <View style={{ flex: 1 }}>
-      <View style={{ flexDirection: "row", marginBottom: 12 }}>
+      <View style={styles.sectionHeader}>
+        <Typography variant="h2">My Emergency Contact</Typography>
         <TouchableOpacity
-          style={[
-            styles.relationshipChip,
-            contactRelationship === "MIDWIFE" && styles.relationshipChipActive,
-          ]}
-          onPress={() => setContactRelationship("MIDWIFE")}
+          onPress={() => {
+            setContactRelationship(
+              profile?.emergencyContactRelationship ?? null
+            );
+            setContactPhone(profile?.emergencyContactPhone ?? "");
+            setIsEditingContact(true);
+          }}
         >
-          <Typography variant="caption">Midwife</Typography>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[
-            styles.relationshipChip,
-            contactRelationship === "PARTNER" && styles.relationshipChipActive,
-          ]}
-          onPress={() => setContactRelationship("PARTNER")}
-        >
-          <Typography variant="caption">Husband/Partner</Typography>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[
-            styles.relationshipChip,
-            contactRelationship === "FAMILY_MEMBER" &&
-              styles.relationshipChipActive,
-          ]}
-          onPress={() => setContactRelationship("FAMILY_MEMBER")}
-        >
-          <Typography variant="caption">Family member</Typography>
+          <Typography variant="body" style={styles.actionLinkText}>
+            {profile?.emergencyContactPhone ? "Edit" : "Add New"}
+          </Typography>
         </TouchableOpacity>
       </View>
 
-      <TextInput
-        style={styles.contactInput}
-        placeholder="Phone number"
-        keyboardType="phone-pad"
-        value={contactPhone}
-        onChangeText={setContactPhone}
-      />
-    </View>
+      {isEditingContact ? (
+        <Card style={styles.contactCard}>
+          <View style={{ flex: 1 }}>
+            <View style={{ flexDirection: "row", marginBottom: 12 }}>
+              <TouchableOpacity
+                style={[
+                  styles.relationshipChip,
+                  contactRelationship === "MIDWIFE" && styles.relationshipChipActive,
+                ]}
+                onPress={() => setContactRelationship("MIDWIFE")}
+              >
+                <Typography variant="caption">Midwife</Typography>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.relationshipChip,
+                  contactRelationship === "PARTNER" && styles.relationshipChipActive,
+                ]}
+                onPress={() => setContactRelationship("PARTNER")}
+              >
+                <Typography variant="caption">Husband/Partner</Typography>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.relationshipChip,
+                  contactRelationship === "FAMILY_MEMBER" &&
+                    styles.relationshipChipActive,
+                ]}
+                onPress={() => setContactRelationship("FAMILY_MEMBER")}
+              >
+                <Typography variant="caption">Family member</Typography>
+              </TouchableOpacity>
+            </View>
 
-    <Button
-      title={isUpdatingProfile ? "Saving..." : "Save"}
-      variant="secondary"
-      containerStyle={styles.saveContactButton}
-      onPress={handleSaveEmergencyContact}
-      disabled={isUpdatingProfile}
-    />
-  </Card>
-) : profile?.emergencyContactPhone ? (
-  <Card style={styles.contactCard}>
-    <View style={styles.contactInfo}>
-      <View style={[styles.contactIcon, { backgroundColor: "#EBF3FE" }]}>
-        <Ionicons name="person" size={20} color="#1565C0" />
-      </View>
-      <View style={styles.contactContent}>
-        <Typography variant="h3">
-          {relationshipLabel}
-        </Typography>
-        <Typography variant="caption" color={Theme.colors.textLight}>
-          {profile.emergencyContactPhone}
-        </Typography>
-      </View>
-    </View>
-    <TouchableOpacity style={styles.callButton} onPress={handleCallContact}>
-      <Ionicons name="call" size={20} color="#34E875" />
-    </TouchableOpacity>
-  </Card>
-) : (
-  <Card style={styles.contactCard}>
-    <Typography variant="body" color={Theme.colors.textLight}>
-      No emergency contact added yet.
-    </Typography>
-  </Card>
-)}
+            <TextInput
+              style={styles.contactInput}
+              placeholder="Phone number"
+              keyboardType="phone-pad"
+              value={contactPhone}
+              onChangeText={setContactPhone}
+            />
+          </View>
 
-      <Card style={styles.contactCard}>
-        <View style={styles.contactInfo}>
-          <View style={[styles.contactIcon, { backgroundColor: "#EBF3FE" }]}>
-            <Ionicons name="person" size={20} color="#1565C0" />
+          <Button
+            title={isUpdatingProfile ? "Saving..." : "Save"}
+            variant="secondary"
+            containerStyle={styles.saveContactButton}
+            onPress={handleSaveEmergencyContact}
+            disabled={isUpdatingProfile}
+          />
+        </Card>
+      ) : profile?.emergencyContactPhone ? (
+        <Card style={styles.contactCard}>
+          <View style={styles.contactInfo}>
+            <View style={[styles.contactIcon, { backgroundColor: "#EBF3FE" }]}>
+              <Ionicons name="person" size={20} color="#1565C0" />
+            </View>
+            <View style={styles.contactContent}>
+              <Typography variant="h3">
+                {relationshipLabel}
+              </Typography>
+              <Typography variant="caption" color={Theme.colors.textLight}>
+                {profile.emergencyContactPhone}
+              </Typography>
+            </View>
           </View>
-          <View style={styles.contactContent}>
-            <Typography variant="h3">Husband - John</Typography>
-            <Typography variant="caption" color={Theme.colors.textLight}>
-              Primary Contact
-            </Typography>
-          </View>
-        </View>
-        <TouchableOpacity style={styles.callButton}>
-          <Ionicons name="call" size={20} color="#34E875" />
-        </TouchableOpacity>
-      </Card>
-
-      <Card style={styles.contactCard}>
-        <View style={styles.contactInfo}>
-          <View style={[styles.contactIcon, { backgroundColor: "#F5F0FF" }]}>
-            <Ionicons name="person" size={20} color="#6A1B9A" />
-          </View>
-          <View style={styles.contactContent}>
-            <Typography variant="h3">Sister - Mary</Typography>
-            <Typography variant="caption" color={Theme.colors.textLight}>
-              Secondary Contact
-            </Typography>
-          </View>
-        </View>
-        <TouchableOpacity style={styles.callButton}>
-          <Ionicons name="call" size={20} color="#34E875" />
-        </TouchableOpacity>
-      </Card>
+          <TouchableOpacity style={styles.callButton} onPress={handleCallContact}>
+            <Ionicons name="call" size={20} color="#34E875" />
+          </TouchableOpacity>
+        </Card>
+      ) : (
+        <Card style={styles.contactCard}>
+          <Typography variant="body" color={Theme.colors.textLight}>
+            No emergency contact added yet.
+          </Typography>
+        </Card>
+      )}
 
       {/* Clinic Info */}
       <View style={styles.sectionHeader}>
         <Typography variant="h2">My Clinic Info</Typography>
+        <TouchableOpacity
+          onPress={() => {
+            setClinicName(profile?.clinicName ?? "");
+            setClinicAddress(profile?.clinicAddress ?? "");
+            setClinicPhone(profile?.clinicPhone ?? "");
+            setIsEditingClinic(true);
+          }}
+        >
+          <Typography variant="body" style={styles.actionLinkText}>
+            {profile?.clinicName ? "Edit" : "Add Info"}
+          </Typography>
+        </TouchableOpacity>
       </View>
 
-      <Card style={styles.clinicCard}>
-        <View style={styles.clinicHeader}>
-          <View style={[styles.clinicIcon, { backgroundColor: "#FFEBEE" }]}>
-            <Ionicons name="medical" size={20} color="#C62828" />
+      {isEditingClinic ? (
+        <Card style={styles.clinicCard}>
+          <View>
+             <TextInput
+              style={styles.contactInput}
+              placeholder="Clinic Name"
+              value={clinicName}
+              onChangeText={setClinicName}
+            />
+            <TextInput
+              style={styles.contactInput}
+              placeholder="Address"
+              value={clinicAddress}
+              onChangeText={setClinicAddress}
+            />
+            <TextInput
+              style={styles.contactInput}
+              placeholder="Phone (optional)"
+              keyboardType="phone-pad"
+              value={clinicPhone}
+              onChangeText={setClinicPhone}
+            />
+            <View style={{ marginTop: 12, alignItems: 'flex-end' }}>
+               <Button
+                title={isUpdatingProfile ? "Saving..." : "Save"}
+                variant="secondary"
+                containerStyle={styles.saveContactButton}
+                onPress={handleSaveClinic}
+                disabled={isUpdatingProfile}
+              />
+            </View>
           </View>
-          <View style={styles.clinicContent}>
-            <Typography variant="h3">City Health Center</Typography>
-            <Typography variant="caption" color={Theme.colors.textLight}>
-              123 Main St, Central District
-            </Typography>
-            <Typography variant="caption" color={Theme.colors.textLight}>
-              Open: 8:00 AM - 6:00 PM
-            </Typography>
+        </Card>
+      ) : profile?.clinicName ? (
+        <Card style={styles.clinicCard}>
+          <View style={styles.clinicHeader}>
+            <View style={[styles.clinicIcon, { backgroundColor: "#FFEBEE" }]}>
+              <Ionicons name="medical" size={20} color="#C62828" />
+            </View>
+            <View style={styles.clinicContent}>
+              <Typography variant="h3">{profile.clinicName}</Typography>
+              <Typography variant="caption" color={Theme.colors.textLight}>
+                {profile.clinicAddress || 'No address provided'}
+              </Typography>
+              {profile.clinicPhone && (
+                <Typography variant="caption" color={Theme.colors.textLight}>
+                  Phone: {profile.clinicPhone}
+                </Typography>
+              )}
+            </View>
           </View>
-        </View>
 
-        <View style={styles.clinicActions}>
-          <Button
-            title="Call Clinic"
-            variant="outline"
-            containerStyle={styles.clinicActionButton}
-            icon={<Ionicons name="call-outline" size={18} />}
-          />
-          <Button
-            title="Directions"
-            variant="outline"
-            containerStyle={styles.clinicActionButton}
-            icon={<Ionicons name="navigate-outline" size={18} />}
-          />
-        </View>
-      </Card>
+          <View style={styles.clinicActions}>
+            <Button
+              title="Call Clinic"
+              variant="outline"
+              containerStyle={styles.clinicActionButton}
+              icon={<Ionicons name="call-outline" size={18} />}
+              onPress={handleCallClinic}
+              disabled={!profile.clinicPhone}
+            />
+            <Button
+              title="Directions"
+              variant="outline"
+              containerStyle={styles.clinicActionButton}
+              icon={<Ionicons name="navigate-outline" size={18} />}
+              onPress={() => router.push('/clinic-finder')}
+            />
+          </View>
+        </Card>
+      ) : (
+         <Card style={styles.clinicCard}>
+          <Typography variant="body" color={Theme.colors.textLight}>
+            No clinic information added yet.
+          </Typography>
+        </Card>
+      )}
     </Screen>
   );
 }
@@ -403,43 +454,67 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     marginBottom: Theme.spacing.m,
-    marginTop: Theme.spacing.s,
   },
   actionLinkText: {
     color: "#34E875",
-    fontWeight: "bold",
+    fontWeight: "600",
   },
   contactCard: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    marginBottom: Theme.spacing.m,
     padding: Theme.spacing.m,
-    marginBottom: Theme.spacing.s,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
   contactInfo: {
     flexDirection: "row",
     alignItems: "center",
+    flex: 1,
   },
   contactIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     justifyContent: "center",
     alignItems: "center",
     marginRight: Theme.spacing.m,
   },
   contactContent: {
-    justifyContent: "center",
+    flex: 1,
   },
   callButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: "#F7FAFC",
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "#E8F5E9",
     justifyContent: "center",
     alignItems: "center",
+  },
+  relationshipChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    backgroundColor: "#F1F5F9",
+    marginRight: 8,
+  },
+  relationshipChipActive: {
+    backgroundColor: "#E8F5E9",
+    borderWidth: 1,
+    borderColor: "#34E875",
+  },
+  contactInput: {
+    backgroundColor: "#F8FAFC",
+    padding: 12,
+    borderRadius: 12,
+    marginTop: 12,
+    fontSize: 16,
     borderWidth: 1,
     borderColor: "#E2E8F0",
+  },
+  saveContactButton: {
+    width: 80,
+    height: 40,
+    marginLeft: 12,
   },
   clinicCard: {
     padding: Theme.spacing.m,
@@ -450,9 +525,9 @@ const styles = StyleSheet.create({
     marginBottom: Theme.spacing.m,
   },
   clinicIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     justifyContent: "center",
     alignItems: "center",
     marginRight: Theme.spacing.m,
@@ -462,36 +537,10 @@ const styles = StyleSheet.create({
   },
   clinicActions: {
     flexDirection: "row",
-    gap: Theme.spacing.s,
+    gap: Theme.spacing.m,
   },
   clinicActionButton: {
     flex: 1,
     height: 44,
-    paddingVertical: 0,
-    backgroundColor: "#F7FAFC",
-    borderColor: "#E2E8F0",
   },
-  relationshipChip: {
-  paddingHorizontal: 12,
-  paddingVertical: 6,
-  borderRadius: 999,
-  borderWidth: 1,
-  borderColor: "#E2E8F0",
-  marginRight: 8,
-},
-relationshipChipActive: {
-  backgroundColor: "#E0FAEB",
-  borderColor: Theme.colors.primary,
-},
-contactInput: {
-  borderWidth: 1,
-  borderColor: "#E2E8F0",
-  borderRadius: 999,
-  paddingHorizontal: 16,
-  paddingVertical: 10,
-},
-saveContactButton: {
-  marginLeft: 12,
-  height: 44,
-},
 });

@@ -2,12 +2,12 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React from "react";
 import {
-  Linking,
   SafeAreaView,
   ScrollView,
   TouchableOpacity,
   View
 } from "react-native";
+import * as WebBrowser from 'expo-web-browser';
 import { Card } from "../../components/shared/Card";
 import { Screen } from "../../components/shared/Screen";
 import { StatusBanner } from "../../components/shared/StatusBanner";
@@ -21,9 +21,17 @@ export default function EducationScreen() {
   const featured = articles?.[0];
   const others = articles?.slice(1) ?? [];
 
-  const openLink = (url?: string) => {
+  const openLink = async (url?: string) => {
     if (!url) return;
-    Linking.openURL(url);
+    try {
+      await WebBrowser.openBrowserAsync(url, {
+        presentationStyle: WebBrowser.WebBrowserPresentationStyle.FULL_SCREEN,
+        controlsColor: '#1A212E',
+        toolbarColor: '#FFFFFF',
+      });
+    } catch (e) {
+      console.error('Failed to open link', e);
+    }
   };
 
   return (
@@ -81,7 +89,7 @@ export default function EducationScreen() {
 
           {isLoading && (
             <Typography variant="body" className="mb-4">
-              Loading education articles…
+              Loading education articles...
             </Typography>
           )}
           <View className="mb-5">
@@ -112,24 +120,5 @@ export default function EducationScreen() {
         </ScrollView>
       </Screen>
     </SafeAreaView>
-  );
-}
-
-function TopicCard({ title, icon, color, bg }: any) {
-  return (
-    <TouchableOpacity
-      className="w-[47%] bg-white rounded-[32px] p-6 items-center border border-[#F1F5F9] shadow-sm"
-      activeOpacity={0.7}
-    >
-      <View
-        className="w-[60px] h-[60px] rounded-[20px] justify-center items-center mb-4"
-        style={{ backgroundColor: bg }}
-      >
-        <Ionicons name={icon} size={28} color={color} />
-      </View>
-      <Typography variant="h3" weight="bold" className="text-center">
-        {title}
-      </Typography>
-    </TouchableOpacity>
   );
 }

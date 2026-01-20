@@ -98,22 +98,22 @@ export default function SymptomCheckerScreen() {
           <Typography variant="caption" className="text-gray-500">All data is kept private and secure.</Typography>
         </View>
 
-        {/* Tab Mockup for fidelity */}
+        {/* Tab Mockup for fidelity - Now Functional */}
         <View className="absolute bottom-0 w-full h-20 bg-white flex-row border-t border-[#F1F5F9] px-10 pt-2.5 justify-between">
-           <View className="items-center gap-1">
+           <TouchableOpacity className="items-center gap-1" onPress={() => router.push('/(tabs)')}>
               <Ionicons name="home" size={24} color={Theme.colors.textLight} />
               <Typography variant="caption" className="text-gray-500">Home</Typography>
-           </View>
-           <View className="items-center gap-1">
+           </TouchableOpacity>
+           <TouchableOpacity className="items-center gap-1" onPress={() => router.push('/(tabs)/tracking')}>
               <View className="bg-[#E8FCF1] px-5 py-1 rounded-[20px]">
                 <Ionicons name="medical" size={24} color={Theme.colors.primary} />
               </View>
               <Typography variant="caption" weight="bold" className="text-primary">Checkup</Typography>
-           </View>
-           <View className="items-center gap-1">
+           </TouchableOpacity>
+           <TouchableOpacity className="items-center gap-1" onPress={() => router.push('/(tabs)/profile')}>
               <Ionicons name="person" size={24} color={Theme.colors.textLight} />
               <Typography variant="caption" className="text-gray-500">Profile</Typography>
-           </View>
+           </TouchableOpacity>
         </View>
       </Screen>
     </SafeAreaView>

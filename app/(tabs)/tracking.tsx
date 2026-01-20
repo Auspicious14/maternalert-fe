@@ -1,20 +1,23 @@
 import { Ionicons } from '@expo/vector-icons';
-import React from 'react';
-import { SafeAreaView, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import React, { useState, useMemo } from 'react';
+import { SafeAreaView, ScrollView, StyleSheet, TouchableOpacity, View, TextInput, Alert } from 'react-native';
+import { useRouter } from 'expo-router';
 import { Card } from '../../components/shared/Card';
 import { Screen } from '../../components/shared/Screen';
 import { Typography } from '../../components/shared/Typography';
 import Theme from '../../constants/theme';
-
 import { useHealthData } from '../../hooks/useHealthData';
 import { useUserProfile } from '../../hooks/useUserProfile';
 
 export default function TrackingScreen() {
+  const router = useRouter();
   const { bpHistory, recentSymptoms } = useHealthData();
   const { profile } = useUserProfile();
+  const [weight, setWeight] = useState('');
+  const [isEditingWeight, setIsEditingWeight] = useState(false);
 
   // Calculate average BP
-  const avgBP = React.useMemo(() => {
+  const avgBP = useMemo(() => {
     if (!bpHistory || bpHistory.length === 0) return null;
     const sysSum = bpHistory.reduce((acc, curr) => acc + curr.systolic, 0);
     const diaSum = bpHistory.reduce((acc, curr) => acc + curr.diastolic, 0);
@@ -24,15 +27,35 @@ export default function TrackingScreen() {
     };
   }, [bpHistory]);
 
-  const weekDays = [
-    { day: 'M', date: '12', current: false, status: 'stable' },
-    { day: 'T', date: '13', current: false, status: 'stable' },
-    { day: 'W', date: '14', current: true, status: 'urgent' },
-    { day: 'T', date: '15', current: false, status: 'none' },
-    { day: 'F', date: '16', current: false, status: 'none' },
-    { day: 'S', date: '17', current: false, status: 'none' },
-    { day: 'S', date: '18', current: false, status: 'none' },
-  ];
+  // Generate current week days
+  const weekDays = useMemo(() => {
+    const days = [];
+    const today = new Date();
+    const currentDay = today.getDay(); // 0 is Sunday
+    const mondayOffset = currentDay === 0 ? -6 : 1 - currentDay; // Calculate offset to get to Monday
+    
+    for (let i = 0; i < 7; i++) {
+      const date = new Date(today);
+      date.setDate(today.getDate() + mondayOffset + i);
+      
+      const isToday = date.toDateString() === today.toDateString();
+      const dayName = date.toLocaleDateString('en-US', { weekday: 'narrow' }); // M, T, W...
+      
+      days.push({
+        day: dayName,
+        date: date.getDate().toString(),
+        current: isToday,
+        status: isToday ? 'stable' : 'none', // Simple logic for now
+      });
+    }
+    return days;
+  }, []);
+
+  const handleSaveWeight = () => {
+    setIsEditingWeight(false);
+    // In a real app, we would save this to the backend
+    Alert.alert('Weight Saved', `Recorded weight: ${weight} kg`);
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -71,7 +94,7 @@ export default function TrackingScreen() {
             </View>
           </Card>
 
-          {/* Calendar Strip (Fidelity Focused) */}
+          {/* Calendar Strip */}
           <View style={styles.calendarStrip}>
             {weekDays.map((item, index) => (
               <View key={index} style={styles.dayItem}>
@@ -107,13 +130,36 @@ export default function TrackingScreen() {
                <Typography variant="caption" style={styles.vitalLabel}>Avg. Blood Pressure</Typography>
             </Card>
 
-            <Card style={styles.vitalCard}>
-               <View style={[styles.vitalIcon, { backgroundColor: 'rgba(255, 155, 62, 0.1)' }]}>
-                  <Ionicons name="body" size={20} color={Theme.colors.accent} />
-               </View>
-               <Typography variant="h2" style={styles.vitalValue}>--.- kg</Typography>
-               <Typography variant="caption" style={styles.vitalLabel}>Current Weight</Typography>
-            </Card>
+            <TouchableOpacity 
+              style={[styles.vitalCard, { padding: 0 }]} 
+              onPress={() => setIsEditingWeight(true)}
+              activeOpacity={0.9}
+            >
+              <Card style={{ flex: 1, padding: 16 }}>
+                 <View style={[styles.vitalIcon, { backgroundColor: 'rgba(255, 155, 62, 0.1)' }]}>
+                    <Ionicons name="body" size={20} color={Theme.colors.accent} />
+                 </View>
+                 {isEditingWeight ? (
+                   <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                     <TextInput 
+                       value={weight}
+                       onChangeText={setWeight}
+                       keyboardType="numeric"
+                       placeholder="0.0"
+                       style={[styles.vitalValue, { minWidth: 60, borderBottomWidth: 1, borderColor: Theme.colors.border }]}
+                       autoFocus
+                       onBlur={handleSaveWeight}
+                     />
+                     <Typography variant="h2" style={styles.vitalValue}> kg</Typography>
+                   </View>
+                 ) : (
+                   <Typography variant="h2" style={styles.vitalValue}>
+                     {weight ? `${weight} kg` : '--.- kg'}
+                   </Typography>
+                 )}
+                 <Typography variant="caption" style={styles.vitalLabel}>Current Weight</Typography>
+              </Card>
+            </TouchableOpacity>
           </View>
 
           {/* Logs */}
@@ -136,7 +182,11 @@ export default function TrackingScreen() {
         </ScrollView>
 
         {/* FAB Refined */}
-        <TouchableOpacity style={styles.fab} activeOpacity={0.9}>
+        <TouchableOpacity 
+          style={styles.fab} 
+          activeOpacity={0.9}
+          onPress={() => router.push('/bp-entry')}
+        >
            <Ionicons name="add" size={32} color={Theme.colors.darkBg} />
         </TouchableOpacity>
       </Screen>
@@ -200,32 +250,33 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   summarySubtitle: {
-    color: 'rgba(255,255,255,0.4)',
+    color: 'rgba(255,255,255,0.6)',
   },
   babyIconBg: {
     width: 48,
     height: 48,
-    borderRadius: 16,
+    borderRadius: 24,
     backgroundColor: 'rgba(45, 228, 116, 0.1)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   progressContainer: {
-    gap: 8,
+    marginTop: 8,
   },
   progressBar: {
-    height: 8,
+    height: 6,
     backgroundColor: 'rgba(255,255,255,0.1)',
-    borderRadius: 4,
+    borderRadius: 3,
+    marginBottom: 8,
     overflow: 'hidden',
   },
   progressFill: {
     height: '100%',
     backgroundColor: Theme.colors.primary,
-    borderRadius: 4,
+    borderRadius: 3,
   },
   progressText: {
-    color: 'rgba(255,255,255,0.5)',
+    color: 'rgba(255,255,255,0.6)',
     textAlign: 'right',
   },
   calendarStrip: {
@@ -239,7 +290,8 @@ const styles = StyleSheet.create({
   },
   dayLabel: {
     color: 'rgba(255,255,255,0.4)',
-    fontWeight: 'bold',
+    textTransform: 'uppercase',
+    fontSize: 12,
   },
   dateCircle: {
     width: 40,
@@ -247,29 +299,35 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
   },
   dateCircleActive: {
-    borderWidth: 1,
+    backgroundColor: Theme.colors.primary,
     borderColor: Theme.colors.primary,
   },
   dateCircleStable: {
-    backgroundColor: Theme.colors.primary,
+    borderColor: Theme.colors.primary,
+    backgroundColor: 'rgba(45, 228, 116, 0.1)',
   },
   dateCircleUrgent: {
-    backgroundColor: Theme.colors.accent,
+    borderColor: Theme.colors.emergency,
+    backgroundColor: 'rgba(255, 75, 75, 0.1)',
   },
   dateText: {
-    color: 'rgba(255,255,255,0.3)',
-    fontWeight: 'bold',
+    color: 'rgba(255,255,255,0.4)',
+    fontWeight: '600',
   },
   dateTextActive: {
-    color: Theme.colors.darkBg,
+    color: Theme.colors.white,
   },
   activeDot: {
     width: 4,
     height: 4,
     borderRadius: 2,
     backgroundColor: Theme.colors.primary,
+    marginTop: 4,
   },
   sectionHeader: {
     marginBottom: 20,
@@ -281,46 +339,48 @@ const styles = StyleSheet.create({
   vitalsRow: {
     flexDirection: 'row',
     gap: 16,
-    marginBottom: 40,
+    marginBottom: 32,
   },
   vitalCard: {
     flex: 1,
     backgroundColor: Theme.colors.cardDark,
     borderColor: Theme.colors.borderDark,
     borderWidth: 1,
-    padding: 20,
-    borderRadius: 28,
+    padding: 16,
+    borderRadius: 24,
   },
   vitalIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 12,
   },
   vitalValue: {
     color: Theme.colors.white,
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: 'bold',
+    marginBottom: 4,
   },
   vitalLabel: {
-    color: 'rgba(255,255,255,0.4)',
+    color: 'rgba(255,255,255,0.5)',
+    fontSize: 12,
   },
   logItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: Theme.colors.cardDark,
     borderColor: Theme.colors.borderDark,
     borderWidth: 1,
-    padding: 20,
+    padding: 16,
     borderRadius: 24,
-    flexDirection: 'row',
-    alignItems: 'center',
     marginBottom: 12,
   },
   logIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 16,
@@ -332,24 +392,25 @@ const styles = StyleSheet.create({
     color: Theme.colors.white,
     fontSize: 16,
     fontWeight: 'bold',
+    marginBottom: 4,
   },
   logSubtitle: {
-    color: 'rgba(255,255,255,0.4)',
-  },
-  logValue: {
-    color: '#1E6BFF',
-    fontWeight: 'bold',
+    color: 'rgba(255,255,255,0.5)',
   },
   fab: {
     position: 'absolute',
-    bottom: 30,
-    right: 30,
+    bottom: 20,
+    right: 20,
     width: 64,
     height: 64,
     borderRadius: 32,
     backgroundColor: Theme.colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
-    ...Theme.shadows.medium,
+    shadowColor: Theme.colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
   },
 });

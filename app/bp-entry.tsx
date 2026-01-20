@@ -1,11 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
-import { SafeAreaView, ScrollView, TextInput, TouchableOpacity, View } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { SafeAreaView, ScrollView, TextInput, TouchableOpacity, View, Alert } from 'react-native';
 import { Screen } from '../components/shared/Screen';
 import { Typography } from '../components/shared/Typography';
 import Theme from '../constants/theme';
-
 import { useHealthData } from '../hooks/useHealthData';
 
 export default function BPEntryScreen() {
@@ -13,6 +12,22 @@ export default function BPEntryScreen() {
   const { addBP, isAddingBP } = useHealthData();
   const [systolic, setSystolic] = useState('120');
   const [diastolic, setDiastolic] = useState('80');
+  const [currentDate, setCurrentDate] = useState(new Date());
+
+  useEffect(() => {
+    // Update time every minute
+    const timer = setInterval(() => {
+      setCurrentDate(new Date());
+    }, 60000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const formattedDate = new Intl.DateTimeFormat('en-US', {
+    weekday: 'long',
+    hour: 'numeric',
+    minute: 'numeric',
+    hour12: true
+  }).format(currentDate);
 
   const handleSave = async () => {
     try {
@@ -30,7 +45,17 @@ export default function BPEntryScreen() {
       }
     } catch (error) {
       console.error('Failed to save BP reading', error);
+      Alert.alert('Error', 'Failed to save blood pressure reading. Please try again.');
     }
+  };
+
+  const showHelp = (type: 'systolic' | 'diastolic') => {
+    Alert.alert(
+      type === 'systolic' ? 'Systolic Pressure' : 'Diastolic Pressure',
+      type === 'systolic' 
+        ? 'The top number. It measures the force your heart exerts on your artery walls each time it beats. Normal is around 90-120.' 
+        : 'The bottom number. It measures the force your heart exerts on your artery walls between beats. Normal is around 60-80.'
+    );
   };
 
   return (
@@ -47,7 +72,9 @@ export default function BPEntryScreen() {
         <View className="items-center mb-4">
           <View className="flex-row items-center gap-2 bg-white py-3 px-5 rounded-[30px] shadow-sm">
             <Ionicons name="calendar" size={18} color={Theme.colors.primary} />
-            <Typography variant="h3" weight="bold" className="text-base text-[#121915]">Today, 10:42 AM</Typography>
+            <Typography variant="h3" weight="bold" className="text-base text-[#121915]">
+              {formattedDate}
+            </Typography>
           </View>
         </View>
 
@@ -60,7 +87,9 @@ export default function BPEntryScreen() {
           <View className="bg-white rounded-[40px] p-6 mb-4 shadow-sm border border-[#F1F5F9]">
             <View className="flex-row justify-between items-center mb-4">
               <Typography variant="h2" className="text-xl font-black">Systolic (Top)</Typography>
-              <Ionicons name="help-circle" size={24} color={Theme.colors.primary} />
+              <TouchableOpacity onPress={() => showHelp('systolic')}>
+                <Ionicons name="help-circle" size={24} color={Theme.colors.primary} />
+              </TouchableOpacity>
             </View>
             <View className="flex-row items-center bg-[#E8FCF1] rounded-[30px] px-6 h-14 mb-3">
               <TextInput 
@@ -80,7 +109,9 @@ export default function BPEntryScreen() {
           <View className="bg-white rounded-[40px] p-6 mb-4 shadow-sm border border-[#F1F5F9]">
             <View className="flex-row justify-between items-center mb-4">
               <Typography variant="h2" className="text-xl font-black">Diastolic (Bottom)</Typography>
-              <Ionicons name="help-circle" size={24} color={Theme.colors.primary} />
+              <TouchableOpacity onPress={() => showHelp('diastolic')}>
+                <Ionicons name="help-circle" size={24} color={Theme.colors.primary} />
+              </TouchableOpacity>
             </View>
             <View className="flex-row items-center bg-[#E8FCF1] rounded-[30px] px-6 h-14 mb-3">
               <TextInput 
@@ -96,28 +127,16 @@ export default function BPEntryScreen() {
             <Typography variant="caption" className="text-gray-500 text-center mt-1">Normal range is around 60-80</Typography>
           </View>
 
-          <View className="flex-row bg-[#EFF6FF] p-4 rounded-3xl items-center gap-4 mt-4 border border-[#DBEAFE]">
-            <View className="w-11 h-11 rounded-full bg-white justify-center items-center">
-              <Ionicons name="information-circle" size={24} color="#3B82F6" />
-            </View>
-            <Typography variant="body" className="flex-1 text-blue-800 leading-5 text-[15px]">
-              Rest for 5 minutes before taking your reading for the most accurate result.
-            </Typography>
-          </View>
-        </ScrollView>
-
-        <View className="px-6 pb-8 pt-2">
           <TouchableOpacity 
-            className={`bg-primary h-[70px] rounded-[35px] justify-center items-center shadow-md ${isAddingBP ? 'opacity-70' : ''}`}
-            activeOpacity={0.8}
+            className="w-full bg-primary h-14 rounded-[30px] items-center justify-center mt-4 shadow-lg shadow-primary/30"
             onPress={handleSave}
             disabled={isAddingBP}
           >
-            <Typography variant="h2" weight="bold" className="text-[#121915] text-[22px]">
+            <Typography variant="h2" weight="bold" className="text-white">
               {isAddingBP ? 'Saving...' : 'Save Reading'}
             </Typography>
           </TouchableOpacity>
-        </View>
+        </ScrollView>
       </Screen>
     </SafeAreaView>
   );

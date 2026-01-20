@@ -9,21 +9,33 @@ import { Typography } from '../components/shared/Typography';
 import Theme from '../constants/theme';
 import { useClinics } from "../hooks/useClinics";
 
-const CLINICS = [
-  { id: '1', name: 'West Health Center', distance: '0.8 km', status: 'Open Now', type: 'Clinic' },
-  { id: '2', name: 'General Hospital', distance: '1.5 km', status: 'Open 24/7', type: 'Hospital' },
-  { id: '3', name: 'Maternal Care Unit', distance: '2.4 km', status: 'Closed', type: 'Clinic' },
-];
-
 export default function ClinicFinderScreen() {
   const router = useRouter();
   const [search, setSearch] = useState('');
 
   const { data: clinics, isLoading } = useClinics();
-const filteredClinics =
-  (clinics || []).filter((clinic) =>
-    clinic.name.toLowerCase().includes(search.toLowerCase())
-  );
+  
+  const filteredClinics =
+    (clinics || []).filter((clinic) =>
+      clinic.name.toLowerCase().includes(search.toLowerCase())
+    );
+
+  // Default region if no clinics (Lagos coordinates as fallback)
+  const defaultRegion = {
+    latitude: 6.45,
+    longitude: 3.39,
+    latitudeDelta: 0.1,
+    longitudeDelta: 0.1,
+  };
+
+  const initialRegion = clinics && clinics.length > 0 
+    ? {
+        latitude: clinics[0].latitude,
+        longitude: clinics[0].longitude,
+        latitudeDelta: 0.05,
+        longitudeDelta: 0.05,
+      }
+    : defaultRegion;
 
   return (
     <SafeAreaView className="flex-1 bg-[#F9FAFB]">
@@ -53,32 +65,27 @@ const filteredClinics =
         </View>
 
         {/* Map Area Refined */}
-
-<View className="px-6 mb-10">
-  <View className="h-72 rounded-[40px] overflow-hidden border border-[#E2E8F0]">
-    <MapView
-      style={{ flex: 1 }}
-      initialRegion={{
-        latitude: clinics?.[0]?.latitude ?? 6.45,
-        longitude: clinics?.[0]?.longitude ?? 3.39,
-        latitudeDelta: 0.3,
-        longitudeDelta: 0.3,
-      }}
-    >
-      {(clinics || []).map((clinic) => (
-        <Marker
-          key={clinic.id}
-          coordinate={{
-            latitude: clinic.latitude,
-            longitude: clinic.longitude,
-          }}
-          title={clinic.name}
-          description={clinic.address}
-        />
-      ))}
-    </MapView>
-  </View>
-</View>
+        <View className="px-6 mb-10">
+          <View className="h-72 rounded-[40px] overflow-hidden border border-[#E2E8F0]">
+            <MapView
+              style={{ flex: 1 }}
+              initialRegion={initialRegion}
+              showsUserLocation={true}
+            >
+              {(clinics || []).map((clinic) => (
+                <Marker
+                  key={clinic.id}
+                  coordinate={{
+                    latitude: clinic.latitude,
+                    longitude: clinic.longitude,
+                  }}
+                  title={clinic.name}
+                  description={clinic.address}
+                />
+              ))}
+            </MapView>
+          </View>
+        </View>
 
         <View className="flex-row justify-between items-center px-10 mb-5">
           <Typography variant="h2" weight="bold" className="text-lg">Nearby Facilities</Typography>
@@ -88,47 +95,47 @@ const filteredClinics =
         </View>
 
        <ScrollView
-  showsVerticalScrollIndicator={false}
-  contentContainerStyle={{ paddingHorizontal: 40, paddingBottom: 40 }}
->
-  {isLoading && (
-    <Typography variant="body" className="mb-4">
-      Loading nearby facilities…
-    </Typography>
-  )}
-
-  {filteredClinics.map((clinic) => (
-    <TouchableOpacity key={clinic.id} activeOpacity={0.9}>
-      <Card className="flex-row items-center p-6 rounded-[30px] mb-4 bg-white border border-[#F1F5F9] shadow-sm">
-        <View className="w-[50px] h-[50px] bg-slate-50 rounded-2xl justify-center items-center mr-4">
-          <Ionicons
-            name={clinic.isEmergency ? "medical" : "business"}
-            size={24}
-            color={clinic.isEmergency ? Theme.colors.primary : "#94A3B8"}
-          />
-        </View>
-        <View className="flex-1">
-          <Typography
-            variant="h3"
-            weight="bold"
-            className="text-lg font-black mb-1"
-          >
-            {clinic.name}
-          </Typography>
-          <Typography variant="caption" className="text-gray-500">
-            {clinic.address}, {clinic.city}
-          </Typography>
-          {clinic.phone && (
-            <Typography variant="caption" className="text-gray-500">
-              {clinic.phone}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingHorizontal: 40, paddingBottom: 40 }}
+        >
+          {isLoading && (
+            <Typography variant="body" className="mb-4">
+              Loading nearby facilities...
             </Typography>
           )}
-        </View>
-        <Ionicons name="chevron-forward" size={20} color="#CBD5E0" />
-      </Card>
-    </TouchableOpacity>
-  ))}
-</ScrollView>
+
+          {filteredClinics.map((clinic) => (
+            <TouchableOpacity key={clinic.id} activeOpacity={0.9}>
+              <Card className="flex-row items-center p-6 rounded-[30px] mb-4 bg-white border border-[#F1F5F9] shadow-sm">
+                <View className="w-[50px] h-[50px] bg-slate-50 rounded-2xl justify-center items-center mr-4">
+                  <Ionicons
+                    name={clinic.isEmergency ? "medical" : "business"}
+                    size={24}
+                    color={clinic.isEmergency ? Theme.colors.primary : "#94A3B8"}
+                  />
+                </View>
+                <View className="flex-1">
+                  <Typography
+                    variant="h3"
+                    weight="bold"
+                    className="text-lg font-black mb-1"
+                  >
+                    {clinic.name}
+                  </Typography>
+                  <Typography variant="caption" className="text-gray-500">
+                    {clinic.address}, {clinic.city}
+                  </Typography>
+                  {clinic.phone && (
+                    <Typography variant="caption" className="text-gray-500">
+                      {clinic.phone}
+                    </Typography>
+                  )}
+                </View>
+                <Ionicons name="chevron-forward" size={20} color="#CBD5E0" />
+              </Card>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
 
         <View className="px-10 pb-8 pt-2">
            <TouchableOpacity className="bg-slate-900 h-[70px] rounded-[35px] flex-row items-center justify-center gap-3">

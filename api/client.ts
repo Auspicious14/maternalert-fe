@@ -2,11 +2,11 @@ import axios from "axios";
 import { Platform } from "react-native";
 import { TokenStorage } from "./storage";
 
-const LOCAL_IP = "10.70.142.25"; 
+const LOCAL_IP = "10.120.165.24";
 
 // Priority: Environment Variable > Local IP (for phone) > Localhost (for emulator/web)
-const BASE_URL = process.env.API_URL 
-  ? `${process.env.API_URL}/api/v1` 
+const BASE_URL = process.env.API_URL
+  ? `${process.env.API_URL}/api/v1`
   : `http://${LOCAL_IP}:2005/api/v1`;
 
 if (__DEV__) {
@@ -37,7 +37,7 @@ apiClient.interceptors.request.use(
     }
     return config;
   },
-  (error) => Promise.reject(error)
+  (error) => Promise.reject(error),
 );
 
 apiClient.interceptors.response.use(
@@ -53,9 +53,15 @@ apiClient.interceptors.response.use(
     if (__DEV__) {
       if (error.message === "Network Error") {
         console.error("‼️ NETWORK ERROR DETECTED:");
-        console.error(`1. Open this URL in your PHONE'S BROWSER: http://${LOCAL_IP}:2005/api/v1/health`);
-        console.error("2. If it works in the browser but not here, it's an Expo/App issue.");
-        console.error("3. If it DOES NOT work in the browser, your phone cannot see your computer.");
+        console.error(
+          `1. Open this URL in your PHONE'S BROWSER: http://${LOCAL_IP}:2005/api/v1/health`,
+        );
+        console.error(
+          "2. If it works in the browser but not here, it's an Expo/App issue.",
+        );
+        console.error(
+          "3. If it DOES NOT work in the browser, your phone cannot see your computer.",
+        );
         console.error("   - Check if you are on the SAME Wi-Fi.");
         console.error("   - Check if your router has 'AP Isolation' enabled.");
       } else {
@@ -68,8 +74,11 @@ apiClient.interceptors.response.use(
       const refreshToken = await TokenStorage.getRefreshToken();
       if (refreshToken) {
         try {
-          const refreshResponse = await axios.post(`${BASE_URL}/auth/refresh`, { refreshToken });
-          const { accessToken, refreshToken: newRefreshToken } = refreshResponse.data;
+          const refreshResponse = await axios.post(`${BASE_URL}/auth/refresh`, {
+            refreshToken,
+          });
+          const { accessToken, refreshToken: newRefreshToken } =
+            refreshResponse.data;
           await TokenStorage.saveToken(accessToken);
           await TokenStorage.saveRefreshToken(newRefreshToken);
           originalRequest.headers.Authorization = `Bearer ${accessToken}`;
@@ -82,7 +91,7 @@ apiClient.interceptors.response.use(
     }
 
     return Promise.reject(error);
-  }
+  },
 );
 
 export default apiClient;
