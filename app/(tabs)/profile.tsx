@@ -1,4 +1,4 @@
-import { Switch, ActivityIndicator, Ionicons } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
@@ -7,6 +7,7 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  Switch,
   Image
 } from "react-native";
 import { Badge } from "../../components/shared/Badge";
