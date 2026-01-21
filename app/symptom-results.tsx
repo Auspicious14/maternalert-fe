@@ -6,9 +6,11 @@ import { Card } from '../components/shared/Card';
 import { Screen } from '../components/shared/Screen';
 import { Typography } from '../components/shared/Typography';
 import Theme from '../constants/theme';
+import { useHealthData } from '../hooks/useHealthData';
 
 export default function SymptomResultsScreen() {
   const router = useRouter();
+  const { latestBP, recentSymptoms } = useHealthData();
 
   return (
     <SafeAreaView className="flex-1 bg-[#F9FAFB]">
@@ -42,12 +44,12 @@ export default function SymptomResultsScreen() {
              <View className="flex-row gap-4 items-start mb-5">
                <Ionicons name="medical" size={24} color={Theme.colors.primary} />
                <Typography variant="body" className="flex-1 leading-6 text-lg">
-                 Based on your symptoms and blood pressure reading, please visit your clinic <Typography weight="bold">today</Typography>.
+                 {latestBP && latestBP.systolic > 140 ? "Based on your symptoms and blood pressure reading, please visit your clinic today." : "Your recent health data looks good. No immediate action required."}
                </Typography>
              </View>
              <View className="flex-row items-center gap-2 border-t border-[#F1F5F9] pt-4">
                 <Ionicons name="time" size={18} color={Theme.colors.textLight} />
-                <Typography variant="caption" className="text-gray-500">Last reading: 10 mins ago</Typography>
+                <Typography variant="caption" className="text-gray-500">{latestBP ? `Last reading: ${new Date(latestBP.timestamp).toLocaleTimeString([], {hour: "2-digit", minute:"2-digit"})}` : "No recent readings"}</Typography>
              </View>
           </Card>
 

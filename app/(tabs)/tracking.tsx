@@ -13,8 +13,8 @@ export default function TrackingScreen() {
   const router = useRouter();
   const { bpHistory, recentSymptoms } = useHealthData();
   const { profile } = useUserProfile();
-  const [weight, setWeight] = useState('');
-  const [isEditingWeight, setIsEditingWeight] = useState(false);
+  
+  
 
   // Calculate average BP
   const avgBP = useMemo(() => {
@@ -51,11 +51,7 @@ export default function TrackingScreen() {
     return days;
   }, []);
 
-  const handleSaveWeight = () => {
-    setIsEditingWeight(false);
-    // In a real app, we would save this to the backend
-    Alert.alert('Weight Saved', `Recorded weight: ${weight} kg`);
-  };
+  
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -119,11 +115,19 @@ export default function TrackingScreen() {
             <Typography variant="h2" style={styles.sectionTitle}>Vitals Overview</Typography>
           </View>
 
+          
           <View style={styles.vitalsRow}>
             <Card style={styles.vitalCard}>
                <View style={[styles.vitalIcon, { backgroundColor: 'rgba(45, 228, 116, 0.1)' }]}>
                   <Ionicons name="pulse" size={20} color={Theme.colors.primary} />
                </View>
+               <Typography variant="h2" style={styles.vitalValue}>
+                 {avgBP ? `${avgBP.systolic}/${avgBP.diastolic}` : '--/--'}
+               </Typography>
+               <Typography variant="caption" style={styles.vitalLabel}>Avg. Blood Pressure</Typography>
+            </Card>
+          </View>
+
                <Typography variant="h2" style={styles.vitalValue}>
                  {avgBP ? `${avgBP.systolic}/${avgBP.diastolic}` : '--/--'}
                </Typography>

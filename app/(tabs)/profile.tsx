@@ -1,4 +1,4 @@
-import { Ionicons } from "@expo/vector-icons";
+import { Switch, ActivityIndicator, Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
@@ -14,6 +14,8 @@ import { Button } from "../../components/shared/Button";
 import { Card } from "../../components/shared/Card";
 import { Screen } from "../../components/shared/Screen";
 import { Typography } from "../../components/shared/Typography";
+import { Skeleton } from "../../components/ui/Skeleton";
+import { Loading } from "../../components/ui/Loading";
 import Theme from "../../constants/theme";
 import { useUserProfile } from "../../hooks/useUserProfile";
 
@@ -80,12 +82,80 @@ export default function ProfileScreen() {
   if (isLoadingProfile) {
     return (
       <Screen style={styles.container} scrollable={false}>
-        <Typography variant="body">Loading profile...</Typography>
-      </Screen>
+         {/* Header Skeleton */}
+         <View style={[styles.header, { marginBottom: 32 }]}>
+            <Skeleton width={32} height={32} borderRadius={16} variant="light" />
+            <Skeleton width={120} height={32} variant="light" />
+            <Skeleton width={40} height={20} variant="light" />
+         </View>
+
+         {/* Avatar Skeleton */}
+         <View style={{ alignItems: 'center', marginBottom: 24 }}>
+            <Skeleton width={110} height={110} borderRadius={55} variant="light" />
+         </View>
+
+         {/* Badges Skeleton */}
+         <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 16, marginBottom: 32 }}>
+            <Skeleton width={100} height={40} borderRadius={20} variant="light" />
+            <Skeleton width={140} height={40} borderRadius={20} variant="light" />
+         </View>
+
+         {/* Status Card Skeleton */}
+         <Skeleton height={120} borderRadius={16} variant="light" style={{ marginBottom: 32 }} />
+
+         {/* Sections Skeleton */}
+         <Skeleton width={200} height={24} variant="light" style={{ marginBottom: 16 }} />
+         <Skeleton height={80} borderRadius={16} variant="light" style={{ marginBottom: 32 }} />
+
+         <Skeleton width={200} height={24} variant="light" style={{ marginBottom: 16 }} />
+         <Skeleton height={80} borderRadius={16} variant="light" />
+      
+      {/* Notification Settings */}
+      <View style={styles.sectionHeader}>
+        <Typography variant="h2">Notification Settings</Typography>
+      </View>
+      <Card style={styles.clinicCard}>
+        <View style={styles.settingRow}>
+           <Typography variant="body">Care Priorities</Typography>
+           <Switch
+             value={profile?.notifyCarePriority ?? true}
+             onValueChange={(val) => updateProfile({ notifyCarePriority: val })}
+             trackColor={{ false: "#767577", true: "#34E875" }}
+           />
+        </View>
+        <View style={styles.settingRow}>
+           <Typography variant="body">Blood Pressure Alerts</Typography>
+           <Switch
+             value={profile?.notifyBpAlert ?? true}
+             onValueChange={(val) => updateProfile({ notifyBpAlert: val })}
+             trackColor={{ false: "#767577", true: "#34E875" }}
+           />
+        </View>
+        <View style={styles.settingRow}>
+           <Typography variant="body">Symptom Alerts</Typography>
+           <Switch
+             value={profile?.notifySymptomAlert ?? true}
+             onValueChange={(val) => updateProfile({ notifySymptomAlert: val })}
+             trackColor={{ false: "#767577", true: "#34E875" }}
+           />
+        </View>
+        <View style={styles.settingRow}>
+           <Typography variant="body">Daily Reminders</Typography>
+           <Switch
+             value={profile?.notifyReminders ?? true}
+             onValueChange={(val) => updateProfile({ notifyReminders: val })}
+             trackColor={{ false: "#767577", true: "#34E875" }}
+           />
+        </View>
+      </Card>
+
+    </Screen>
     );
   }
   return (
     <Screen style={styles.container} scrollable>
+      {/* Loading overlay removed for better UX */}
+      
       {/* Header Section */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.iconButton} onPress={() => router.back()}>
@@ -180,7 +250,7 @@ export default function ProfileScreen() {
       {isEditingContact ? (
         <Card style={styles.contactCard}>
           <View style={{ flex: 1 }}>
-            <View style={{ flexDirection: "row", marginBottom: 12 }}>
+            <View style={{ flexDirection: "row", flexWrap: "wrap", marginBottom: 12, gap: 8 }}>
               <TouchableOpacity
                 style={[
                   styles.relationshipChip,
@@ -349,6 +419,46 @@ export default function ProfileScreen() {
           </Typography>
         </Card>
       )}
+    
+      {/* Notification Settings */}
+      <View style={styles.sectionHeader}>
+        <Typography variant="h2">Notification Settings</Typography>
+      </View>
+      <Card style={styles.clinicCard}>
+        <View style={styles.settingRow}>
+           <Typography variant="body">Care Priorities</Typography>
+           <Switch
+             value={profile?.notifyCarePriority ?? true}
+             onValueChange={(val) => updateProfile({ notifyCarePriority: val })}
+             trackColor={{ false: "#767577", true: "#34E875" }}
+           />
+        </View>
+        <View style={styles.settingRow}>
+           <Typography variant="body">Blood Pressure Alerts</Typography>
+           <Switch
+             value={profile?.notifyBpAlert ?? true}
+             onValueChange={(val) => updateProfile({ notifyBpAlert: val })}
+             trackColor={{ false: "#767577", true: "#34E875" }}
+           />
+        </View>
+        <View style={styles.settingRow}>
+           <Typography variant="body">Symptom Alerts</Typography>
+           <Switch
+             value={profile?.notifySymptomAlert ?? true}
+             onValueChange={(val) => updateProfile({ notifySymptomAlert: val })}
+             trackColor={{ false: "#767577", true: "#34E875" }}
+           />
+        </View>
+        <View style={styles.settingRow}>
+           <Typography variant="body">Daily Reminders</Typography>
+           <Switch
+             value={profile?.notifyReminders ?? true}
+             onValueChange={(val) => updateProfile({ notifyReminders: val })}
+             trackColor={{ false: "#767577", true: "#34E875" }}
+           />
+        </View>
+      </Card>
+
     </Screen>
   );
 }
@@ -491,6 +601,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   relationshipChip: {
+    marginBottom: 8,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,
@@ -512,7 +623,7 @@ const styles = StyleSheet.create({
     borderColor: "#E2E8F0",
   },
   saveContactButton: {
-    width: 80,
+    flex: 1,
     height: 40,
     marginLeft: 12,
   },
@@ -539,7 +650,17 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: Theme.spacing.m,
   },
-  clinicActionButton: {
+  
+  settingRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "#F3F4F6",
+  },
+
+    clinicActionButton: {
     flex: 1,
     height: 44,
   },

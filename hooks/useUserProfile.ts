@@ -9,6 +9,13 @@ export interface UserProfile {
   knownConditions: string[];
   emergencyContactRelationship?: "MIDWIFE" | "PARTNER" | "FAMILY_MEMBER" | "OTHER";
   emergencyContactPhone?: string;
+  clinicName?: string;
+  clinicAddress?: string;
+  clinicPhone?: string;
+  notifyCarePriority?: boolean;
+  notifyBpAlert?: boolean;
+  notifySymptomAlert?: boolean;
+  notifyReminders?: boolean;
 }
 
 export const useUserProfile = () => {

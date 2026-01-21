@@ -6,7 +6,7 @@ const LOCAL_IP = "10.120.165.24";
 
 // Priority: Environment Variable > Local IP (for phone) > Localhost (for emulator/web)
 const BASE_URL = process.env.API_URL
-  ? `${process.env.API_URL}/api/v1`
+  ? `${process.env.API_URL}`
   : `http://${LOCAL_IP}:2005/api/v1`;
 
 if (__DEV__) {
