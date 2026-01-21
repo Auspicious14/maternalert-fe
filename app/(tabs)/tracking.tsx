@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
-import React, { useState, useMemo } from 'react';
-import { SafeAreaView, ScrollView, StyleSheet, TouchableOpacity, View, TextInput, Alert } from 'react-native';
+import React, { useMemo } from 'react';
+import { SafeAreaView, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Card } from '../../components/shared/Card';
 import { Screen } from '../../components/shared/Screen';
@@ -116,6 +116,8 @@ export default function TrackingScreen() {
           </View>
 
           
+          
+          
           <View style={styles.vitalsRow}>
             <Card style={styles.vitalCard}>
                <View style={[styles.vitalIcon, { backgroundColor: 'rgba(45, 228, 116, 0.1)' }]}>
@@ -126,44 +128,6 @@ export default function TrackingScreen() {
                </Typography>
                <Typography variant="caption" style={styles.vitalLabel}>Avg. Blood Pressure</Typography>
             </Card>
-          </View>
-
-               <Typography variant="h2" style={styles.vitalValue}>
-                 {avgBP ? `${avgBP.systolic}/${avgBP.diastolic}` : '--/--'}
-               </Typography>
-               <Typography variant="caption" style={styles.vitalLabel}>Avg. Blood Pressure</Typography>
-            </Card>
-
-            <TouchableOpacity 
-              style={[styles.vitalCard, { padding: 0 }]} 
-              onPress={() => setIsEditingWeight(true)}
-              activeOpacity={0.9}
-            >
-              <Card style={{ flex: 1, padding: 16 }}>
-                 <View style={[styles.vitalIcon, { backgroundColor: 'rgba(255, 155, 62, 0.1)' }]}>
-                    <Ionicons name="body" size={20} color={Theme.colors.accent} />
-                 </View>
-                 {isEditingWeight ? (
-                   <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                     <TextInput 
-                       value={weight}
-                       onChangeText={setWeight}
-                       keyboardType="numeric"
-                       placeholder="0.0"
-                       style={[styles.vitalValue, { minWidth: 60, borderBottomWidth: 1, borderColor: Theme.colors.border }]}
-                       autoFocus
-                       onBlur={handleSaveWeight}
-                     />
-                     <Typography variant="h2" style={styles.vitalValue}> kg</Typography>
-                   </View>
-                 ) : (
-                   <Typography variant="h2" style={styles.vitalValue}>
-                     {weight ? `${weight} kg` : '--.- kg'}
-                   </Typography>
-                 )}
-                 <Typography variant="caption" style={styles.vitalLabel}>Current Weight</Typography>
-              </Card>
-            </TouchableOpacity>
           </View>
 
           {/* Logs */}
