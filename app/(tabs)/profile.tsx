@@ -22,7 +22,7 @@ import { useUserProfile } from "../../hooks/useUserProfile";
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const { profile, isLoadingProfile, updateProfile, isUpdatingProfile } =
+  const { profile, isLoadingProfile, updateProfile } =
     useUserProfile();
 
   const [isEditingContact, setIsEditingContact] = useState(false);
@@ -39,6 +39,9 @@ export default function ProfileScreen() {
   const [clinicAddress, setClinicAddress] = useState(profile?.clinicAddress ?? "");
   const [clinicPhone, setClinicPhone] = useState(profile?.clinicPhone ?? "");
 
+  const [isSavingEmergency, setIsSavingEmergency] = useState(false);
+  const [isSavingClinic, setIsSavingClinic] = useState(false);
+
   const DEFAULT_AVATAR = 'https://images.unsplash.com/photo-1531123897727-8f129e1688ce?q=80&w=200&auto=format&fit=crop';
 
   const relationshipLabel =
@@ -54,20 +57,30 @@ export default function ProfileScreen() {
 
   const handleSaveEmergencyContact = async () => {
     if (!contactRelationship || !contactPhone.trim()) return;
-    await updateProfile({
-      emergencyContactRelationship: contactRelationship,
-      emergencyContactPhone: contactPhone.trim(),
-    });
-    setIsEditingContact(false);
+    try {
+      setIsSavingEmergency(true);
+      await updateProfile({
+        emergencyContactRelationship: contactRelationship,
+        emergencyContactPhone: contactPhone.trim(),
+      });
+      setIsEditingContact(false);
+    } finally {
+      setIsSavingEmergency(false);
+    }
   };
 
   const handleSaveClinic = async () => {
-    await updateProfile({
-      clinicName,
-      clinicAddress,
-      clinicPhone,
-    });
-    setIsEditingClinic(false);
+    try {
+      setIsSavingClinic(true);
+      await updateProfile({
+        clinicName,
+        clinicAddress,
+        clinicPhone,
+      });
+      setIsEditingClinic(false);
+    } finally {
+      setIsSavingClinic(false);
+    }
   };
 
   const handleCallContact = () => {
@@ -250,54 +263,76 @@ export default function ProfileScreen() {
 
       {isEditingContact ? (
         <Card style={styles.contactCard}>
-          <View style={{ flex: 1 }}>
-            <View style={{ flexDirection: "row", flexWrap: "wrap", marginBottom: 12, gap: 8 }}>
-              <TouchableOpacity
-                style={[
-                  styles.relationshipChip,
-                  contactRelationship === "MIDWIFE" && styles.relationshipChipActive,
-                ]}
-                onPress={() => setContactRelationship("MIDWIFE")}
+          <View style={styles.contactHeaderRow}>
+            <View style={{ flex: 1 }}>
+              <Typography variant="h3">Emergency contact</Typography>
+              <Typography
+                variant="caption"
+                color={Theme.colors.textLight}
+                style={styles.contactSubtitle}
               >
-                <Typography variant="caption">Midwife</Typography>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  styles.relationshipChip,
-                  contactRelationship === "PARTNER" && styles.relationshipChipActive,
-                ]}
-                onPress={() => setContactRelationship("PARTNER")}
-              >
-                <Typography variant="caption">Husband/Partner</Typography>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  styles.relationshipChip,
-                  contactRelationship === "FAMILY_MEMBER" &&
-                    styles.relationshipChipActive,
-                ]}
-                onPress={() => setContactRelationship("FAMILY_MEMBER")}
-              >
-                <Typography variant="caption">Family member</Typography>
-              </TouchableOpacity>
+                Choose who should be contacted first and add their phone number.
+              </Typography>
             </View>
+          </View>
 
+          <View style={styles.relationshipRow}>
+            <TouchableOpacity
+              style={[
+                styles.relationshipChip,
+                contactRelationship === "MIDWIFE" && styles.relationshipChipActive,
+              ]}
+              onPress={() => setContactRelationship("MIDWIFE")}
+            >
+              <Typography variant="caption">Midwife</Typography>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.relationshipChip,
+                contactRelationship === "PARTNER" && styles.relationshipChipActive,
+              ]}
+              onPress={() => setContactRelationship("PARTNER")}
+            >
+              <Typography variant="caption">Husband/Partner</Typography>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.relationshipChip,
+                contactRelationship === "FAMILY_MEMBER" &&
+                  styles.relationshipChipActive,
+              ]}
+              onPress={() => setContactRelationship("FAMILY_MEMBER")}
+            >
+              <Typography variant="caption">Family member</Typography>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.contactFieldGroup}>
+            <Typography
+              variant="caption"
+              color={Theme.colors.textLight}
+              style={styles.fieldLabel}
+            >
+              Phone number
+            </Typography>
             <TextInput
               style={styles.contactInput}
-              placeholder="Phone number"
+              placeholder="Enter phone number"
               keyboardType="phone-pad"
               value={contactPhone}
               onChangeText={setContactPhone}
             />
           </View>
 
-          <Button
-            title={isUpdatingProfile ? "Saving..." : "Save"}
-            variant="secondary"
-            containerStyle={styles.saveContactButton}
-            onPress={handleSaveEmergencyContact}
-            disabled={isUpdatingProfile}
-          />
+          <View style={styles.contactActions}>
+            <Button
+              title={isSavingEmergency ? "Saving..." : "Save"}
+              variant="secondary"
+              containerStyle={styles.saveContactButton}
+              onPress={handleSaveEmergencyContact}
+              disabled={isSavingEmergency}
+            />
+          </View>
         </Card>
       ) : profile?.emergencyContactPhone ? (
         <Card style={styles.contactCard}>
@@ -366,12 +401,12 @@ export default function ProfileScreen() {
               onChangeText={setClinicPhone}
             />
             <View style={{ marginTop: 12, alignItems: 'flex-end' }}>
-               <Button
-                title={isUpdatingProfile ? "Saving..." : "Save"}
+              <Button
+                title={isSavingClinic ? "Saving..." : "Save"}
                 variant="secondary"
                 containerStyle={styles.saveContactButton}
                 onPress={handleSaveClinic}
-                disabled={isUpdatingProfile}
+                disabled={isSavingClinic}
               />
             </View>
           </View>
@@ -573,9 +608,6 @@ const styles = StyleSheet.create({
   contactCard: {
     marginBottom: Theme.spacing.m,
     padding: Theme.spacing.m,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
   },
   contactInfo: {
     flexDirection: "row",
@@ -627,6 +659,28 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 40,
     marginLeft: 12,
+  },
+  contactHeaderRow: {
+    marginBottom: Theme.spacing.s,
+  },
+  contactSubtitle: {
+    marginTop: 4,
+  },
+  relationshipRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    marginTop: Theme.spacing.s,
+    marginBottom: Theme.spacing.m,
+    gap: 8,
+  },
+  contactFieldGroup: {
+    marginBottom: Theme.spacing.m,
+  },
+  fieldLabel: {
+    marginBottom: 4,
+  },
+  contactActions: {
+    alignItems: "flex-end",
   },
   clinicCard: {
     padding: Theme.spacing.m,

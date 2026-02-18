@@ -129,7 +129,7 @@ export default function ProfileSetupScreen() {
               variant="body"
               className="text-center text-gray-500 mb-10"
             >
-              If you aren't sure, give your best guess.
+              If you aren&apos;t sure, give your best guess.
             </Typography>
 
             <View className="items-center my-10">

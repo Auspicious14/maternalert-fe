@@ -109,7 +109,7 @@ export default function LoginScreen() {
 
         <View className="flex-row justify-center items-center mb-10">
           <Typography variant="body" className="text-gray-500">
-            Don't have an account?{' '}
+            Don&apos;t have an account?{" "}
           </Typography>
           <TouchableOpacity onPress={() => router.push('/register')}>
             <Typography variant="body" color={Theme.colors.primary} className="font-bold">
