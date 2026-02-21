@@ -2,27 +2,77 @@ import 'react-native-reanimated';
 import '../global.css';
 
 import {
-    Lexend_400Regular,
-    Lexend_500Medium,
-    Lexend_600SemiBold,
-    Lexend_700Bold
+  Lexend_400Regular,
+  Lexend_500Medium,
+  Lexend_600SemiBold,
+  Lexend_700Bold,
 } from '@expo-google-fonts/lexend';
-import { DefaultTheme, ThemeProvider } from '@react-navigation/native';
+import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
 import { Stack, useRouter } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
 import { TokenStorage } from '../api/storage';
-
-// Prevent the splash screen from auto-hiding before asset loading is complete.
-SplashScreen.preventAutoHideAsync().catch(() => {
-  /* ignore */
-});
-
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { AppThemeProvider, useAppTheme } from '../hooks/useAppTheme';
+import { Colors } from '../constants/theme';
+
+SplashScreen.preventAutoHideAsync().catch(() => {});
 
 const queryClient = new QueryClient();
+
+const NavigationLightTheme = {
+  ...DefaultTheme,
+  colors: {
+    ...DefaultTheme.colors,
+    background: Colors.light.background,
+    card: Colors.light.card,
+    text: Colors.light.text,
+    border: Colors.light.border,
+    primary: Colors.light.tint,
+  },
+};
+
+const NavigationDarkTheme = {
+  ...DarkTheme,
+  colors: {
+    ...DarkTheme.colors,
+    background: Colors.dark.background,
+    card: Colors.dark.card,
+    text: Colors.dark.text,
+    border: Colors.dark.border,
+    primary: Colors.dark.tint,
+  },
+};
+
+function RootNavigation() {
+  const { colorScheme } = useAppTheme();
+  const navigationTheme = colorScheme === 'dark' ? NavigationDarkTheme : NavigationLightTheme;
+  const statusBarStyle = colorScheme === 'dark' ? 'light' : 'dark';
+
+  return (
+    <ThemeProvider value={navigationTheme}>
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="index" />
+        <Stack.Screen name="onboarding" />
+        <Stack.Screen name="login" />
+        <Stack.Screen name="register" />
+        <Stack.Screen name="disclaimer" />
+        <Stack.Screen name="profile-setup" />
+        <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="emergency" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="symptom-checker" />
+        <Stack.Screen name="symptom-results" />
+        <Stack.Screen name="nurse-summary" options={{ presentation: 'fullScreenModal' }} />
+        <Stack.Screen name="bp-entry" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="clinic-finder" />
+        <Stack.Screen name="+not-found" />
+      </Stack>
+      <StatusBar style={statusBarStyle} />
+    </ThemeProvider>
+  );
+}
 
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts({
@@ -38,16 +88,12 @@ export default function RootLayout() {
   useEffect(() => {
     async function prepare() {
       try {
-        // Perform auth check
         const hasLaunched = await TokenStorage.getHasLaunched();
         const token = await TokenStorage.getToken();
 
-        // Small delay to ensure the UI can mount smoothly
         setTimeout(() => {
           if (!hasLaunched) {
             TokenStorage.setHasLaunched();
-            // We use router.push/replace only when we know the layout is ready
-            // but for safety, we rely on the index.tsx redirect as well.
             router.replace('/onboarding');
           } else if (token) {
             router.replace('/(tabs)');
@@ -67,19 +113,14 @@ export default function RootLayout() {
 
   useEffect(() => {
     if (fontsLoaded && isAuthReady) {
-      SplashScreen.hideAsync().catch(() => {
-        /* ignore */
-      });
+      SplashScreen.hideAsync().catch(() => {});
     }
-    
-    // Fallback: hide splash screen after 5 seconds no matter what
+
     const timer = setTimeout(() => {
-      SplashScreen.hideAsync().catch(() => {
-        /* ignore */
-      });
+      SplashScreen.hideAsync().catch(() => {});
       setIsAuthReady(true);
     }, 5000);
-    
+
     return () => clearTimeout(timer);
   }, [fontsLoaded, isAuthReady]);
 
@@ -89,25 +130,9 @@ export default function RootLayout() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider value={DefaultTheme}>
-        <Stack screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="index" />
-          <Stack.Screen name="onboarding" />
-          <Stack.Screen name="login" />
-          <Stack.Screen name="register" />
-          <Stack.Screen name="disclaimer" />
-          <Stack.Screen name="profile-setup" />
-          <Stack.Screen name="(tabs)" />
-          <Stack.Screen name="emergency" options={{ presentation: 'modal' }} />
-          <Stack.Screen name="symptom-checker" />
-          <Stack.Screen name="symptom-results" />
-          <Stack.Screen name="nurse-summary" options={{ presentation: 'fullScreenModal' }} />
-          <Stack.Screen name="bp-entry" options={{ presentation: 'modal' }} />
-          <Stack.Screen name="clinic-finder" />
-          <Stack.Screen name="+not-found" />
-        </Stack>
-        <StatusBar style="dark" />
-      </ThemeProvider>
+      <AppThemeProvider>
+        <RootNavigation />
+      </AppThemeProvider>
     </QueryClientProvider>
   );
 }

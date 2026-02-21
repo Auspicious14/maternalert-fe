@@ -1,9 +1,28 @@
-import { Colors } from "./Colors";
+import { Colors as BaseColors } from "./Colors";
+
+export const Colors = {
+  light: {
+    text: BaseColors.text,
+    background: BaseColors.background,
+    card: BaseColors.white,
+    border: BaseColors.border,
+    tint: BaseColors.primary,
+    tabIconDefault: BaseColors.inactiveTab,
+    tabIconSelected: BaseColors.primary,
+  },
+  dark: {
+    text: BaseColors.textOnDark,
+    background: BaseColors.darkBg,
+    card: BaseColors.cardDark,
+    border: BaseColors.borderDark,
+    tint: BaseColors.primary,
+    tabIconDefault: BaseColors.inactiveTab,
+    tabIconSelected: BaseColors.primary,
+  },
+};
 
 export const Theme = {
-  colors: Colors,
-
-  // Typography
+  colors: BaseColors,
   typography: {
     fontFamilies: {
       regular: "Lexend-Regular",
@@ -21,14 +40,11 @@ export const Theme = {
       bold: "700",
     },
   },
-
-  // Shapes & Layout
   borderRadius: {
     small: 8,
     medium: 16,
     large: 24,
   },
-
   spacing: {
     xs: 4,
     s: 8,
@@ -36,8 +52,6 @@ export const Theme = {
     l: 24,
     xl: 32,
   },
-
-  // Shadows
   shadows: {
     light: {
       shadowColor: "#000",

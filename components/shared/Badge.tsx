@@ -1,6 +1,7 @@
 import React from 'react';
 import { StyleSheet, View, ViewStyle } from 'react-native';
 import Theme from '../../constants/theme';
+import { useColorScheme } from '../../hooks/use-color-scheme';
 import { Typography } from './Typography';
 
 interface BadgeProps {
@@ -16,6 +17,9 @@ export const Badge: React.FC<BadgeProps> = ({
   icon,
   containerStyle 
 }) => {
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
+
   const getVariantStyle = () => {
     switch (variant) {
       case 'secondary': return { backgroundColor: Theme.colors.secondary };
@@ -27,10 +31,13 @@ export const Badge: React.FC<BadgeProps> = ({
   };
 
   const getTextColor = () => {
-    switch (variant) {
-      case 'emergency': return Theme.colors.emergencyText;
-      default: return Theme.colors.text;
+    if (variant === 'emergency') {
+      return Theme.colors.emergencyText;
     }
+    if (variant === 'white') {
+      return Theme.colors.text;
+    }
+    return isDark ? Theme.colors.textOnDark : Theme.colors.text;
   };
 
   return (

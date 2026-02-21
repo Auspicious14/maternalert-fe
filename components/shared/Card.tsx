@@ -1,7 +1,8 @@
 import { cssInterop } from 'nativewind';
 import React from 'react';
 import { StyleSheet, View, ViewProps } from 'react-native';
-import Theme from '../../constants/theme';
+import Theme, { Colors } from '../../constants/theme';
+import { useColorScheme } from '../../hooks/use-color-scheme';
 
 interface CardProps extends ViewProps {
   variant?: 'white' | 'routine' | 'urgent' | 'emergency';
@@ -16,12 +17,15 @@ export const Card: React.FC<CardProps> = ({
   elevation = 'light',
   ...props 
 }) => {
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
+
   const getVariantStyle = () => {
     switch (variant) {
       case 'routine': return { backgroundColor: Theme.colors.routine };
       case 'urgent': return { backgroundColor: Theme.colors.urgent };
       case 'emergency': return { backgroundColor: Theme.colors.emergency };
-      default: return { backgroundColor: Theme.colors.white };
+      default: return { backgroundColor: isDark ? Colors.dark.card : Colors.light.card };
     }
   };
 

@@ -2,13 +2,13 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
+  Image,
   Linking,
   StyleSheet,
+  Switch,
   TextInput,
   TouchableOpacity,
   View,
-  Switch,
-  Image
 } from "react-native";
 import { Badge } from "../../components/shared/Badge";
 import { Button } from "../../components/shared/Button";
@@ -16,44 +16,47 @@ import { Card } from "../../components/shared/Card";
 import { Screen } from "../../components/shared/Screen";
 import { Typography } from "../../components/shared/Typography";
 import { Skeleton } from "../../components/ui/Skeleton";
-import { Loading } from "../../components/ui/Loading";
 import Theme from "../../constants/theme";
 import { useUserProfile } from "../../hooks/useUserProfile";
+import { useAppTheme } from "../../hooks/useAppTheme";
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const { profile, isLoadingProfile, updateProfile } =
-    useUserProfile();
+  const { profile, isLoadingProfile, updateProfile } = useUserProfile();
+  const { preference: themePreference, setPreference: setThemePreference } = useAppTheme();
 
   const [isEditingContact, setIsEditingContact] = useState(false);
   const [contactRelationship, setContactRelationship] = useState(
-    profile?.emergencyContactRelationship ?? null
+    profile?.emergencyContactRelationship ?? null,
   );
   const [contactPhone, setContactPhone] = useState(
-    profile?.emergencyContactPhone ?? ""
+    profile?.emergencyContactPhone ?? "",
   );
 
   // Clinic Edit State
   const [isEditingClinic, setIsEditingClinic] = useState(false);
   const [clinicName, setClinicName] = useState(profile?.clinicName ?? "");
-  const [clinicAddress, setClinicAddress] = useState(profile?.clinicAddress ?? "");
+  const [clinicAddress, setClinicAddress] = useState(
+    profile?.clinicAddress ?? "",
+  );
   const [clinicPhone, setClinicPhone] = useState(profile?.clinicPhone ?? "");
 
   const [isSavingEmergency, setIsSavingEmergency] = useState(false);
   const [isSavingClinic, setIsSavingClinic] = useState(false);
 
-  const DEFAULT_AVATAR = 'https://images.unsplash.com/photo-1531123897727-8f129e1688ce?q=80&w=200&auto=format&fit=crop';
+  const DEFAULT_AVATAR =
+    "https://images.unsplash.com/photo-1531123897727-8f129e1688ce?q=80&w=200&auto=format&fit=crop";
 
   const relationshipLabel =
     profile?.emergencyContactRelationship === "MIDWIFE"
       ? "Midwife"
       : profile?.emergencyContactRelationship === "PARTNER"
-      ? "Husband/Partner"
-      : profile?.emergencyContactRelationship === "FAMILY_MEMBER"
-      ? "Family member"
-      : profile?.emergencyContactRelationship === "OTHER"
-      ? "Emergency contact"
-      : "Emergency contact";
+        ? "Husband/Partner"
+        : profile?.emergencyContactRelationship === "FAMILY_MEMBER"
+          ? "Family member"
+          : profile?.emergencyContactRelationship === "OTHER"
+            ? "Emergency contact"
+            : "Emergency contact";
 
   const handleSaveEmergencyContact = async () => {
     if (!contactRelationship || !contactPhone.trim()) return;
@@ -96,83 +99,122 @@ export default function ProfileScreen() {
   if (isLoadingProfile) {
     return (
       <Screen style={styles.container} scrollable={false}>
-         {/* Header Skeleton */}
-         <View style={[styles.header, { marginBottom: 32 }]}>
-            <Skeleton width={32} height={32} borderRadius={16} variant="light" />
-            <Skeleton width={120} height={32} variant="light" />
-            <Skeleton width={40} height={20} variant="light" />
-         </View>
-
-         {/* Avatar Skeleton */}
-         <View style={{ alignItems: 'center', marginBottom: 24 }}>
-            <Skeleton width={110} height={110} borderRadius={55} variant="light" />
-         </View>
-
-         {/* Badges Skeleton */}
-         <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 16, marginBottom: 32 }}>
-            <Skeleton width={100} height={40} borderRadius={20} variant="light" />
-            <Skeleton width={140} height={40} borderRadius={20} variant="light" />
-         </View>
-
-         {/* Status Card Skeleton */}
-         <Skeleton height={120} borderRadius={16} variant="light" style={{ marginBottom: 32 }} />
-
-         {/* Sections Skeleton */}
-         <Skeleton width={200} height={24} variant="light" style={{ marginBottom: 16 }} />
-         <Skeleton height={80} borderRadius={16} variant="light" style={{ marginBottom: 32 }} />
-
-         <Skeleton width={200} height={24} variant="light" style={{ marginBottom: 16 }} />
-         <Skeleton height={80} borderRadius={16} variant="light" />
-      
-      {/* Notification Settings */}
-      <View style={styles.sectionHeader}>
-        <Typography variant="h2">Notification Settings</Typography>
-      </View>
-      <Card style={styles.clinicCard}>
-        <View style={styles.settingRow}>
-           <Typography variant="body">Care Priorities</Typography>
-           <Switch
-             value={profile?.notifyCarePriority ?? true}
-             onValueChange={(val) => updateProfile({ notifyCarePriority: val })}
-             trackColor={{ false: "#767577", true: "#34E875" }}
-           />
+        {/* Header Skeleton */}
+        <View style={[styles.header, { marginBottom: 32 }]}>
+          <Skeleton width={32} height={32} borderRadius={16} variant="light" />
+          <Skeleton width={120} height={32} variant="light" />
+          <Skeleton width={40} height={20} variant="light" />
         </View>
-        <View style={styles.settingRow}>
-           <Typography variant="body">Blood Pressure Alerts</Typography>
-           <Switch
-             value={profile?.notifyBpAlert ?? true}
-             onValueChange={(val) => updateProfile({ notifyBpAlert: val })}
-             trackColor={{ false: "#767577", true: "#34E875" }}
-           />
-        </View>
-        <View style={styles.settingRow}>
-           <Typography variant="body">Symptom Alerts</Typography>
-           <Switch
-             value={profile?.notifySymptomAlert ?? true}
-             onValueChange={(val) => updateProfile({ notifySymptomAlert: val })}
-             trackColor={{ false: "#767577", true: "#34E875" }}
-           />
-        </View>
-        <View style={styles.settingRow}>
-           <Typography variant="body">Daily Reminders</Typography>
-           <Switch
-             value={profile?.notifyReminders ?? true}
-             onValueChange={(val) => updateProfile({ notifyReminders: val })}
-             trackColor={{ false: "#767577", true: "#34E875" }}
-           />
-        </View>
-      </Card>
 
-    </Screen>
+        {/* Avatar Skeleton */}
+        <View style={{ alignItems: "center", marginBottom: 24 }}>
+          <Skeleton
+            width={110}
+            height={110}
+            borderRadius={55}
+            variant="light"
+          />
+        </View>
+
+        {/* Badges Skeleton */}
+        <View
+          style={{
+            flexDirection: "row",
+            justifyContent: "center",
+            gap: 16,
+            marginBottom: 32,
+          }}
+        >
+          <Skeleton width={100} height={40} borderRadius={20} variant="light" />
+          <Skeleton width={140} height={40} borderRadius={20} variant="light" />
+        </View>
+
+        {/* Status Card Skeleton */}
+        <Skeleton
+          height={120}
+          borderRadius={16}
+          variant="light"
+          style={{ marginBottom: 32 }}
+        />
+
+        {/* Sections Skeleton */}
+        <Skeleton
+          width={200}
+          height={24}
+          variant="light"
+          style={{ marginBottom: 16 }}
+        />
+        <Skeleton
+          height={80}
+          borderRadius={16}
+          variant="light"
+          style={{ marginBottom: 32 }}
+        />
+
+        <Skeleton
+          width={200}
+          height={24}
+          variant="light"
+          style={{ marginBottom: 16 }}
+        />
+        <Skeleton height={80} borderRadius={16} variant="light" />
+
+        {/* Notification Settings */}
+        <View style={styles.sectionHeader}>
+          <Typography variant="h2">Notification Settings</Typography>
+        </View>
+        <Card style={styles.clinicCard}>
+          <View style={styles.settingRow}>
+            <Typography variant="body">Care Priorities</Typography>
+            <Switch
+              value={profile?.notifyCarePriority ?? true}
+              onValueChange={(val) =>
+                updateProfile({ notifyCarePriority: val })
+              }
+              trackColor={{ false: "#767577", true: "#34E875" }}
+            />
+          </View>
+          <View style={styles.settingRow}>
+            <Typography variant="body">Blood Pressure Alerts</Typography>
+            <Switch
+              value={profile?.notifyBpAlert ?? true}
+              onValueChange={(val) => updateProfile({ notifyBpAlert: val })}
+              trackColor={{ false: "#767577", true: "#34E875" }}
+            />
+          </View>
+          <View style={styles.settingRow}>
+            <Typography variant="body">Symptom Alerts</Typography>
+            <Switch
+              value={profile?.notifySymptomAlert ?? true}
+              onValueChange={(val) =>
+                updateProfile({ notifySymptomAlert: val })
+              }
+              trackColor={{ false: "#767577", true: "#34E875" }}
+            />
+          </View>
+          <View style={styles.settingRow}>
+            <Typography variant="body">Daily Reminders</Typography>
+            <Switch
+              value={profile?.notifyReminders ?? true}
+              onValueChange={(val) => updateProfile({ notifyReminders: val })}
+              trackColor={{ false: "#767577", true: "#34E875" }}
+            />
+          </View>
+        </Card>
+      </Screen>
     );
   }
+  console.log({ profile });
   return (
     <Screen style={styles.container} scrollable>
       {/* Loading overlay removed for better UX */}
-      
+
       {/* Header Section */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.iconButton} onPress={() => router.back()}>
+        <TouchableOpacity
+          style={styles.iconButton}
+          onPress={() => router.back()}
+        >
           <Ionicons name="arrow-back" size={24} color={Theme.colors.text} />
         </TouchableOpacity>
         <Typography variant="h2">My Profile</Typography>
@@ -188,8 +230,8 @@ export default function ProfileScreen() {
         <View style={styles.avatarContainer}>
           <View style={styles.avatarOutline}>
             <View style={styles.avatarPlaceholder}>
-              <Image 
-                source={{ uri: DEFAULT_AVATAR }} 
+              <Image
+                source={{ uri: DEFAULT_AVATAR }}
                 style={{ width: 100, height: 100, borderRadius: 50 }}
               />
             </View>
@@ -239,7 +281,7 @@ export default function ProfileScreen() {
           variant="secondary"
           containerStyle={styles.historyButton}
           textStyle={{ color: Theme.colors.text }}
-          onPress={() => router.push('/symptom-results')}
+          onPress={() => router.push("/symptom-results")}
         />
       </Card>
 
@@ -249,7 +291,7 @@ export default function ProfileScreen() {
         <TouchableOpacity
           onPress={() => {
             setContactRelationship(
-              profile?.emergencyContactRelationship ?? null
+              profile?.emergencyContactRelationship ?? null,
             );
             setContactPhone(profile?.emergencyContactPhone ?? "");
             setIsEditingContact(true);
@@ -280,7 +322,8 @@ export default function ProfileScreen() {
             <TouchableOpacity
               style={[
                 styles.relationshipChip,
-                contactRelationship === "MIDWIFE" && styles.relationshipChipActive,
+                contactRelationship === "MIDWIFE" &&
+                  styles.relationshipChipActive,
               ]}
               onPress={() => setContactRelationship("MIDWIFE")}
             >
@@ -289,7 +332,8 @@ export default function ProfileScreen() {
             <TouchableOpacity
               style={[
                 styles.relationshipChip,
-                contactRelationship === "PARTNER" && styles.relationshipChipActive,
+                contactRelationship === "PARTNER" &&
+                  styles.relationshipChipActive,
               ]}
               onPress={() => setContactRelationship("PARTNER")}
             >
@@ -341,15 +385,16 @@ export default function ProfileScreen() {
               <Ionicons name="person" size={20} color="#1565C0" />
             </View>
             <View style={styles.contactContent}>
-              <Typography variant="h3">
-                {relationshipLabel}
-              </Typography>
+              <Typography variant="h3">{relationshipLabel}</Typography>
               <Typography variant="caption" color={Theme.colors.textLight}>
                 {profile.emergencyContactPhone}
               </Typography>
             </View>
           </View>
-          <TouchableOpacity style={styles.callButton} onPress={handleCallContact}>
+          <TouchableOpacity
+            style={styles.callButton}
+            onPress={handleCallContact}
+          >
             <Ionicons name="call" size={20} color="#34E875" />
           </TouchableOpacity>
         </Card>
@@ -381,7 +426,7 @@ export default function ProfileScreen() {
       {isEditingClinic ? (
         <Card style={styles.clinicCard}>
           <View>
-             <TextInput
+            <TextInput
               style={styles.contactInput}
               placeholder="Clinic Name"
               value={clinicName}
@@ -400,7 +445,7 @@ export default function ProfileScreen() {
               value={clinicPhone}
               onChangeText={setClinicPhone}
             />
-            <View style={{ marginTop: 12, alignItems: 'flex-end' }}>
+            <View style={{ marginTop: 12, alignItems: "flex-end" }}>
               <Button
                 title={isSavingClinic ? "Saving..." : "Save"}
                 variant="secondary"
@@ -420,7 +465,7 @@ export default function ProfileScreen() {
             <View style={styles.clinicContent}>
               <Typography variant="h3">{profile.clinicName}</Typography>
               <Typography variant="caption" color={Theme.colors.textLight}>
-                {profile.clinicAddress || 'No address provided'}
+                {profile.clinicAddress || "No address provided"}
               </Typography>
               {profile.clinicPhone && (
                 <Typography variant="caption" color={Theme.colors.textLight}>
@@ -444,57 +489,91 @@ export default function ProfileScreen() {
               variant="outline"
               containerStyle={styles.clinicActionButton}
               icon={<Ionicons name="navigate-outline" size={18} />}
-              onPress={() => router.push('/clinic-finder')}
+              onPress={() => router.push("/clinic-finder")}
             />
           </View>
         </Card>
       ) : (
-         <Card style={styles.clinicCard}>
+        <Card style={styles.clinicCard}>
           <Typography variant="body" color={Theme.colors.textLight}>
             No clinic information added yet.
           </Typography>
         </Card>
       )}
-    
+
       {/* Notification Settings */}
       <View style={styles.sectionHeader}>
         <Typography variant="h2">Notification Settings</Typography>
       </View>
       <Card style={styles.clinicCard}>
         <View style={styles.settingRow}>
-           <Typography variant="body">Care Priorities</Typography>
-           <Switch
-             value={profile?.notifyCarePriority ?? true}
-             onValueChange={(val) => updateProfile({ notifyCarePriority: val })}
-             trackColor={{ false: "#767577", true: "#34E875" }}
-           />
+          <Typography variant="body">Care Priorities</Typography>
+          <Switch
+            value={profile?.notifyCarePriority ?? true}
+            onValueChange={(val) => updateProfile({ notifyCarePriority: val })}
+            trackColor={{ false: "#767577", true: "#34E875" }}
+          />
         </View>
         <View style={styles.settingRow}>
-           <Typography variant="body">Blood Pressure Alerts</Typography>
-           <Switch
-             value={profile?.notifyBpAlert ?? true}
-             onValueChange={(val) => updateProfile({ notifyBpAlert: val })}
-             trackColor={{ false: "#767577", true: "#34E875" }}
-           />
+          <Typography variant="body">Blood Pressure Alerts</Typography>
+          <Switch
+            value={profile?.notifyBpAlert ?? true}
+            onValueChange={(val) => updateProfile({ notifyBpAlert: val })}
+            trackColor={{ false: "#767577", true: "#34E875" }}
+          />
         </View>
         <View style={styles.settingRow}>
-           <Typography variant="body">Symptom Alerts</Typography>
-           <Switch
-             value={profile?.notifySymptomAlert ?? true}
-             onValueChange={(val) => updateProfile({ notifySymptomAlert: val })}
-             trackColor={{ false: "#767577", true: "#34E875" }}
-           />
+          <Typography variant="body">Symptom Alerts</Typography>
+          <Switch
+            value={profile?.notifySymptomAlert ?? true}
+            onValueChange={(val) => updateProfile({ notifySymptomAlert: val })}
+            trackColor={{ false: "#767577", true: "#34E875" }}
+          />
         </View>
         <View style={styles.settingRow}>
-           <Typography variant="body">Daily Reminders</Typography>
-           <Switch
-             value={profile?.notifyReminders ?? true}
-             onValueChange={(val) => updateProfile({ notifyReminders: val })}
-             trackColor={{ false: "#767577", true: "#34E875" }}
-           />
+          <Typography variant="body">Daily Reminders</Typography>
+          <Switch
+            value={profile?.notifyReminders ?? true}
+            onValueChange={(val) => updateProfile({ notifyReminders: val })}
+            trackColor={{ false: "#767577", true: "#34E875" }}
+          />
         </View>
       </Card>
 
+      <View style={styles.sectionHeader}>
+        <Typography variant="h2">Appearance</Typography>
+      </View>
+      <Card style={styles.clinicCard}>
+        <View style={styles.themeRow}>
+          <TouchableOpacity
+            style={[
+              styles.themeOption,
+              themePreference === "system" && styles.themeOptionActive,
+            ]}
+            onPress={() => setThemePreference("system")}
+          >
+            <Typography variant="body">System default</Typography>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.themeOption,
+              themePreference === "light" && styles.themeOptionActive,
+            ]}
+            onPress={() => setThemePreference("light")}
+          >
+            <Typography variant="body">Light</Typography>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.themeOption,
+              themePreference === "dark" && styles.themeOptionActive,
+            ]}
+            onPress={() => setThemePreference("dark")}
+          >
+            <Typography variant="body">Dark</Typography>
+          </TouchableOpacity>
+        </View>
+      </Card>
     </Screen>
   );
 }
@@ -705,7 +784,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: Theme.spacing.m,
   },
-  
+
   settingRow: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -715,7 +794,27 @@ const styles = StyleSheet.create({
     borderBottomColor: "#F3F4F6",
   },
 
-    clinicActionButton: {
+  themeRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    gap: Theme.spacing.s,
+    marginTop: Theme.spacing.s,
+  },
+  themeOption: {
+    flex: 1,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    alignItems: "center",
+  },
+  themeOptionActive: {
+    borderColor: "#34E875",
+    backgroundColor: "#E8F5E9",
+  },
+
+  clinicActionButton: {
     flex: 1,
     height: 44,
   },

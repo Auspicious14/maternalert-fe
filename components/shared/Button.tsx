@@ -2,6 +2,7 @@ import { cssInterop } from 'nativewind';
 import React from 'react';
 import { StyleSheet, TextStyle, TouchableOpacity, TouchableOpacityProps, View, ViewStyle } from 'react-native';
 import Theme from '../../constants/theme';
+import { useColorScheme } from '../../hooks/use-color-scheme';
 import { Typography } from './Typography';
 
 interface ButtonProps extends TouchableOpacityProps {
@@ -25,6 +26,9 @@ export const Button: React.FC<ButtonProps> = ({
   style,
   ...props 
 }) => {
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
+
   const getVariantStyle = () => {
     switch (variant) {
       case 'secondary': return { backgroundColor: Theme.colors.setupBlue };
@@ -38,7 +42,7 @@ export const Button: React.FC<ButtonProps> = ({
     switch (variant) {
       case 'emergency': return Theme.colors.white;
       case 'outline': return Theme.colors.primaryDark;
-      default: return '#121915'; // Modern charcoal for primary buttons
+      default: return isDark ? Theme.colors.textOnDark : '#121915';
     }
   };
 

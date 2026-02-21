@@ -4,32 +4,43 @@ import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Typography } from '../../components/shared/Typography';
 import Theme from '../../constants/theme';
+import { useColorScheme } from '../../hooks/use-color-scheme';
 
 export default function TabLayout() {
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
+
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarStyle: styles.tabBar,
+        tabBarStyle: [
+          styles.tabBar,
+          {
+            backgroundColor: isDark ? Theme.colors.darkBg : Theme.colors.white,
+            borderTopColor: isDark ? Theme.colors.borderDark : Theme.colors.border,
+          },
+        ],
         tabBarShowLabel: true,
-        tabBarActiveTintColor: Theme.colors.text,
+        tabBarActiveTintColor: isDark ? Theme.colors.white : Theme.colors.text,
         tabBarInactiveTintColor: Theme.colors.inactiveTab,
         tabBarLabelStyle: styles.tabBarLabel,
-      }}>
+      }}
+    >
       <Tabs.Screen
         name="index"
         options={{
           title: 'Home',
           tabBarIcon: ({ focused, color }) => (
             <View style={[styles.iconContainer, focused && styles.activeIconContainer]}>
-              <Ionicons name={focused ? "home" : "home-outline"} size={24} color={color} />
+              <Ionicons name={focused ? 'home' : 'home-outline'} size={24} color={color} />
             </View>
           ),
           tabBarLabel: ({ focused, color }) => (
             <Typography variant="caption" style={[styles.label, { color, fontWeight: focused ? 'bold' : 'normal' }]}>
               Home
             </Typography>
-          )
+          ),
         }}
       />
       <Tabs.Screen
@@ -38,14 +49,14 @@ export default function TabLayout() {
           title: 'Tracking',
           tabBarIcon: ({ focused, color }) => (
             <View style={[styles.iconContainer, focused && styles.activeIconContainer]}>
-              <Ionicons name={focused ? "stats-chart" : "stats-chart-outline"} size={24} color={color} />
+              <Ionicons name={focused ? 'stats-chart' : 'stats-chart-outline'} size={24} color={color} />
             </View>
           ),
           tabBarLabel: ({ focused, color }) => (
             <Typography variant="caption" style={[styles.label, { color, fontWeight: focused ? 'bold' : 'normal' }]}>
               Tracking
             </Typography>
-          )
+          ),
         }}
       />
       <Tabs.Screen
@@ -54,14 +65,14 @@ export default function TabLayout() {
           title: 'Education',
           tabBarIcon: ({ focused, color }) => (
             <View style={[styles.iconContainer, focused && styles.activeIconContainer]}>
-              <Ionicons name={focused ? "book" : "book-outline"} size={24} color={color} />
+              <Ionicons name={focused ? 'book' : 'book-outline'} size={24} color={color} />
             </View>
           ),
           tabBarLabel: ({ focused, color }) => (
             <Typography variant="caption" style={[styles.label, { color, fontWeight: focused ? 'bold' : 'normal' }]}>
               Education
             </Typography>
-          )
+          ),
         }}
       />
       <Tabs.Screen
@@ -70,14 +81,14 @@ export default function TabLayout() {
           title: 'Profile',
           tabBarIcon: ({ focused, color }) => (
             <View style={[styles.iconContainer, focused && styles.activeIconContainer]}>
-              <Ionicons name={focused ? "person" : "person-outline"} size={24} color={color} />
+              <Ionicons name={focused ? 'person' : 'person-outline'} size={24} color={color} />
             </View>
           ),
           tabBarLabel: ({ focused, color }) => (
             <Typography variant="caption" style={[styles.label, { color, fontWeight: focused ? 'bold' : 'normal' }]}>
               Profile
             </Typography>
-          )
+          ),
         }}
       />
     </Tabs>
@@ -86,9 +97,6 @@ export default function TabLayout() {
 
 const styles = StyleSheet.create({
   tabBar: {
-    backgroundColor: Theme.colors.white,
-    borderTopWidth: 1,
-    borderTopColor: Theme.colors.border,
     height: 85,
     paddingBottom: 25,
     paddingTop: 10,
@@ -116,9 +124,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   activeIconContainer: {
-    backgroundColor: Theme.colors.secondary, // Mint Green for active state as per screenshot
+    backgroundColor: Theme.colors.secondary,
   },
   label: {
     marginTop: 4,
-  }
+  },
 });

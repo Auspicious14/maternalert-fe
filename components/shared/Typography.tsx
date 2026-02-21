@@ -1,7 +1,8 @@
 import { cssInterop } from 'nativewind';
 import React from 'react';
 import { StyleSheet, Text, TextProps } from 'react-native';
-import Theme from '../../constants/theme';
+import Theme, { Colors } from '../../constants/theme';
+import { useColorScheme } from '../../hooks/use-color-scheme';
 
 interface TypographyProps extends TextProps {
   variant?: 'h1' | 'h2' | 'h3' | 'body' | 'caption';
@@ -18,6 +19,9 @@ export const Typography: React.FC<TypographyProps> = ({
   style, 
   ...props 
 }) => {
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
+
   const getVariantStyle = () => {
     switch (variant) {
       case 'h1': return styles.h1;
@@ -70,7 +74,7 @@ export const Typography: React.FC<TypographyProps> = ({
       style={[
         getVariantStyle(), 
         getWeightStyle(),
-        { color: color || styleColor || Theme.colors.text }, 
+        { color: color || styleColor || (isDark ? Colors.dark.text : Colors.light.text) }, 
         restStyle // Apply everything BUT the font settings from style to avoid overrides
       ]} 
       {...props}

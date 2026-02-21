@@ -1,16 +1,17 @@
 import { cssInterop } from 'nativewind';
 import React from 'react';
 import {
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
-    StatusBar,
-    StyleSheet,
-    View,
-    ViewStyle
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  View,
+  ViewStyle,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Theme from '../../constants/theme';
+import { useColorScheme } from '../../hooks/use-color-scheme';
 
 interface ScreenProps {
   children: React.ReactNode;
@@ -21,24 +22,39 @@ interface ScreenProps {
   className?: string;
 }
 
-export const Screen: React.FC<ScreenProps> = ({ 
-  children, 
-  style, 
-  scrollable = false, 
+export const Screen: React.FC<ScreenProps> = ({
+  children,
+  style,
+  scrollable = false,
   safe = true,
-  backgroundColor = Theme.colors.background
+  backgroundColor,
 }) => {
-  const Container = safe ? SafeAreaView : View;
-  const ContentContainer = scrollable ? ScrollView : View;
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
+
+  const resolvedBackground =
+    backgroundColor !== undefined
+      ? backgroundColor
+      : isDark
+      ? Theme.colors.darkBg
+      : Theme.colors.background;
+
+  const barStyle = isDark ? 'light-content' : 'dark-content';
+
+  const Container: any = safe ? SafeAreaView : View;
+  const ContentContainer: any = scrollable ? ScrollView : View;
 
   return (
-    <Container style={[styles.container, { backgroundColor }, style]} edges={safe ? ['top', 'bottom', 'left', 'right'] : []}>
-      <StatusBar barStyle="dark-content" backgroundColor={backgroundColor} />
-      <KeyboardAvoidingView 
+    <Container
+      style={[styles.container, { backgroundColor: resolvedBackground }, style]}
+      edges={safe ? ['top', 'bottom', 'left', 'right'] : []}
+    >
+      <StatusBar barStyle={barStyle} backgroundColor={resolvedBackground} />
+      <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.flex}
       >
-        <ContentContainer 
+        <ContentContainer
           style={styles.flex}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={scrollable ? styles.scrollContent : { flex: 1 }}
