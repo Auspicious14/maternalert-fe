@@ -5,6 +5,7 @@ import { SafeAreaView, ScrollView, TouchableOpacity, View } from 'react-native';
 import { Screen } from '../components/shared/Screen';
 import { Typography } from '../components/shared/Typography';
 import Theme from '../constants/theme';
+import { useColorScheme } from '../hooks/use-color-scheme';
 
 const SYMPTOMS = [
   { id: 'HEADACHE', title: 'Severe Headache', icon: 'flash' },
@@ -18,6 +19,9 @@ import { useHealthData } from '../hooks/useHealthData';
 export default function SymptomCheckerScreen() {
   const router = useRouter();
   const { addSymptom, isAddingSymptom } = useHealthData();
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === "dark";
+
   const [selected, setSelected] = useState<string[]>([]);
 
   const toggleSymptom = (id: string) => {
@@ -42,11 +46,18 @@ export default function SymptomCheckerScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-[#F9FAFB]">
-      <Screen backgroundColor="#F9FAFB">
+    <SafeAreaView
+      className="flex-1"
+      style={{ backgroundColor: isDark ? Theme.colors.darkBg : "#F9FAFB" }}
+    >
+      <Screen backgroundColor={isDark ? Theme.colors.darkBg : "#F9FAFB"}>
         <View className="flex-row items-center justify-between px-6 pt-4 mb-10">
           <TouchableOpacity onPress={() => router.back()} className="w-11 h-11 justify-center items-center">
-            <Ionicons name="arrow-back" size={28} color="#1A212E" />
+            <Ionicons
+              name="arrow-back"
+              size={28}
+              color={isDark ? Theme.colors.white : "#1A212E"}
+            />
           </TouchableOpacity>
           <Typography variant="h2" weight="bold" className="text-[22px]">Check Symptoms</Typography>
           <View className="w-7" />
@@ -54,7 +65,10 @@ export default function SymptomCheckerScreen() {
 
         <ScrollView contentContainerStyle={{ paddingHorizontal: 40, paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
           <Typography variant="h1" className="text-[36px] font-black leading-[44px] mb-3 shadow-lexend-bold">How are you feeling today?</Typography>
-          <Typography variant="body" className="text-gray-500 text-lg leading-6 mb-10">
+          <Typography
+            variant="body"
+            className={isDark ? "text-gray-300 text-lg leading-6 mb-10" : "text-gray-500 text-lg leading-6 mb-10"}
+          >
             Select any symptoms you are experiencing right now.
           </Typography>
 
@@ -62,7 +76,7 @@ export default function SymptomCheckerScreen() {
             {SYMPTOMS.map((symptom) => (
               <TouchableOpacity 
                 key={symptom.id}
-                className={`bg-white rounded-[40px] py-6 px-[30px] flex-row items-center border shadow-sm ${selected.includes(symptom.id) ? 'border-primary' : 'border-[#F1F5F9]'}`}
+                className={`${isDark ? 'bg-[#020617] border-white/10' : 'bg-white'} rounded-[40px] py-6 px-[30px] flex-row items-center border shadow-sm ${selected.includes(symptom.id) ? 'border-primary' : 'border-[#F1F5F9]'}`}
                 onPress={() => toggleSymptom(symptom.id)}
                 activeOpacity={0.7}
               >
@@ -72,7 +86,10 @@ export default function SymptomCheckerScreen() {
                 <View className="flex-1">
                   <Typography variant="h3" weight="bold" className="text-lg">{symptom.title}</Typography>
                   {symptom.subtitle && (
-                    <Typography variant="caption" className="text-gray-400">{symptom.subtitle}</Typography>
+                    <Typography
+                      variant="caption"
+                      className={isDark ? "text-gray-400" : "text-gray-400"}
+                    >{symptom.subtitle}</Typography>
                   )}
                 </View>
                 <View className={`w-7 h-7 rounded-full border-2 justify-center items-center ${selected.includes(symptom.id) ? 'border-gray-300' : 'border-gray-300'}`}>
@@ -99,13 +116,13 @@ export default function SymptomCheckerScreen() {
         </View>
 
         {/* Tab Mockup for fidelity - Now Functional */}
-        <View className="absolute bottom-0 w-full h-20 bg-white flex-row border-t border-[#F1F5F9] px-10 pt-2.5 justify-between">
+        <View className={isDark ? "absolute bottom-0 w-full h-20 bg-[#020617] flex-row border-t border-white/10 px-10 pt-2.5 justify-between" : "absolute bottom-0 w-full h-20 bg-white flex-row border-t border-[#F1F5F9] px-10 pt-2.5 justify-between"}>
            <TouchableOpacity className="items-center gap-1" onPress={() => router.push('/(tabs)')}>
               <Ionicons name="home" size={24} color={Theme.colors.textLight} />
               <Typography variant="caption" className="text-gray-500">Home</Typography>
            </TouchableOpacity>
            <TouchableOpacity className="items-center gap-1" onPress={() => router.push('/(tabs)/tracking')}>
-              <View className="bg-[#E8FCF1] px-5 py-1 rounded-[20px]">
+              <View className={isDark ? "bg-[#022C22] px-5 py-1 rounded-[20px]" : "bg-[#E8FCF1] px-5 py-1 rounded-[20px]"}>
                 <Ionicons name="medical" size={24} color={Theme.colors.primary} />
               </View>
               <Typography variant="caption" weight="bold" className="text-primary">Checkup</Typography>

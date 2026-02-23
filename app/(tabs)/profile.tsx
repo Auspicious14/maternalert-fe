@@ -18,6 +18,7 @@ import { Typography } from "../../components/shared/Typography";
 import { Skeleton } from "../../components/ui/Skeleton";
 import Theme from "../../constants/theme";
 import { useUserProfile } from "../../hooks/useUserProfile";
+import MaternalAvatar from "../../assets/images/maternal_onboarding_illustration.png";
 import { useAppTheme } from "../../hooks/useAppTheme";
 
 export default function ProfileScreen() {
@@ -43,9 +44,6 @@ export default function ProfileScreen() {
 
   const [isSavingEmergency, setIsSavingEmergency] = useState(false);
   const [isSavingClinic, setIsSavingClinic] = useState(false);
-
-  const DEFAULT_AVATAR =
-    "https://images.unsplash.com/photo-1531123897727-8f129e1688ce?q=80&w=200&auto=format&fit=crop";
 
   const relationshipLabel =
     profile?.emergencyContactRelationship === "MIDWIFE"
@@ -218,11 +216,7 @@ export default function ProfileScreen() {
           <Ionicons name="arrow-back" size={24} color={Theme.colors.text} />
         </TouchableOpacity>
         <Typography variant="h2">My Profile</Typography>
-        <TouchableOpacity>
-          <Typography variant="body" style={styles.editText}>
-            Edit
-          </Typography>
-        </TouchableOpacity>
+        <View style={styles.iconButton} />
       </View>
 
       {/* Profile Info Section */}
@@ -231,7 +225,7 @@ export default function ProfileScreen() {
           <View style={styles.avatarOutline}>
             <View style={styles.avatarPlaceholder}>
               <Image
-                source={{ uri: DEFAULT_AVATAR }}
+                source={MaternalAvatar}
                 style={{ width: 100, height: 100, borderRadius: 50 }}
               />
             </View>

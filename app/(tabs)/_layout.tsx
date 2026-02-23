@@ -32,7 +32,7 @@ export default function TabLayout() {
         options={{
           title: 'Home',
           tabBarIcon: ({ focused, color }) => (
-            <View style={[styles.iconContainer, focused && styles.activeIconContainer]}>
+            <View style={[styles.iconContainer, focused && (isDark ? styles.activeIconContainerDark : styles.activeIconContainerLight)]}>
               <Ionicons name={focused ? 'home' : 'home-outline'} size={24} color={color} />
             </View>
           ),
@@ -48,7 +48,7 @@ export default function TabLayout() {
         options={{
           title: 'Tracking',
           tabBarIcon: ({ focused, color }) => (
-            <View style={[styles.iconContainer, focused && styles.activeIconContainer]}>
+            <View style={[styles.iconContainer, focused && (isDark ? styles.activeIconContainerDark : styles.activeIconContainerLight)]}>
               <Ionicons name={focused ? 'stats-chart' : 'stats-chart-outline'} size={24} color={color} />
             </View>
           ),
@@ -64,7 +64,7 @@ export default function TabLayout() {
         options={{
           title: 'Education',
           tabBarIcon: ({ focused, color }) => (
-            <View style={[styles.iconContainer, focused && styles.activeIconContainer]}>
+            <View style={[styles.iconContainer, focused && (isDark ? styles.activeIconContainerDark : styles.activeIconContainerLight)]}>
               <Ionicons name={focused ? 'book' : 'book-outline'} size={24} color={color} />
             </View>
           ),
@@ -80,7 +80,7 @@ export default function TabLayout() {
         options={{
           title: 'Profile',
           tabBarIcon: ({ focused, color }) => (
-            <View style={[styles.iconContainer, focused && styles.activeIconContainer]}>
+            <View style={[styles.iconContainer, focused && (isDark ? styles.activeIconContainerDark : styles.activeIconContainerLight)]}>
               <Ionicons name={focused ? 'person' : 'person-outline'} size={24} color={color} />
             </View>
           ),
@@ -125,6 +125,14 @@ const styles = StyleSheet.create({
   },
   activeIconContainer: {
     backgroundColor: Theme.colors.secondary,
+  },
+  activeIconContainerLight: {
+    backgroundColor: Theme.colors.secondary,
+  },
+  activeIconContainerDark: {
+    backgroundColor: 'rgba(45, 228, 116, 0.2)',
+    borderWidth: 1,
+    borderColor: Theme.colors.primary,
   },
   label: {
     marginTop: 4,
