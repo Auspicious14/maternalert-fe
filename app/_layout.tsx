@@ -15,6 +15,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
 import { TokenStorage } from '../api/storage';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ToastProvider } from "../components/ui/ToastProvider";
 import { AppThemeProvider, useAppTheme } from '../hooks/useAppTheme';
 import { Colors } from '../constants/theme';
 
@@ -131,7 +132,9 @@ export default function RootLayout() {
   return (
     <QueryClientProvider client={queryClient}>
       <AppThemeProvider>
-        <RootNavigation />
+        <ToastProvider>
+          <RootNavigation />
+        </ToastProvider>
       </AppThemeProvider>
     </QueryClientProvider>
   );

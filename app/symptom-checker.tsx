@@ -6,6 +6,7 @@ import { Screen } from '../components/shared/Screen';
 import { Typography } from '../components/shared/Typography';
 import Theme from '../constants/theme';
 import { useColorScheme } from '../hooks/use-color-scheme';
+import { useToast } from "../components/ui/ToastProvider";
 
 const SYMPTOMS = [
   { id: 'HEADACHE', title: 'Severe Headache', icon: 'flash' },
@@ -21,6 +22,7 @@ export default function SymptomCheckerScreen() {
   const { addSymptom, isAddingSymptom } = useHealthData();
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
+  const { showToast } = useToast();
 
   const [selected, setSelected] = useState<string[]>([]);
 
@@ -42,6 +44,10 @@ export default function SymptomCheckerScreen() {
       router.push('/symptom-results');
     } catch (error) {
       console.error('Failed to submit symptoms', error);
+      showToast({
+        type: "error",
+        message: "Failed to submit symptoms. Please try again.",
+      });
     }
   };
 

@@ -4,7 +4,7 @@ import { TokenStorage } from "./storage";
 const LOCAL_IP = "10.120.165.24";
 
 // Priority: Environment Variable > Local IP (for phone) > Localhost (for emulator/web)
-const BASE_URL = process.env.API_URL;
+const BASE_URL = process.env.EXPO_PUBLIC_API_URL;
 
 // if (__DEV__) {
 //   console.log("-----------------------------------------");
@@ -16,7 +16,7 @@ const BASE_URL = process.env.API_URL;
 
 const apiClient = axios.create({
   baseURL: BASE_URL,
-  timeout: 10000, // Reduced timeout to fail faster during debugging
+  // timeout: 10000, // Reduced timeout to fail faster during debugging
   headers: {
     "Content-Type": "application/json",
     Accept: "application/json",

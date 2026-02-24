@@ -41,9 +41,19 @@ export const useAuth = () => {
   });
 
   const logout = async () => {
-    await TokenStorage.clearTokens();
-    queryClient.clear();
-    router.replace("/onboarding");
+    try {
+      await apiClient.post("/auth/logout");
+    } catch (error: any) {
+      console.log("Logout Error:", {
+        message: error.message,
+        status: error.response?.status,
+        data: error.response?.data,
+      });
+    } finally {
+      await TokenStorage.clearTokens();
+      queryClient.clear();
+      router.replace("/onboarding");
+    }
   };
 
   return {
