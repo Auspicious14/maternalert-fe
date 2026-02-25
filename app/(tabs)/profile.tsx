@@ -20,12 +20,14 @@ import Theme from "../../constants/theme";
 import { useColorScheme } from "../../hooks/use-color-scheme";
 import { useAppTheme } from "../../hooks/useAppTheme";
 import { useAuth } from "../../hooks/useAuth";
+import { useCarePriority } from "../../hooks/useCarePriority";
 import { useUserProfile } from "../../hooks/useUserProfile";
 
 export default function ProfileScreen() {
   const router = useRouter();
   const { profile, isLoadingProfile, updateProfile, calculatedPregnancyWeeks } =
     useUserProfile();
+  const { data: priorityData } = useCarePriority();
   const { preference: themePreference, setPreference: setThemePreference } =
     useAppTheme();
   const { logout } = useAuth();
@@ -49,6 +51,52 @@ export default function ProfileScreen() {
 
   const [isSavingEmergency, setIsSavingEmergency] = useState(false);
   const [isSavingClinic, setIsSavingClinic] = useState(false);
+
+  const statusInfo = React.useMemo(() => {
+    switch (priorityData?.priority) {
+      case "EMERGENCY":
+        return {
+          title: "Emergency attention needed",
+          message: priorityData.message,
+          icon: "alert-circle",
+          color: Theme.colors.emergency,
+          bgColor: isDark ? "#451a1a" : "#FEF2F2",
+          iconBg: isDark ? "#5c2626" : "#FEE2E2",
+          buttonVariant: "emergency" as const,
+        };
+      case "URGENT_REVIEW":
+        return {
+          title: "Urgent review recommended",
+          message: priorityData.message,
+          icon: "warning",
+          color: Theme.colors.accent,
+          bgColor: isDark ? "#452a1a" : "#FFFBEB",
+          iconBg: isDark ? "#5c402d" : "#FEF3C7",
+          buttonVariant: "secondary" as const,
+        };
+      case "INCREASED_MONITORING":
+        return {
+          title: "Increased monitoring",
+          message: priorityData.message,
+          icon: "eye",
+          color: Theme.colors.primary,
+          bgColor: isDark ? "#1a2e1a" : "#F0FDF4",
+          iconBg: isDark ? "#264526" : "#DCFCE7",
+          buttonVariant: "secondary" as const,
+        };
+      default:
+        return {
+          title: "Routine care recommended",
+          message:
+            "Your blood pressure is within normal range. Keep tracking daily.",
+          icon: "checkmark-circle",
+          color: "#34E875",
+          bgColor: isDark ? "#1a2e1a" : "#F0FDF4",
+          iconBg: isDark ? "#264526" : "#DCFCE7",
+          buttonVariant: "secondary" as const,
+        };
+    }
+  }, [priorityData, isDark]);
 
   const relationshipLabel =
     profile?.emergencyContactRelationship === "MIDWIFE"
@@ -230,27 +278,57 @@ export default function ProfileScreen() {
         </View>
       </View>
 
-      {/* Routine Care Status Card */}
-      <Card variant="routine" style={styles.statusCard}>
+      {/* Health Status Card */}
+      <Card
+        style={[
+          styles.statusCard,
+          {
+            backgroundColor: statusInfo.bgColor,
+            borderColor: isDark ? "rgba(255,255,255,0.05)" : "#E2E8F0",
+            borderWidth: 1,
+          },
+        ]}
+      >
         <View style={styles.statusRow}>
-          <View style={styles.statusCheckContainer}>
-            <Ionicons name="checkmark-circle" size={24} color="#34E875" />
+          <View
+            style={[
+              styles.statusCheckContainer,
+              { backgroundColor: statusInfo.iconBg },
+            ]}
+          >
+            <Ionicons
+              name={statusInfo.icon as any}
+              size={24}
+              color={statusInfo.color}
+            />
           </View>
           <View style={styles.statusTextContainer}>
-            <Typography variant="h3" style={styles.statusTitle}>
-              Routine care recommended
+            <Typography
+              variant="h3"
+              style={[styles.statusTitle, { color: statusInfo.color }]}
+            >
+              {statusInfo.title}
             </Typography>
             <Typography variant="caption" color={Theme.colors.textLight}>
-              Your blood pressure is within normal range. Keep tracking daily.
+              {statusInfo.message}
             </Typography>
           </View>
         </View>
         <Button
-          title="View History"
-          variant="secondary"
-          containerStyle={styles.historyButton}
-          textStyle={{ color: Theme.colors.text }}
-          onPress={() => router.push("/symptom-results")}
+          title="View Recommendations"
+          variant={statusInfo.buttonVariant}
+          containerStyle={
+            statusInfo.buttonVariant === "emergency"
+              ? styles.emergencyButton
+              : styles.historyButton
+          }
+          onPress={() =>
+            router.push(
+              priorityData?.priority === "EMERGENCY"
+                ? "/nurse-summary"
+                : "/symptom-results",
+            )
+          }
         />
       </Card>
 
@@ -363,6 +441,7 @@ export default function ProfileScreen() {
               title="Cancel"
               variant="outline"
               containerStyle={styles.cancelButton}
+              textStyle={isDark ? { color: "#94A3B8" } : {}}
               onPress={() => setIsEditingContact(false)}
               disabled={isSavingEmergency}
             />
@@ -421,34 +500,50 @@ export default function ProfileScreen() {
 
       {isEditingClinic ? (
         <Card style={styles.clinicCard}>
-          <View>
-            <TextInput
-              style={[styles.contactInput, isDark && styles.contactInputDark]}
-              placeholder="Clinic Name"
-              placeholderTextColor={isDark ? "#94A3B8" : "#94A3B8"}
-              value={clinicName}
-              onChangeText={setClinicName}
-            />
-            <TextInput
-              style={[styles.contactInput, isDark && styles.contactInputDark]}
-              placeholder="Address"
-              placeholderTextColor={isDark ? "#94A3B8" : "#94A3B8"}
-              value={clinicAddress}
-              onChangeText={setClinicAddress}
-            />
-            <TextInput
-              style={[styles.contactInput, isDark && styles.contactInputDark]}
-              placeholder="Phone (optional)"
-              placeholderTextColor={isDark ? "#94A3B8" : "#94A3B8"}
-              keyboardType="phone-pad"
-              value={clinicPhone}
-              onChangeText={setClinicPhone}
-            />
+          <View style={styles.clinicForm}>
+            <View style={styles.inputGroup}>
+              <Typography variant="caption" color={Theme.colors.textLight}>
+                Clinic Name
+              </Typography>
+              <TextInput
+                style={[styles.contactInput, isDark && styles.contactInputDark]}
+                placeholder="Clinic Name"
+                placeholderTextColor={isDark ? "#94A3B8" : "#94A3B8"}
+                value={clinicName}
+                onChangeText={setClinicName}
+              />
+            </View>
+            <View style={styles.inputGroup}>
+              <Typography variant="caption" color={Theme.colors.textLight}>
+                Address
+              </Typography>
+              <TextInput
+                style={[styles.contactInput, isDark && styles.contactInputDark]}
+                placeholder="Address"
+                placeholderTextColor={isDark ? "#94A3B8" : "#94A3B8"}
+                value={clinicAddress}
+                onChangeText={setClinicAddress}
+              />
+            </View>
+            <View style={styles.inputGroup}>
+              <Typography variant="caption" color={Theme.colors.textLight}>
+                Phone (optional)
+              </Typography>
+              <TextInput
+                style={[styles.contactInput, isDark && styles.contactInputDark]}
+                placeholder="Phone (optional)"
+                placeholderTextColor={isDark ? "#94A3B8" : "#94A3B8"}
+                keyboardType="phone-pad"
+                value={clinicPhone}
+                onChangeText={setClinicPhone}
+              />
+            </View>
             <View style={styles.contactActions}>
               <Button
                 title="Cancel"
                 variant="outline"
                 containerStyle={styles.cancelButton}
+                textStyle={isDark ? { color: "#94A3B8" } : {}}
                 onPress={() => setIsEditingClinic(false)}
                 disabled={isSavingClinic}
               />
@@ -691,9 +786,14 @@ const styles = StyleSheet.create({
   },
   statusTitle: {
     marginBottom: 2,
+    fontWeight: "bold",
   },
   historyButton: {
     backgroundColor: "#34E875",
+    height: 50,
+  },
+  emergencyButton: {
+    backgroundColor: Theme.colors.emergency,
     height: 50,
   },
   sectionHeader: {
@@ -769,11 +869,12 @@ const styles = StyleSheet.create({
   },
   saveContactButton: {
     height: 40,
-    minWidth: 100,
+    width: "50%",
   },
   cancelButton: {
     height: 40,
-    minWidth: 100,
+    // minWidth: 100,
+    width: "50%",
   },
   contactHeaderRow: {
     marginBottom: Theme.spacing.s,
@@ -796,7 +897,7 @@ const styles = StyleSheet.create({
   },
   contactActions: {
     flexDirection: "row",
-    justifyContent: "flex-end",
+    justifyContent: "center",
     gap: 12,
     marginTop: 8,
   },
@@ -870,5 +971,11 @@ const styles = StyleSheet.create({
   clinicActionButton: {
     flex: 1,
     height: 44,
+  },
+  clinicForm: {
+    gap: 12,
+  },
+  inputGroup: {
+    marginBottom: 8,
   },
 });
