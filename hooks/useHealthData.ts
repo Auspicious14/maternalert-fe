@@ -11,7 +11,8 @@ export interface BloodPressure {
 export interface Symptom {
   id: string;
   symptomType: string;
-  timestamp: string;
+  createdAt: string;
+  recordedAt: string;
 }
 
 export const useHealthData = () => {

@@ -52,7 +52,7 @@ export default function HomeScreen() {
         return "ROUTINE CARE";
     }
   }, [priorityData?.priority]);
-
+  console.log({ recentSymptoms });
   return (
     <Screen className="pt-6" scrollable backgroundColor={Theme.colors.darkBg}>
       <View className="flex-row items-center justify-between px-6 mb-6">
@@ -317,7 +317,7 @@ export default function HomeScreen() {
                 </Typography>
               </View>
               <Typography variant="caption" className="text-white/30">
-                {new Date(symptom.timestamp).toLocaleDateString(undefined, {
+                {new Date(symptom.recordedAt).toLocaleDateString(undefined, {
                   month: "short",
                   day: "numeric",
                   hour: "2-digit",

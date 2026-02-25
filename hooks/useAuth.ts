@@ -35,9 +35,9 @@ export const useAuth = () => {
       console.log("Registration Error:", {
         message: err.message,
         status: err.response?.status,
-        data: err.response?.data
+        data: err.response?.data,
       });
-    }
+    },
   });
 
   const logout = async () => {
@@ -52,7 +52,7 @@ export const useAuth = () => {
     } finally {
       await TokenStorage.clearTokens();
       queryClient.clear();
-      router.replace("/onboarding");
+      router.replace("/login");
     }
   };
 

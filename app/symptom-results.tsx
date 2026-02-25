@@ -14,7 +14,6 @@ export default function SymptomResultsScreen() {
   const { latestBP } = useHealthData();
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
-
   const iconColor = isDark ? "#FFFFFF" : "#1A212E";
   const cardBg = isDark ? Theme.colors.cardDark : "#FFFFFF";
   const borderColor = isDark ? Theme.colors.borderDark : "#F1F5F9";
