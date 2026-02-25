@@ -7,16 +7,56 @@ import { Screen } from "../components/shared/Screen";
 import { Typography } from "../components/shared/Typography";
 import Theme from "../constants/theme";
 import { useColorScheme } from "../hooks/use-color-scheme";
+import { useCarePriority } from "../hooks/useCarePriority";
 import { useHealthData } from "../hooks/useHealthData";
 
 export default function SymptomResultsScreen() {
   const router = useRouter();
   const { latestBP } = useHealthData();
+  const { data: priorityData } = useCarePriority();
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
+
   const iconColor = isDark ? "#FFFFFF" : "#1A212E";
   const cardBg = isDark ? Theme.colors.cardDark : "#FFFFFF";
   const borderColor = isDark ? Theme.colors.borderDark : "#F1F5F9";
+
+  const priorityInfo = React.useMemo(() => {
+    switch (priorityData?.priority) {
+      case "EMERGENCY":
+        return {
+          label: "Emergency Level",
+          color: Theme.colors.emergency,
+          icon: "alert-circle",
+          bgLight: isDark ? "#3D1A1A" : "#FEF2F2",
+          bgInner: isDark ? "#5C2626" : "#FEE2E2",
+        };
+      case "URGENT_REVIEW":
+        return {
+          label: "Urgent Review",
+          color: Theme.colors.accent,
+          icon: "warning",
+          bgLight: isDark ? "#3D2B1E" : "#FFF4E8",
+          bgInner: isDark ? "#5C402D" : "#FFE8D1",
+        };
+      case "INCREASED_MONITORING":
+        return {
+          label: "Increased Monitoring",
+          color: Theme.colors.primary,
+          icon: "eye",
+          bgLight: isDark ? "#1A2D1F" : "#F0FDF4",
+          bgInner: isDark ? "#26452D" : "#DCFCE7",
+        };
+      default:
+        return {
+          label: "Routine Care",
+          color: Theme.colors.primary,
+          icon: "checkmark-circle",
+          bgLight: isDark ? "#1A2D1F" : "#F0FDF4",
+          bgInner: isDark ? "#26452D" : "#DCFCE7",
+        };
+    }
+  }, [priorityData?.priority, isDark]);
 
   return (
     <Screen>
@@ -40,13 +80,13 @@ export default function SymptomResultsScreen() {
         <View className="items-center my-10">
           <View
             style={{
-              backgroundColor: isDark ? "#2D2118" : "#FFF4E8",
+              backgroundColor: priorityInfo.bgLight,
             }}
             className="w-[180px] h-[180px] rounded-full justify-center items-center mb-6"
           >
             <View
               style={{
-                backgroundColor: isDark ? "#3D2B1E" : "#FFE8D1",
+                backgroundColor: priorityInfo.bgInner,
               }}
               className="w-[140px] h-[140px] rounded-full justify-center items-center relative"
             >
@@ -61,9 +101,9 @@ export default function SymptomResultsScreen() {
                 className="w-20 h-20 rounded-full justify-center items-center"
               >
                 <Ionicons
-                  name="medical"
+                  name={priorityInfo.icon as any}
                   size={40}
-                  color={Theme.colors.accent}
+                  color={priorityInfo.color}
                 />
               </View>
               <View
@@ -74,25 +114,26 @@ export default function SymptomResultsScreen() {
                 className="absolute bottom-[-5px] w-8 h-8 rounded-full justify-center items-center border shadow-sm"
               >
                 <Ionicons
-                  name="warning"
+                  name={priorityInfo.icon as any}
                   size={16}
-                  color={Theme.colors.accent}
+                  color={priorityInfo.color}
                 />
               </View>
             </View>
           </View>
           <Typography
             variant="h1"
-            className="text-[28px] font-black text-accent mb-2 shadow-lexend-bold"
+            style={{ color: priorityInfo.color }}
+            className="text-[28px] font-black mb-2 shadow-lexend-bold"
           >
-            Orange Level
+            {priorityInfo.label}
           </Typography>
           <Typography
             variant="h2"
             weight="bold"
             className="text-xl text-center px-10 leading-7"
           >
-            Medical review recommended soon
+            {priorityData?.message || "Assessing your care needs..."}
           </Typography>
         </View>
 
@@ -106,9 +147,9 @@ export default function SymptomResultsScreen() {
           <View className="flex-row gap-4 items-start mb-5">
             <Ionicons name="medical" size={24} color={Theme.colors.primary} />
             <Typography variant="body" className="flex-1 leading-6 text-lg">
-              {latestBP && latestBP.systolic > 140
-                ? "Based on your symptoms and blood pressure reading, please visit your clinic today."
-                : "Your recent health data looks good. No immediate action required."}
+              {priorityData?.reasons && priorityData.reasons.length > 0
+                ? `Factors: ${priorityData.reasons.join(", ")}`
+                : "No immediate clinical concerns identified from your data."}
             </Typography>
           </View>
           <View

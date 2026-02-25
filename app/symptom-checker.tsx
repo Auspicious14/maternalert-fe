@@ -38,10 +38,24 @@ export default function SymptomCheckerScreen() {
     if (selected.length === 0) return;
 
     try {
+      // Record all selected symptoms
       for (const symptomId of selected) {
         await addSymptom(symptomId);
       }
-      router.push('/symptom-results');
+
+      // Check for emergency symptom combinations:
+      // HEADACHE + BLURRED_VISION is an emergency
+      // UPPER_ABDOMINAL_PAIN is an emergency
+      const symptomSet = new Set(selected);
+      const isEmergency =
+        (symptomSet.has("HEADACHE") && symptomSet.has("BLURRED_VISION")) ||
+        symptomSet.has("UPPER_ABDOMINAL_PAIN");
+
+      if (isEmergency) {
+        router.push("/nurse-summary");
+      } else {
+        router.push("/symptom-results");
+      }
     } catch (error) {
       console.error('Failed to submit symptoms', error);
       showToast({

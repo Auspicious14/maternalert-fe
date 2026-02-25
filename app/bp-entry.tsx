@@ -11,9 +11,9 @@ import {
 } from "react-native";
 import { Screen } from "../components/shared/Screen";
 import { Typography } from "../components/shared/Typography";
+import { useToast } from "../components/ui/ToastProvider";
 import Theme from "../constants/theme";
 import { useColorScheme } from "../hooks/use-color-scheme";
-import { useToast } from "../components/ui/ToastProvider";
 import { useHealthData } from "../hooks/useHealthData";
 
 export default function BPEntryScreen() {
@@ -50,10 +50,17 @@ export default function BPEntryScreen() {
         diastolic: parseInt(diastolic),
       });
       console.log("successful...");
-      if (parseInt(systolic) > 160 || parseInt(diastolic) > 110) {
-        router.push("/emergency");
-      } else if (parseInt(systolic) > 140 || parseInt(diastolic) > 90) {
+
+      // Routing logic based on emergency thresholds:
+      // EMERGENCY (Nurse Summary): Systolic >= 160 OR Diastolic >= 110
+      // URGENT (Symptom Results): Systolic >= 140 OR Diastolic >= 90
+      const sys = parseInt(systolic);
+      const dia = parseInt(diastolic);
+
+      if (sys >= 160 || dia >= 110) {
         router.push("/nurse-summary");
+      } else if (sys >= 140 || dia >= 90) {
+        router.push("/symptom-results");
       } else {
         router.back();
       }
@@ -146,7 +153,11 @@ export default function BPEntryScreen() {
               <Typography variant="h2" className="text-xl font-black">
                 Systolic (Top)
               </Typography>
-              <TouchableOpacity onPress={() => showHelp("systolic")}>
+              <TouchableOpacity
+                style={{}}
+                className="font-sans"
+                onPress={() => showHelp("systolic")}
+              >
                 <Ionicons
                   name="help-circle"
                   size={24}

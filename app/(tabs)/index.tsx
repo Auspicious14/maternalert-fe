@@ -180,11 +180,27 @@ export default function HomeScreen() {
                 <Typography
                   variant="body"
                   weight="bold"
-                  className="text-accent"
+                  style={{
+                    color: !latestBP
+                      ? Theme.colors.textLight
+                      : latestBP.systolic >= 160 || latestBP.diastolic >= 110
+                        ? Theme.colors.emergency
+                        : latestBP.systolic >= 140 || latestBP.diastolic >= 90
+                          ? Theme.colors.accent
+                          : latestBP.systolic >= 130 || latestBP.diastolic >= 85
+                            ? Theme.colors.accent
+                            : Theme.colors.primary,
+                  }}
                 >
-                  {latestBP?.systolic && latestBP.systolic > 140
-                    ? "High"
-                    : "Normal"}
+                  {latestBP
+                    ? latestBP.systolic >= 160 || latestBP.diastolic >= 110
+                      ? "Crisis"
+                      : latestBP.systolic >= 140 || latestBP.diastolic >= 90
+                        ? "High"
+                        : latestBP.systolic >= 130 || latestBP.diastolic >= 85
+                          ? "Elevated"
+                          : "Normal"
+                    : "--"}
                 </Typography>
               </View>
             )}

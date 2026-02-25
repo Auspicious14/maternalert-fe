@@ -51,7 +51,9 @@ export const useHealthData = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["blood-pressure"] });
+      queryClient.invalidateQueries({ queryKey: ["blood-pressure", "latest"] });
       queryClient.invalidateQueries({ queryKey: ["care-priority"] });
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
     },
   });
 
@@ -62,7 +64,9 @@ export const useHealthData = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["symptoms"] });
+      queryClient.invalidateQueries({ queryKey: ["symptoms", "recent"] });
       queryClient.invalidateQueries({ queryKey: ["care-priority"] });
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
     },
   });
 

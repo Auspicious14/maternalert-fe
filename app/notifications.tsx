@@ -7,7 +7,7 @@ import { Typography } from "../components/shared/Typography";
 import { Skeleton } from "../components/ui/Skeleton";
 import Theme from "../constants/theme";
 import { useColorScheme } from "../hooks/use-color-scheme";
-import { useNotifications, Notification } from "../hooks/useNotifications";
+import { Notification, useNotifications } from "../hooks/useNotifications";
 
 export default function NotificationsScreen() {
   const router = useRouter();
@@ -56,7 +56,7 @@ export default function NotificationsScreen() {
         };
     }
   };
-
+  console.log({ notifications });
   const renderItem = ({ item }: { item: Notification }) => {
     const { name, color, bg } = getIconAndColor(item.type);
 
