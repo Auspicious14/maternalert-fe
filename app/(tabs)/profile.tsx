@@ -10,7 +10,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-// import MaternalAvatar from "../../assets/images/maternal_onboarding_illustration.png";
 import { Badge } from "../../components/shared/Badge";
 import { Button } from "../../components/shared/Button";
 import { Card } from "../../components/shared/Card";
@@ -18,16 +17,20 @@ import { Screen } from "../../components/shared/Screen";
 import { Typography } from "../../components/shared/Typography";
 import { Skeleton } from "../../components/ui/Skeleton";
 import Theme from "../../constants/theme";
+import { useColorScheme } from "../../hooks/use-color-scheme";
 import { useAppTheme } from "../../hooks/useAppTheme";
 import { useAuth } from "../../hooks/useAuth";
 import { useUserProfile } from "../../hooks/useUserProfile";
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const { profile, isLoadingProfile, updateProfile } = useUserProfile();
+  const { profile, isLoadingProfile, updateProfile, calculatedPregnancyWeeks } =
+    useUserProfile();
   const { preference: themePreference, setPreference: setThemePreference } =
     useAppTheme();
   const { logout } = useAuth();
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === "dark";
 
   const [isEditingContact, setIsEditingContact] = useState(false);
   const [contactRelationship, setContactRelationship] = useState(
@@ -37,7 +40,6 @@ export default function ProfileScreen() {
     profile?.emergencyContactPhone ?? "",
   );
 
-  // Clinic Edit State
   const [isEditingClinic, setIsEditingClinic] = useState(false);
   const [clinicName, setClinicName] = useState(profile?.clinicName ?? "");
   const [clinicAddress, setClinicAddress] = useState(
@@ -98,26 +100,29 @@ export default function ProfileScreen() {
   };
 
   if (isLoadingProfile) {
+    const skeletonVariant = isDark ? "dark" : "light";
     return (
       <Screen style={styles.container} scrollable={false}>
-        {/* Header Skeleton */}
         <View style={[styles.header, { marginBottom: 32 }]}>
-          <Skeleton width={32} height={32} borderRadius={16} variant="light" />
-          <Skeleton width={120} height={32} variant="light" />
-          <Skeleton width={40} height={20} variant="light" />
+          <Skeleton
+            width={32}
+            height={32}
+            borderRadius={16}
+            variant={skeletonVariant}
+          />
+          <Skeleton width={120} height={32} variant={skeletonVariant} />
+          <Skeleton width={40} height={20} variant={skeletonVariant} />
         </View>
 
-        {/* Avatar Skeleton */}
         <View style={{ alignItems: "center", marginBottom: 24 }}>
           <Skeleton
             width={110}
             height={110}
             borderRadius={55}
-            variant="light"
+            variant={skeletonVariant}
           />
         </View>
 
-        {/* Badges Skeleton */}
         <View
           style={{
             flexDirection: "row",
@@ -126,82 +131,47 @@ export default function ProfileScreen() {
             marginBottom: 32,
           }}
         >
-          <Skeleton width={100} height={40} borderRadius={20} variant="light" />
-          <Skeleton width={140} height={40} borderRadius={20} variant="light" />
+          <Skeleton
+            width={100}
+            height={40}
+            borderRadius={20}
+            variant={skeletonVariant}
+          />
+          <Skeleton
+            width={140}
+            height={40}
+            borderRadius={20}
+            variant={skeletonVariant}
+          />
         </View>
 
-        {/* Status Card Skeleton */}
         <Skeleton
           height={120}
           borderRadius={16}
-          variant="light"
+          variant={skeletonVariant}
           style={{ marginBottom: 32 }}
         />
 
-        {/* Sections Skeleton */}
         <Skeleton
           width={200}
           height={24}
-          variant="light"
+          variant={skeletonVariant}
           style={{ marginBottom: 16 }}
         />
         <Skeleton
           height={80}
           borderRadius={16}
-          variant="light"
+          variant={skeletonVariant}
           style={{ marginBottom: 32 }}
         />
 
         <Skeleton
           width={200}
           height={24}
-          variant="light"
+          variant={skeletonVariant}
           style={{ marginBottom: 16 }}
         />
-        <Skeleton height={80} borderRadius={16} variant="light" />
-
-        {/* Notification Settings */}
-        <View style={styles.sectionHeader}>
-          <Typography variant="h2">Notification Settings</Typography>
-        </View>
-        <Card style={styles.clinicCard}>
-          <View style={styles.settingRow}>
-            <Typography variant="body">Care Priorities</Typography>
-            <Switch
-              value={profile?.notifyCarePriority ?? true}
-              onValueChange={(val) =>
-                updateProfile({ notifyCarePriority: val })
-              }
-              trackColor={{ false: "#767577", true: "#34E875" }}
-            />
-          </View>
-          <View style={styles.settingRow}>
-            <Typography variant="body">Blood Pressure Alerts</Typography>
-            <Switch
-              value={profile?.notifyBpAlert ?? true}
-              onValueChange={(val) => updateProfile({ notifyBpAlert: val })}
-              trackColor={{ false: "#767577", true: "#34E875" }}
-            />
-          </View>
-          <View style={styles.settingRow}>
-            <Typography variant="body">Symptom Alerts</Typography>
-            <Switch
-              value={profile?.notifySymptomAlert ?? true}
-              onValueChange={(val) =>
-                updateProfile({ notifySymptomAlert: val })
-              }
-              trackColor={{ false: "#767577", true: "#34E875" }}
-            />
-          </View>
-          <View style={styles.settingRow}>
-            <Typography variant="body">Daily Reminders</Typography>
-            <Switch
-              value={profile?.notifyReminders ?? true}
-              onValueChange={(val) => updateProfile({ notifyReminders: val })}
-              trackColor={{ false: "#767577", true: "#34E875" }}
-            />
-          </View>
-        </Card>
+        <Skeleton height={80} borderRadius={16} variant={skeletonVariant} />
       </Screen>
     );
   }
@@ -236,7 +206,13 @@ export default function ProfileScreen() {
 
         <View style={styles.badgeRow}>
           <Badge
-            label={profile ? `${profile.pregnancyWeeks} Weeks` : "Weeks"}
+            label={
+              calculatedPregnancyWeeks
+                ? `${calculatedPregnancyWeeks} Weeks`
+                : profile
+                  ? `${profile.pregnancyWeeks} Weeks`
+                  : "Weeks"
+            }
             variant="white"
             icon={
               <Ionicons name="calendar-outline" size={16} color="#34E875" />
@@ -278,7 +254,6 @@ export default function ProfileScreen() {
         />
       </Card>
 
-      {/* Emergency Contacts */}
       <View style={styles.sectionHeader}>
         <Typography variant="h2">My Emergency Contact</Typography>
         <TouchableOpacity
@@ -315,8 +290,15 @@ export default function ProfileScreen() {
             <TouchableOpacity
               style={[
                 styles.relationshipChip,
+                isDark && {
+                  backgroundColor: "#26211E",
+                  borderColor: "#3A3430",
+                  borderWidth: 1,
+                },
                 contactRelationship === "MIDWIFE" &&
-                  styles.relationshipChipActive,
+                  (isDark
+                    ? styles.relationshipChipActiveDark
+                    : styles.relationshipChipActive),
               ]}
               onPress={() => setContactRelationship("MIDWIFE")}
             >
@@ -325,8 +307,15 @@ export default function ProfileScreen() {
             <TouchableOpacity
               style={[
                 styles.relationshipChip,
+                isDark && {
+                  backgroundColor: "#26211E",
+                  borderColor: "#3A3430",
+                  borderWidth: 1,
+                },
                 contactRelationship === "PARTNER" &&
-                  styles.relationshipChipActive,
+                  (isDark
+                    ? styles.relationshipChipActiveDark
+                    : styles.relationshipChipActive),
               ]}
               onPress={() => setContactRelationship("PARTNER")}
             >
@@ -335,8 +324,15 @@ export default function ProfileScreen() {
             <TouchableOpacity
               style={[
                 styles.relationshipChip,
+                isDark && {
+                  backgroundColor: "#26211E",
+                  borderColor: "#3A3430",
+                  borderWidth: 1,
+                },
                 contactRelationship === "FAMILY_MEMBER" &&
-                  styles.relationshipChipActive,
+                  (isDark
+                    ? styles.relationshipChipActiveDark
+                    : styles.relationshipChipActive),
               ]}
               onPress={() => setContactRelationship("FAMILY_MEMBER")}
             >
@@ -353,8 +349,9 @@ export default function ProfileScreen() {
               Phone number
             </Typography>
             <TextInput
-              style={styles.contactInput}
+              style={[styles.contactInput, isDark && styles.contactInputDark]}
               placeholder="Enter phone number"
+              placeholderTextColor={isDark ? "#94A3B8" : "#94A3B8"}
               keyboardType="phone-pad"
               value={contactPhone}
               onChangeText={setContactPhone}
@@ -362,6 +359,13 @@ export default function ProfileScreen() {
           </View>
 
           <View style={styles.contactActions}>
+            <Button
+              title="Cancel"
+              variant="outline"
+              containerStyle={styles.cancelButton}
+              onPress={() => setIsEditingContact(false)}
+              disabled={isSavingEmergency}
+            />
             <Button
               title={isSavingEmergency ? "Saving..." : "Save"}
               variant="secondary"
@@ -399,7 +403,6 @@ export default function ProfileScreen() {
         </Card>
       )}
 
-      {/* Clinic Info */}
       <View style={styles.sectionHeader}>
         <Typography variant="h2">My Clinic Info</Typography>
         <TouchableOpacity
@@ -420,25 +423,35 @@ export default function ProfileScreen() {
         <Card style={styles.clinicCard}>
           <View>
             <TextInput
-              style={styles.contactInput}
+              style={[styles.contactInput, isDark && styles.contactInputDark]}
               placeholder="Clinic Name"
+              placeholderTextColor={isDark ? "#94A3B8" : "#94A3B8"}
               value={clinicName}
               onChangeText={setClinicName}
             />
             <TextInput
-              style={styles.contactInput}
+              style={[styles.contactInput, isDark && styles.contactInputDark]}
               placeholder="Address"
+              placeholderTextColor={isDark ? "#94A3B8" : "#94A3B8"}
               value={clinicAddress}
               onChangeText={setClinicAddress}
             />
             <TextInput
-              style={styles.contactInput}
+              style={[styles.contactInput, isDark && styles.contactInputDark]}
               placeholder="Phone (optional)"
+              placeholderTextColor={isDark ? "#94A3B8" : "#94A3B8"}
               keyboardType="phone-pad"
               value={clinicPhone}
               onChangeText={setClinicPhone}
             />
-            <View style={{ marginTop: 12, alignItems: "flex-end" }}>
+            <View style={styles.contactActions}>
+              <Button
+                title="Cancel"
+                variant="outline"
+                containerStyle={styles.cancelButton}
+                onPress={() => setIsEditingClinic(false)}
+                disabled={isSavingClinic}
+              />
               <Button
                 title={isSavingClinic ? "Saving..." : "Save"}
                 variant="secondary"
@@ -494,12 +507,11 @@ export default function ProfileScreen() {
         </Card>
       )}
 
-      {/* Notification Settings */}
       <View style={styles.sectionHeader}>
         <Typography variant="h2">Notification Settings</Typography>
       </View>
       <Card style={styles.clinicCard}>
-        <View style={styles.settingRow}>
+        <View style={[styles.settingRow, isDark && styles.settingRowDark]}>
           <Typography variant="body">Care Priorities</Typography>
           <Switch
             value={profile?.notifyCarePriority ?? true}
@@ -507,7 +519,7 @@ export default function ProfileScreen() {
             trackColor={{ false: "#767577", true: "#34E875" }}
           />
         </View>
-        <View style={styles.settingRow}>
+        <View style={[styles.settingRow, isDark && styles.settingRowDark]}>
           <Typography variant="body">Blood Pressure Alerts</Typography>
           <Switch
             value={profile?.notifyBpAlert ?? true}
@@ -515,7 +527,7 @@ export default function ProfileScreen() {
             trackColor={{ false: "#767577", true: "#34E875" }}
           />
         </View>
-        <View style={styles.settingRow}>
+        <View style={[styles.settingRow, isDark && styles.settingRowDark]}>
           <Typography variant="body">Symptom Alerts</Typography>
           <Switch
             value={profile?.notifySymptomAlert ?? true}
@@ -523,7 +535,7 @@ export default function ProfileScreen() {
             trackColor={{ false: "#767577", true: "#34E875" }}
           />
         </View>
-        <View style={styles.settingRow}>
+        <View style={[styles.settingRow, isDark && styles.settingRowDark]}>
           <Typography variant="body">Daily Reminders</Typography>
           <Switch
             value={profile?.notifyReminders ?? true}
@@ -541,16 +553,24 @@ export default function ProfileScreen() {
           <TouchableOpacity
             style={[
               styles.themeOption,
-              themePreference === "system" && styles.themeOptionActive,
+              isDark && { backgroundColor: "#26211E", borderColor: "#3A3430" },
+              themePreference === "system" &&
+                (isDark
+                  ? styles.themeOptionActiveDark
+                  : styles.themeOptionActive),
             ]}
             onPress={() => setThemePreference("system")}
           >
-            <Typography variant="body">System default</Typography>
+            <Typography variant="body">System</Typography>
           </TouchableOpacity>
           <TouchableOpacity
             style={[
               styles.themeOption,
-              themePreference === "light" && styles.themeOptionActive,
+              isDark && { backgroundColor: "#26211E", borderColor: "#3A3430" },
+              themePreference === "light" &&
+                (isDark
+                  ? styles.themeOptionActiveDark
+                  : styles.themeOptionActive),
             ]}
             onPress={() => setThemePreference("light")}
           >
@@ -559,7 +579,11 @@ export default function ProfileScreen() {
           <TouchableOpacity
             style={[
               styles.themeOption,
-              themePreference === "dark" && styles.themeOptionActive,
+              isDark && { backgroundColor: "#26211E", borderColor: "#3A3430" },
+              themePreference === "dark" &&
+                (isDark
+                  ? styles.themeOptionActiveDark
+                  : styles.themeOptionActive),
             ]}
             onPress={() => setThemePreference("dark")}
           >
@@ -572,33 +596,6 @@ export default function ProfileScreen() {
           <Typography variant="body">Logout</Typography>
         </TouchableOpacity>
       </View>
-      {/* <TouchableOpacity
-        style={[
-          styles.themeOption,
-          themePreference === "system" && styles.themeOptionActive,
-        ]}
-        onPress={() => setThemePreference("system")}
-      >
-        <Typography variant="body">System default</Typography>
-      </TouchableOpacity>
-      <TouchableOpacity
-        style={[
-          styles.themeOption,
-          themePreference === "light" && styles.themeOptionActive,
-        ]}
-        onPress={() => setThemePreference("light")}
-      >
-        <Typography variant="body">Light</Typography>
-      </TouchableOpacity>
-      <TouchableOpacity
-        style={[
-          styles.themeOption,
-          themePreference === "dark" && styles.themeOptionActive,
-        ]}
-        onPress={() => setThemePreference("dark")}
-      >
-        <Typography variant="body">Dark</Typography>
-      </TouchableOpacity> */}
     </Screen>
   );
 }
@@ -744,10 +741,16 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     backgroundColor: "#F1F5F9",
     marginRight: 8,
+    alignItems: "center",
+    justifyContent: "center",
   },
   relationshipChipActive: {
     backgroundColor: "#E8F5E9",
     borderWidth: 1,
+    borderColor: "#34E875",
+  },
+  relationshipChipActiveDark: {
+    backgroundColor: "#1B3A26",
     borderColor: "#34E875",
   },
   contactInput: {
@@ -759,10 +762,18 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#E2E8F0",
   },
+  contactInputDark: {
+    backgroundColor: "#26211E",
+    borderColor: "#3A3430",
+    color: "#FFFFFF",
+  },
   saveContactButton: {
-    flex: 1,
     height: 40,
-    marginLeft: 12,
+    minWidth: 100,
+  },
+  cancelButton: {
+    height: 40,
+    minWidth: 100,
   },
   contactHeaderRow: {
     marginBottom: Theme.spacing.s,
@@ -784,7 +795,10 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   contactActions: {
-    alignItems: "flex-end",
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    gap: 12,
+    marginTop: 8,
   },
   clinicCard: {
     padding: Theme.spacing.m,
@@ -818,6 +832,9 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "#F3F4F6",
   },
+  settingRowDark: {
+    borderBottomColor: "#3A3430",
+  },
 
   themeRow: {
     flexDirection: "row",
@@ -833,10 +850,15 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#E5E7EB",
     alignItems: "center",
+    justifyContent: "center",
   },
   themeOptionActive: {
     borderColor: "#34E875",
     backgroundColor: "#E8F5E9",
+  },
+  themeOptionActiveDark: {
+    borderColor: "#34E875",
+    backgroundColor: "#1B3A26",
   },
   logoutButton: {
     flex: 1,

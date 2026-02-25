@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMemo } from "react";
 import apiClient from "../api/client";
 
 export interface UserProfile {
@@ -7,7 +8,11 @@ export interface UserProfile {
   pregnancyWeeks: number;
   firstPregnancy: boolean;
   knownConditions: string[];
-  emergencyContactRelationship?: "MIDWIFE" | "PARTNER" | "FAMILY_MEMBER" | "OTHER";
+  emergencyContactRelationship?:
+    | "MIDWIFE"
+    | "PARTNER"
+    | "FAMILY_MEMBER"
+    | "OTHER";
   emergencyContactPhone?: string;
   clinicName?: string;
   clinicAddress?: string;
@@ -16,6 +21,7 @@ export interface UserProfile {
   notifyBpAlert?: boolean;
   notifySymptomAlert?: boolean;
   notifyReminders?: boolean;
+  createdAt: string;
 }
 
 export const useUserProfile = () => {
@@ -28,6 +34,16 @@ export const useUserProfile = () => {
       return response.data;
     },
   });
+
+  const calculatedPregnancyWeeks = useMemo(() => {
+    if (!profile.data) return null;
+    const startWeeks = profile.data.pregnancyWeeks;
+    const createdAt = new Date(profile.data.createdAt);
+    const now = new Date();
+    const diffInMs = now.getTime() - createdAt.getTime();
+    const diffInWeeks = Math.floor(diffInMs / (1000 * 60 * 60 * 24 * 7));
+    return startWeeks + diffInWeeks;
+  }, [profile.data]);
 
   const createProfileMutation = useMutation({
     mutationFn: async (profileData: any) => {
@@ -51,6 +67,7 @@ export const useUserProfile = () => {
 
   return {
     profile: profile.data,
+    calculatedPregnancyWeeks,
     isLoadingProfile: profile.isLoading,
     createProfile: createProfileMutation.mutateAsync,
     isCreatingProfile: createProfileMutation.isPending,
