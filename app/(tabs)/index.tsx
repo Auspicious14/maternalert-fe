@@ -11,8 +11,8 @@ import Theme from "../../constants/theme";
 
 import { useCarePriority } from "../../hooks/useCarePriority";
 import { useHealthData } from "../../hooks/useHealthData";
-import { useUserProfile } from "../../hooks/useUserProfile";
 import { useNotifications } from "../../hooks/useNotifications";
+import { useUserProfile } from "../../hooks/useUserProfile";
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -27,10 +27,6 @@ export default function HomeScreen() {
   const { profile } = useUserProfile();
   const { unreadCount } = useNotifications();
 
-  const DEFAULT_AVATAR =
-    "https://images.unsplash.com/photo-1531123897727-8f129e1688ce?q=80&w=200&auto=format&fit=crop";
-
-  // Memoize status colors based on priority
   const statusColors = React.useMemo(() => {
     switch (priorityData?.priority) {
       case "EMERGENCY":
@@ -59,22 +55,31 @@ export default function HomeScreen() {
 
   return (
     <Screen className="pt-6" scrollable backgroundColor={Theme.colors.darkBg}>
-      {/* Header */}
       <View className="flex-row items-center justify-between px-6 mb-6">
-        <TouchableOpacity className="w-11 h-11 rounded-full bg-white/10 justify-center items-center">
+        {/* <TouchableOpacity className="w-11 h-11 rounded-full bg-white/10 justify-center items-center">
           <Ionicons name="menu-outline" size={28} color="white" />
-        </TouchableOpacity>
-        {/* <Typography variant="h2" className="text-white text-xl">Priority Dashboard</Typography> */}
+        </TouchableOpacity> */}
+        <Typography variant="h2" className="text-white text-xl">
+          Priority Dashboard
+        </Typography>
         <View className="flex-row items-center gap-4">
-          <TouchableOpacity className="relative w-11 h-11 rounded-full bg-white/10 justify-center items-center" onPress={() => router.push("/notifications")}>
+          <TouchableOpacity
+            className="relative w-11 h-11 rounded-full bg-white/10 justify-center items-center"
+            onPress={() => router.push("/notifications")}
+          >
             <Ionicons name="notifications" size={24} color="white" />
-            {unreadCount > 0 && <View className="absolute top-3 right-3 w-2 h-2 rounded-full bg-accent border-2 border-[#1A1512]" />}
+            {unreadCount > 0 && (
+              <View className="absolute top-3 right-3 w-2 h-2 rounded-full bg-accent border-2 border-[#1A1512]" />
+            )}
           </TouchableOpacity>
           <TouchableOpacity
             className="w-11 h-11 rounded-full overflow-hidden border-2 border-white/20"
             onPress={() => router.push("/(tabs)/profile")}
           >
-            <Image source={{ uri: DEFAULT_AVATAR }} className="w-full h-full" />
+            <Image
+              source={require("../../assets/images/maternal_onboarding_illustration.png")}
+              className="w-full h-full"
+            />
           </TouchableOpacity>
         </View>
       </View>
@@ -143,12 +148,12 @@ export default function HomeScreen() {
                 </Typography>
               )}
 
-              <View className="h-[140px] bg-white/10 rounded-[30px] overflow-hidden">
+              {/* <View className="h-[140px] bg-white/10 rounded-[30px] overflow-hidden">
                 <LinearGradient
                   colors={["rgba(255,255,255,0.2)", "rgba(255,255,255,0.05)"]}
                   className="flex-1"
                 />
-              </View>
+              </View> */}
             </LinearGradient>
           </TouchableOpacity>
         )}
@@ -187,14 +192,17 @@ export default function HomeScreen() {
               <Skeleton width={150} height={16} />
             ) : (
               <Typography variant="caption" className="text-white/30">
-                {latestBP?.timestamp
-                  ? new Date(latestBP.timestamp).toLocaleDateString(undefined, {
-                      weekday: "short",
-                      month: "short",
-                      day: "numeric",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })
+                {latestBP?.recordedAt
+                  ? new Date(latestBP.recordedAt).toLocaleDateString(
+                      undefined,
+                      {
+                        weekday: "short",
+                        month: "short",
+                        day: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      },
+                    )
                   : "No readings yet"}
               </Typography>
             )}

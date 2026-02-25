@@ -5,7 +5,7 @@ export interface BloodPressure {
   id: string;
   systolic: number;
   diastolic: number;
-  timestamp: string;
+  recordedAt: string;
 }
 
 export interface Symptom {

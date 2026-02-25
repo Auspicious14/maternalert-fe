@@ -10,6 +10,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+// import MaternalAvatar from "../../assets/images/maternal_onboarding_illustration.png";
 import { Badge } from "../../components/shared/Badge";
 import { Button } from "../../components/shared/Button";
 import { Card } from "../../components/shared/Card";
@@ -17,14 +18,16 @@ import { Screen } from "../../components/shared/Screen";
 import { Typography } from "../../components/shared/Typography";
 import { Skeleton } from "../../components/ui/Skeleton";
 import Theme from "../../constants/theme";
-import { useUserProfile } from "../../hooks/useUserProfile";
-import MaternalAvatar from "../../assets/images/maternal_onboarding_illustration.png";
 import { useAppTheme } from "../../hooks/useAppTheme";
+import { useAuth } from "../../hooks/useAuth";
+import { useUserProfile } from "../../hooks/useUserProfile";
 
 export default function ProfileScreen() {
   const router = useRouter();
   const { profile, isLoadingProfile, updateProfile } = useUserProfile();
-  const { preference: themePreference, setPreference: setThemePreference } = useAppTheme();
+  const { preference: themePreference, setPreference: setThemePreference } =
+    useAppTheme();
+  const { logout } = useAuth();
 
   const [isEditingContact, setIsEditingContact] = useState(false);
   const [contactRelationship, setContactRelationship] = useState(
@@ -202,12 +205,9 @@ export default function ProfileScreen() {
       </Screen>
     );
   }
-  console.log({ profile });
+
   return (
     <Screen style={styles.container} scrollable>
-      {/* Loading overlay removed for better UX */}
-
-      {/* Header Section */}
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.iconButton}
@@ -219,13 +219,12 @@ export default function ProfileScreen() {
         <View style={styles.iconButton} />
       </View>
 
-      {/* Profile Info Section */}
       <View style={styles.profileInfo}>
         <View style={styles.avatarContainer}>
           <View style={styles.avatarOutline}>
             <View style={styles.avatarPlaceholder}>
               <Image
-                source={MaternalAvatar}
+                source={require("../../assets/images/maternal_onboarding_illustration.png")}
                 style={{ width: 100, height: 100, borderRadius: 50 }}
               />
             </View>
@@ -568,6 +567,38 @@ export default function ProfileScreen() {
           </TouchableOpacity>
         </View>
       </Card>
+      <View style={{ marginTop: 16 }}>
+        <TouchableOpacity style={styles.logoutButton} onPress={logout}>
+          <Typography variant="body">Logout</Typography>
+        </TouchableOpacity>
+      </View>
+      {/* <TouchableOpacity
+        style={[
+          styles.themeOption,
+          themePreference === "system" && styles.themeOptionActive,
+        ]}
+        onPress={() => setThemePreference("system")}
+      >
+        <Typography variant="body">System default</Typography>
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={[
+          styles.themeOption,
+          themePreference === "light" && styles.themeOptionActive,
+        ]}
+        onPress={() => setThemePreference("light")}
+      >
+        <Typography variant="body">Light</Typography>
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={[
+          styles.themeOption,
+          themePreference === "dark" && styles.themeOptionActive,
+        ]}
+        onPress={() => setThemePreference("dark")}
+      >
+        <Typography variant="body">Dark</Typography>
+      </TouchableOpacity> */}
     </Screen>
   );
 }
@@ -807,7 +838,13 @@ const styles = StyleSheet.create({
     borderColor: "#34E875",
     backgroundColor: "#E8F5E9",
   },
-
+  logoutButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 999,
+    backgroundColor: Theme.colors.primary,
+    alignItems: "center",
+  },
   clinicActionButton: {
     flex: 1,
     height: 44,

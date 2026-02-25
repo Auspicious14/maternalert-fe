@@ -80,7 +80,7 @@ export default function SymptomResultsScreen() {
               <Ionicons name="time" size={18} color={Theme.colors.textLight} />
               <Typography variant="caption" className="text-gray-500">
                 {latestBP
-                  ? `Last reading: ${new Date(latestBP.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
+                  ? `Last reading: ${new Date(latestBP.recordedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
                   : "No recent readings"}
               </Typography>
             </View>
