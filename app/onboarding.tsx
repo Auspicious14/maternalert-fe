@@ -71,7 +71,7 @@ export default function OnboardingScreen() {
             className="w-[85%] aspect-square rounded-[40px] shadow-sm border overflow-hidden items-center justify-center"
           >
             <Image
-              source={require("../assets/images/maternal_onboarding_illustration.png")}
+              source={require("../assets/images/maternal_onboarding_illustration.jpg")}
               className="w-full h-full"
               resizeMode="contain"
             />

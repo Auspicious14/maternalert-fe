@@ -258,7 +258,7 @@ export default function ProfileScreen() {
           <View style={styles.avatarOutline}>
             <View style={styles.avatarPlaceholder}>
               <Image
-                source={require("../../assets/images/maternal_onboarding_illustration.png")}
+                source={require("../../assets/images/maternal_onboarding_illustration.jpg")}
                 style={{ width: 100, height: 100, borderRadius: 50 }}
               />
             </View>

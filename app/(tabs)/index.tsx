@@ -77,7 +77,7 @@ export default function HomeScreen() {
             onPress={() => router.push("/(tabs)/profile")}
           >
             <Image
-              source={require("../../assets/images/maternal_onboarding_illustration.png")}
+              source={require("../../assets/images/maternal_onboarding_illustration.jpg")}
               className="w-full h-full"
             />
           </TouchableOpacity>
