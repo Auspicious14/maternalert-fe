@@ -2,13 +2,13 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
-  Image,
-  Linking,
-  StyleSheet,
-  Switch,
-  TextInput,
-  TouchableOpacity,
-  View,
+    Image,
+    Linking,
+    Platform,
+    StyleSheet,
+    TextInput,
+    TouchableOpacity,
+    View
 } from "react-native";
 import { Badge } from "../../components/shared/Badge";
 import { Button } from "../../components/shared/Button";
@@ -145,6 +145,22 @@ export default function ProfileScreen() {
   const handleCallClinic = () => {
     if (!profile?.clinicPhone) return;
     Linking.openURL(`tel:${profile.clinicPhone}`);
+  };
+
+  const handleGetDirections = () => {
+    if (!profile?.clinicAddress) return;
+    const scheme = Platform.select({
+      ios: "maps:0,0?q=",
+      android: "geo:0,0?q=",
+    });
+    const url = Platform.select({
+      ios: `${scheme}${profile.clinicName || "Clinic"}@${profile.clinicAddress}`,
+      android: `${scheme}${profile.clinicAddress}(${profile.clinicName || "Clinic"})`,
+    });
+
+    if (url) {
+      Linking.openURL(url);
+    }
   };
 
   if (isLoadingProfile) {
@@ -590,7 +606,8 @@ export default function ProfileScreen() {
               variant="outline"
               containerStyle={styles.clinicActionButton}
               icon={<Ionicons name="navigate-outline" size={18} />}
-              onPress={() => router.push("/clinic-finder")}
+              onPress={handleGetDirections}
+              disabled={!profile.clinicAddress}
             />
           </View>
         </Card>
@@ -602,6 +619,7 @@ export default function ProfileScreen() {
         </Card>
       )}
 
+      {/* 
       <View style={styles.sectionHeader}>
         <Typography variant="h2">Notification Settings</Typography>
       </View>
@@ -639,6 +657,7 @@ export default function ProfileScreen() {
           />
         </View>
       </Card>
+      */}
 
       <View style={styles.sectionHeader}>
         <Typography variant="h2">Appearance</Typography>

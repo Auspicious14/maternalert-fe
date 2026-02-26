@@ -1,26 +1,63 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import React, { useState } from "react";
-import { ScrollView, TextInput, TouchableOpacity, View } from "react-native";
+import React, { useMemo, useState } from "react";
+import {
+  Linking,
+  Platform,
+  ScrollView,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import MapView, { Marker } from "react-native-maps";
 import { Card } from "../components/shared/Card";
 import { Screen } from "../components/shared/Screen";
 import { Typography } from "../components/shared/Typography";
 import Theme from "../constants/theme";
 import { useColorScheme } from "../hooks/use-color-scheme";
-import { useClinics } from "../hooks/useClinics";
+import { ClinicLocation, useClinics } from "../hooks/useClinics";
 
 export default function ClinicFinderScreen() {
   const router = useRouter();
   const [search, setSearch] = useState("");
+  const [showAll, setShowAll] = useState(false);
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
 
   const { data: clinics, isLoading } = useClinics();
 
-  const filteredClinics = (clinics || []).filter((clinic) =>
-    clinic.name.toLowerCase().includes(search.toLowerCase()),
-  );
+  const filteredClinics = useMemo(() => {
+    const all = clinics || [];
+    const filtered = all.filter(
+      (clinic) =>
+        clinic.name.toLowerCase().includes(search.toLowerCase()) ||
+        clinic.address.toLowerCase().includes(search.toLowerCase()) ||
+        clinic.city.toLowerCase().includes(search.toLowerCase()),
+    );
+    return showAll ? filtered : filtered.slice(0, 3);
+  }, [clinics, search, showAll]);
+
+  const handleOpenMaps = (clinic: ClinicLocation) => {
+    const scheme = Platform.select({
+      ios: "maps:0,0?q=",
+      android: "geo:0,0?q=",
+    });
+    const latLng = `${clinic.latitude},${clinic.longitude}`;
+    const label = clinic.name;
+    const url = Platform.select({
+      ios: `${scheme}${label}@${latLng}`,
+      android: `${scheme}${latLng}(${label})`,
+    });
+
+    if (url) {
+      Linking.openURL(url);
+    }
+  };
+
+  const handleCallCenter = () => {
+    // Maternal health support call center (mock number)
+    Linking.openURL("tel:+234800MATERNAL");
+  };
 
   const defaultRegion = {
     latitude: 6.45,
@@ -69,9 +106,12 @@ export default function ClinicFinderScreen() {
           <Ionicons name="search" size={20} color="#94A3B8" />
           <TextInput
             className="flex-1 ml-3 text-base"
-            placeholder="Search by clinic name..."
+            placeholder="Search by clinic name or city..."
             value={search}
-            onChangeText={setSearch}
+            onChangeText={(text) => {
+              setSearch(text);
+              if (text) setShowAll(true);
+            }}
             placeholderTextColor="#94A3B8"
             style={{
               fontFamily: "Lexend-Regular",
@@ -92,7 +132,7 @@ export default function ClinicFinderScreen() {
             showsUserLocation={true}
             userInterfaceStyle={isDark ? "dark" : "light"}
           >
-            {(clinics || []).map((clinic) => (
+            {(filteredClinics || []).map((clinic) => (
               <Marker
                 key={clinic.id}
                 coordinate={{
@@ -101,6 +141,7 @@ export default function ClinicFinderScreen() {
                 }}
                 title={clinic.name}
                 description={clinic.address}
+                onCalloutPress={() => handleOpenMaps(clinic)}
               />
             ))}
           </MapView>
@@ -111,13 +152,13 @@ export default function ClinicFinderScreen() {
         <Typography variant="h2" weight="bold" className="text-lg">
           Nearby Facilities
         </Typography>
-        <TouchableOpacity>
+        <TouchableOpacity onPress={() => setShowAll(!showAll)}>
           <Typography
             variant="body"
             weight="bold"
             className="text-primary text-sh-lexend-medium"
           >
-            See All
+            {showAll ? "Show Less" : "See All"}
           </Typography>
         </TouchableOpacity>
       </View>
@@ -132,8 +173,18 @@ export default function ClinicFinderScreen() {
           </Typography>
         )}
 
+        {!isLoading && filteredClinics.length === 0 && (
+          <Typography variant="body" className="text-center text-gray-500 mt-4">
+            No clinics found matching your search.
+          </Typography>
+        )}
+
         {filteredClinics.map((clinic) => (
-          <TouchableOpacity key={clinic.id} activeOpacity={0.9}>
+          <TouchableOpacity
+            key={clinic.id}
+            activeOpacity={0.9}
+            onPress={() => handleOpenMaps(clinic)}
+          >
             <Card
               style={{ backgroundColor: cardBg, borderColor: borderColor }}
               className="flex-row items-center p-6 rounded-[30px] mb-4 border shadow-sm"
@@ -172,9 +223,9 @@ export default function ClinicFinderScreen() {
                 )}
               </View>
               <Ionicons
-                name="chevron-forward"
+                name="navigate"
                 size={20}
-                color={isDark ? "#4A5568" : "#CBD5E0"}
+                color={Theme.colors.primary}
               />
             </Card>
           </TouchableOpacity>
@@ -184,6 +235,7 @@ export default function ClinicFinderScreen() {
       <View className="px-10 pb-8 pt-2">
         <TouchableOpacity
           style={{ backgroundColor: secondaryBtnBg }}
+          onPress={handleCallCenter}
           className="h-[70px] rounded-[35px] flex-row items-center justify-center gap-3"
         >
           <Ionicons name="call" size={24} color={secondaryBtnText} />
