@@ -1,6 +1,7 @@
 import { cssInterop } from 'nativewind';
 import React, { useState } from 'react';
-import { StyleProp, StyleSheet, TextInput, TextInputProps, View, ViewStyle } from 'react-native';
+import { StyleProp, StyleSheet, TextInput, TextInputProps, View, ViewStyle, TouchableOpacity } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import Theme from '../../constants/theme';
 import { Typography } from './Typography';
 
@@ -10,6 +11,7 @@ interface InputProps extends Omit<TextInputProps, 'style'> {
   error?: string;
   className?: string; // For NativeWind
   style?: StyleProp<ViewStyle>; // NativeWind style injection
+  showPasswordToggle?: boolean;
 }
 
 export const Input: React.FC<InputProps> = ({ 
@@ -19,9 +21,12 @@ export const Input: React.FC<InputProps> = ({
   style, 
   onFocus,
   onBlur,
+  secureTextEntry,
+  showPasswordToggle,
   ...props 
 }) => {
   const [isFocused, setIsFocused] = useState(false);
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
 
   const handleFocus = (e: any) => {
     setIsFocused(true);
@@ -32,6 +37,12 @@ export const Input: React.FC<InputProps> = ({
     setIsFocused(false);
     if (onBlur) onBlur(e);
   };
+
+  const togglePasswordVisibility = () => {
+    setIsPasswordVisible(!isPasswordVisible);
+  };
+
+  const isSecure = secureTextEntry && !isPasswordVisible;
 
   return (
     <View style={[styles.container, containerStyle, style]}>
@@ -58,8 +69,22 @@ export const Input: React.FC<InputProps> = ({
           autoCapitalize="none"
           onFocus={handleFocus}
           onBlur={handleBlur}
+          secureTextEntry={isSecure}
           {...props}
         />
+        {showPasswordToggle && secureTextEntry && (
+          <TouchableOpacity 
+            onPress={togglePasswordVisibility}
+            style={styles.toggleButton}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <Ionicons 
+              name={isPasswordVisible ? "eye-off-outline" : "eye-outline"} 
+              size={20} 
+              color="#64748B" 
+            />
+          </TouchableOpacity>
+        )}
       </View>
       {error && (
         <Typography 
@@ -98,7 +123,8 @@ const styles = StyleSheet.create({
     borderColor: '#E2E8F0',
     paddingHorizontal: 16,
     height: 56,
-    justifyContent: 'center',
+    flexDirection: 'row',
+    alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
@@ -115,6 +141,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: Theme.colors.text,
     paddingVertical: 0,
+  },
+  toggleButton: {
+    marginLeft: 8,
   },
   errorBorder: {
     borderColor: Theme.colors.emergency,

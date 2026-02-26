@@ -112,6 +112,7 @@ export default function RegisterScreen() {
                 onChangeText={onChange}
                 error={errors.password?.message}
                 secureTextEntry
+                showPasswordToggle
               />
             )}
           />

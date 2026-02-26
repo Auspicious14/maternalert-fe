@@ -102,9 +102,23 @@ export default function LoginScreen() {
                 onChangeText={onChange}
                 error={errors.password?.message}
                 secureTextEntry
+                showPasswordToggle
               />
             )}
           />
+
+          <TouchableOpacity 
+            onPress={() => router.push("/forgot-password")}
+            className="self-end -mt-2"
+          >
+            <Typography
+              variant="caption"
+              color={Theme.colors.primary}
+              className="font-bold"
+            >
+              Forgot Password?
+            </Typography>
+          </TouchableOpacity>
 
           {loginError && (
             <Typography

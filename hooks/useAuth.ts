@@ -40,6 +40,20 @@ export const useAuth = () => {
     },
   });
 
+  const forgotPasswordMutation = useMutation({
+    mutationFn: async (data: { email?: string; phone?: string }) => {
+      const response = await apiClient.post("/auth/forgot-password", data);
+      return response.data;
+    },
+  });
+
+  const resetPasswordMutation = useMutation({
+    mutationFn: async (data: { token: string; newPassword: string }) => {
+      const response = await apiClient.post("/auth/reset-password", data);
+      return response.data;
+    },
+  });
+
   const logout = async () => {
     try {
       await apiClient.post("/auth/logout");
@@ -63,6 +77,12 @@ export const useAuth = () => {
     register: registerMutation.mutateAsync,
     isRegistering: registerMutation.isPending,
     registerError: registerMutation.error,
+    forgotPassword: forgotPasswordMutation.mutateAsync,
+    isForgotLoading: forgotPasswordMutation.isPending,
+    forgotError: forgotPasswordMutation.error,
+    resetPassword: resetPasswordMutation.mutateAsync,
+    isResetLoading: resetPasswordMutation.isPending,
+    resetError: resetPasswordMutation.error,
     logout,
   };
 };
