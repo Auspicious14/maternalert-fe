@@ -32,13 +32,19 @@
         {
           "image": "./assets/images/matern-splash-screen.png",
           "resizeMode": "cover",
-                "backgroundColor": "#E6F0FF"
+          "backgroundColor": "#E6F0FF"
         }
       ]
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "fd1b8c99-55ce-463d-8fd3-23857dd9f2ec"
+      }
     }
   }
 }
