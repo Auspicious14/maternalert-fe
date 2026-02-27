@@ -13,12 +13,21 @@ export interface ClinicLocation {
   isEmergency?: boolean;
 }
 
-export const useClinics = (city?: string) => {
+interface ClinicQueryParams {
+  city?: string;
+  lat?: number;
+  lng?: number;
+  radius?: number;
+}
+
+export const useClinics = (params?: ClinicQueryParams | string) => {
+  const queryKeyParams = typeof params === "string" ? { city: params } : params;
+
   return useQuery<ClinicLocation[]>({
-    queryKey: ["clinics", city],
+    queryKey: ["clinics", queryKeyParams],
     queryFn: async () => {
       const response = await apiClient.get("/clinic-finder", {
-        params: city ? { city } : undefined,
+        params: queryKeyParams,
       });
       return response.data;
     },

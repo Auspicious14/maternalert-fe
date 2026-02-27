@@ -1,16 +1,10 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import * as WebBrowser from "expo-web-browser";
 import React from "react";
-import {
-  SafeAreaView,
-  ScrollView,
-  TouchableOpacity,
-  View
-} from "react-native";
-import * as WebBrowser from 'expo-web-browser';
+import { SafeAreaView, ScrollView, TouchableOpacity, View } from "react-native";
 import { Card } from "../../components/shared/Card";
 import { Screen } from "../../components/shared/Screen";
-import { StatusBanner } from "../../components/shared/StatusBanner";
 import { Typography } from "../../components/shared/Typography";
 import { Skeleton } from "../../components/ui/Skeleton";
 import Theme from "../../constants/theme";
@@ -22,7 +16,6 @@ export default function EducationScreen() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
 
-
   const { data: articles, isLoading } = useEducation();
   const featured = articles?.[0];
   const others = articles?.slice(1) ?? [];
@@ -32,11 +25,11 @@ export default function EducationScreen() {
     try {
       await WebBrowser.openBrowserAsync(url, {
         presentationStyle: WebBrowser.WebBrowserPresentationStyle.FULL_SCREEN,
-        controlsColor: '#1A212E',
-        toolbarColor: '#FFFFFF',
+        controlsColor: "#1A212E",
+        toolbarColor: "#FFFFFF",
       });
     } catch (e) {
-      console.error('Failed to open link', e);
+      console.error("Failed to open link", e);
     }
   };
 
@@ -46,10 +39,10 @@ export default function EducationScreen() {
       style={{ backgroundColor: isDark ? Theme.colors.darkBg : "#F9FAFB" }}
     >
       <Screen backgroundColor={isDark ? Theme.colors.darkBg : "#F9FAFB"}>
-        <StatusBanner
+        {/* <StatusBanner
           message="OFFLINE MODE ACTIVE"
           icon={<Ionicons name="cloud-offline" size={16} color="#FFFFFF" />}
-        />
+        /> */}
 
         <View className="px-10 mt-5 mb-8">
           <Typography
@@ -60,7 +53,9 @@ export default function EducationScreen() {
           </Typography>
           <Typography
             variant="body"
-            className={isDark ? "text-gray-300 text-lg" : "text-gray-500 text-lg"}
+            className={
+              isDark ? "text-gray-300 text-lg" : "text-gray-500 text-lg"
+            }
           >
             Verified pregnancy advice and care tips.
           </Typography>
@@ -73,16 +68,39 @@ export default function EducationScreen() {
           {isLoading ? (
             <>
               {/* Featured Card Skeleton */}
-              <Skeleton height={240} borderRadius={40} variant={isDark ? "dark" : "light"} style={{ marginBottom: 40 }} />
-              
+              <Skeleton
+                height={240}
+                borderRadius={40}
+                variant={isDark ? "dark" : "light"}
+                style={{ marginBottom: 40 }}
+              />
+
               <View className="mb-5">
-                 <Skeleton width={100} height={30} variant={isDark ? "dark" : "light"} />
+                <Skeleton
+                  width={100}
+                  height={30}
+                  variant={isDark ? "dark" : "light"}
+                />
               </View>
 
               {/* List Skeletons */}
-              <Skeleton height={120} borderRadius={32} variant={isDark ? "dark" : "light"} style={{ marginBottom: 16 }} />
-              <Skeleton height={120} borderRadius={32} variant={isDark ? "dark" : "light"} style={{ marginBottom: 16 }} />
-              <Skeleton height={120} borderRadius={32} variant={isDark ? "dark" : "light"} />
+              <Skeleton
+                height={120}
+                borderRadius={32}
+                variant={isDark ? "dark" : "light"}
+                style={{ marginBottom: 16 }}
+              />
+              <Skeleton
+                height={120}
+                borderRadius={32}
+                variant={isDark ? "dark" : "light"}
+                style={{ marginBottom: 16 }}
+              />
+              <Skeleton
+                height={120}
+                borderRadius={32}
+                variant={isDark ? "dark" : "light"}
+              />
             </>
           ) : (
             <>
@@ -90,7 +108,9 @@ export default function EducationScreen() {
               {featured && (
                 <TouchableOpacity
                   activeOpacity={0.9}
-                  onPress={() => openLink(featured.videoUrl || featured.sourceUrl)}
+                  onPress={() =>
+                    openLink(featured.videoUrl || featured.sourceUrl)
+                  }
                 >
                   <Card className="h-[240px] rounded-[40px] overflow-hidden mb-10 bg-[#1A212E] p-0">
                     <View className="w-full h-full bg-[#111827]" />
@@ -125,15 +145,25 @@ export default function EducationScreen() {
                 <TouchableOpacity
                   key={article.id}
                   activeOpacity={0.8}
-                  onPress={() => openLink(article.sourceUrl || article.videoUrl)}
+                  onPress={() =>
+                    openLink(article.sourceUrl || article.videoUrl)
+                  }
                 >
-                  <Card className={isDark ? "mb-4 rounded-[32px] p-6 border shadow-sm bg-[#020617] border-white/10" : "mb-4 rounded-[32px] p-6 border shadow-sm bg-white border-[#F1F5F9]"}>
+                  <Card
+                    className={
+                      isDark
+                        ? "mb-4 rounded-[32px] p-6 border shadow-sm bg-[#020617] border-white/10"
+                        : "mb-4 rounded-[32px] p-6 border shadow-sm bg-white border-[#F1F5F9]"
+                    }
+                  >
                     <Typography variant="h3" weight="bold" className="mb-1">
                       {article.title}
                     </Typography>
                     <Typography
                       variant="caption"
-                      className={isDark ? "text-gray-400 mb-2" : "text-gray-500 mb-2"}
+                      className={
+                        isDark ? "text-gray-400 mb-2" : "text-gray-500 mb-2"
+                      }
                     >
                       {article.readTimeMinutes} mins • {article.category}
                     </Typography>
