@@ -121,13 +121,21 @@ export default function LoginScreen() {
           </TouchableOpacity>
 
           {loginError && (
-            <Typography
-              variant="caption"
-              color={Theme.colors.emergencyText}
-              className="text-center"
+            <View
+              style={{
+                backgroundColor: isDark ? Theme.colors.errorBgDark : Theme.colors.errorBg,
+                borderColor: isDark ? Theme.colors.errorBorderDark : Theme.colors.errorBorder,
+              }}
+              className="p-3 rounded-xl border mt-2"
             >
-              Invalid email or password. Please try again.
-            </Typography>
+              <Typography
+                variant="caption"
+                color={isDark ? Theme.colors.errorTextDark : Theme.colors.errorText}
+                className="text-center font-medium"
+              >
+                Invalid email or password. Please try again.
+              </Typography>
+            </View>
           )}
         </View>
 

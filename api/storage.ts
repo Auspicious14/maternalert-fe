@@ -3,6 +3,7 @@ import * as SecureStore from "expo-secure-store";
 const TOKEN_KEY = "maternalert_auth_token";
 const REFRESH_TOKEN_KEY = "maternalert_refresh_token";
 const HAS_LAUNCHED_KEY = "maternalert_has_launched";
+const LAST_LOCATION_KEY = "maternalert_last_location";
 
 export const TokenStorage = {
   async saveToken(token: string) {
@@ -61,6 +62,24 @@ export const TokenStorage = {
       return await SecureStore.getItemAsync(HAS_LAUNCHED_KEY);
     } catch (error) {
       console.error("Error getting launch flag", error);
+      return null;
+    }
+  },
+
+  async saveLastLocation(location: { latitude: number; longitude: number }) {
+    try {
+      await SecureStore.setItemAsync(LAST_LOCATION_KEY, JSON.stringify(location));
+    } catch (error) {
+      console.error("Error saving location", error);
+    }
+  },
+
+  async getLastLocation() {
+    try {
+      const locationStr = await SecureStore.getItemAsync(LAST_LOCATION_KEY);
+      return locationStr ? JSON.parse(locationStr) : null;
+    } catch (error) {
+      console.error("Error getting location", error);
       return null;
     }
   },

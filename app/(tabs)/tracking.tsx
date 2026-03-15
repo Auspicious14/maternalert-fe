@@ -2,26 +2,35 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useMemo } from "react";
 import {
-  SafeAreaView,
-  ScrollView,
-  StyleSheet,
-  TouchableOpacity,
-  View,
+    SafeAreaView,
+    ScrollView,
+    StyleSheet,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import { Card } from "../../components/shared/Card";
 import { Screen } from "../../components/shared/Screen";
 import { Typography } from "../../components/shared/Typography";
 import Theme from "../../constants/theme";
+import { useColorScheme } from "../../hooks/use-color-scheme";
 import { useHealthData } from "../../hooks/useHealthData";
 import { useUserProfile } from "../../hooks/useUserProfile";
 
 export default function TrackingScreen() {
   const router = useRouter();
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === "dark";
   const { bpHistory, recentSymptoms } = useHealthData();
   const { profile, calculatedPregnancyWeeks } = useUserProfile();
 
   const currentWeeks =
     calculatedPregnancyWeeks || profile?.pregnancyWeeks || 24;
+
+  const textColor = isDark ? "#FFFFFF" : "#1A212E";
+  const subTextColor = isDark ? "rgba(255,255,255,0.6)" : "#64748B";
+  const bgColor = isDark ? Theme.colors.darkBg : Theme.colors.background;
+  const cardBg = isDark ? Theme.colors.cardDark : "#FFFFFF";
+  const borderColor = isDark ? Theme.colors.borderDark : "#E2E8F0";
 
   // Calculate average BP
   const avgBP = useMemo(() => {
@@ -59,18 +68,18 @@ export default function TrackingScreen() {
   }, []);
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <Screen style={styles.container} backgroundColor={Theme.colors.darkBg}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: bgColor }]}>
+      <Screen style={styles.container} backgroundColor={bgColor}>
         {/* Header */}
         <View style={styles.header}>
-          <Typography variant="h1" style={styles.title}>
+          <Typography variant="h1" style={[styles.title, { color: textColor }]}>
             Health Tracking
           </Typography>
-          <TouchableOpacity style={styles.calendarButton}>
+          <TouchableOpacity style={[styles.calendarButton, { backgroundColor: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)" }]}>
             <Ionicons
               name="calendar-outline"
               size={24}
-              color={Theme.colors.white}
+              color={isDark ? "#FFFFFF" : "#1A212E"}
             />
           </TouchableOpacity>
         </View>
@@ -80,13 +89,13 @@ export default function TrackingScreen() {
           contentContainerStyle={styles.scrollContent}
         >
           {/* Summary Banner */}
-          <Card style={styles.summaryCard}>
+          <Card style={[styles.summaryCard, { backgroundColor: cardBg, borderColor: borderColor }]}>
             <View style={styles.summaryHeader}>
               <View style={styles.summaryInfo}>
-                <Typography variant="h3" style={styles.summaryTitle}>
+                <Typography variant="h3" style={[styles.summaryTitle, { color: textColor }]}>
                   {currentWeeks} Weeks Pregnant
                 </Typography>
-                <Typography variant="caption" style={styles.summarySubtitle}>
+                <Typography variant="caption" style={[styles.summarySubtitle, { color: subTextColor }]}>
                   {profile?.firstPregnancy
                     ? "First Pregnancy"
                     : "Healthy Progress"}
@@ -101,7 +110,7 @@ export default function TrackingScreen() {
               </View>
             </View>
             <View style={styles.progressContainer}>
-              <View style={styles.progressBar}>
+              <View style={[styles.progressBar, { backgroundColor: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)" }]}>
                 <View
                   style={[
                     styles.progressFill,
@@ -111,7 +120,7 @@ export default function TrackingScreen() {
                   ]}
                 />
               </View>
-              <Typography variant="caption" style={styles.progressText}>
+              <Typography variant="caption" style={[styles.progressText, { color: subTextColor }]}>
                 {Math.round((currentWeeks / 40) * 100)}% complete
               </Typography>
             </View>
@@ -121,12 +130,13 @@ export default function TrackingScreen() {
           <View style={styles.calendarStrip}>
             {weekDays.map((item, index) => (
               <View key={index} style={styles.dayItem}>
-                <Typography variant="caption" style={styles.dayLabel}>
+                <Typography variant="caption" style={[styles.dayLabel, { color: isDark ? "rgba(255,255,255,0.4)" : "#94A3B8" }]}>
                   {item.day}
                 </Typography>
                 <View
                   style={[
                     styles.dateCircle,
+                    { borderColor: isDark ? "rgba(255,255,255,0.1)" : "#E2E8F0" },
                     item.current && styles.dateCircleActive,
                     item.status === "stable" && styles.dateCircleStable,
                     item.status === "urgent" && styles.dateCircleUrgent,
@@ -136,8 +146,10 @@ export default function TrackingScreen() {
                     variant="body"
                     style={[
                       styles.dateText,
+                      { color: isDark ? "rgba(255,255,255,0.4)" : "#64748B" },
                       (item.current || item.status !== "none") &&
-                        styles.dateTextActive,
+                        { color: isDark ? "#FFFFFF" : "#1A212E" },
+                      item.current && { color: "#FFFFFF" }
                     ]}
                   >
                     {item.date}
@@ -150,13 +162,13 @@ export default function TrackingScreen() {
 
           {/* Vitals Section */}
           <View style={styles.sectionHeader}>
-            <Typography variant="h2" style={styles.sectionTitle}>
+            <Typography variant="h2" style={[styles.sectionTitle, { color: textColor }]}>
               Vitals Overview
             </Typography>
           </View>
 
           <View style={styles.vitalsRow}>
-            <Card style={styles.vitalCard}>
+            <Card style={[styles.vitalCard, { backgroundColor: cardBg, borderColor: borderColor }]}>
               <View
                 style={[
                   styles.vitalIcon,
@@ -165,10 +177,10 @@ export default function TrackingScreen() {
               >
                 <Ionicons name="pulse" size={20} color={Theme.colors.primary} />
               </View>
-              <Typography variant="h2" style={styles.vitalValue}>
+              <Typography variant="h2" style={[styles.vitalValue, { color: textColor }]}>
                 {avgBP ? `${avgBP.systolic}/${avgBP.diastolic}` : "--/--"}
               </Typography>
-              <Typography variant="caption" style={styles.vitalLabel}>
+              <Typography variant="caption" style={[styles.vitalLabel, { color: subTextColor }]}>
                 Avg. Blood Pressure
               </Typography>
             </Card>
@@ -176,27 +188,27 @@ export default function TrackingScreen() {
 
           {/* Logs */}
           <View style={styles.sectionHeader}>
-            <Typography variant="h2" style={styles.sectionTitle}>
+            <Typography variant="h2" style={[styles.sectionTitle, { color: textColor }]}>
               Daily Logs
             </Typography>
           </View>
 
-          <Card style={styles.logItem}>
+          <Card style={[styles.logItem, { backgroundColor: cardBg, borderColor: borderColor }]}>
             <View style={[styles.logIcon, { backgroundColor: "#FF4B4B" }]}>
               <Ionicons name="sad" size={20} color="#FFFFFF" />
             </View>
             <View style={styles.logInfo}>
-              <Typography variant="h3" style={styles.logTitle}>
+              <Typography variant="h3" style={[styles.logTitle, { color: textColor }]}>
                 Symptoms
               </Typography>
-              <Typography variant="caption" style={styles.logSubtitle}>
+              <Typography variant="caption" style={[styles.logSubtitle, { color: subTextColor }]}>
                 {recentSymptoms?.length || 0} signs reported recently
               </Typography>
             </View>
             <Ionicons
               name="chevron-forward"
               size={20}
-              color="rgba(255,255,255,0.2)"
+              color={isDark ? "rgba(255,255,255,0.2)" : "rgba(0,0,0,0.2)"}
             />
           </Card>
         </ScrollView>
@@ -207,7 +219,7 @@ export default function TrackingScreen() {
           activeOpacity={0.9}
           onPress={() => router.push("/bp-entry")}
         >
-          <Ionicons name="add" size={32} color={Theme.colors.darkBg} />
+          <Ionicons name="add" size={32} color={isDark ? Theme.colors.darkBg : "#FFFFFF"} />
         </TouchableOpacity>
       </Screen>
     </SafeAreaView>
@@ -217,7 +229,6 @@ export default function TrackingScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: Theme.colors.darkBg,
   },
   container: {
     paddingHorizontal: 0,
@@ -231,7 +242,6 @@ const styles = StyleSheet.create({
     marginBottom: 30,
   },
   title: {
-    color: Theme.colors.white,
     fontSize: 28,
     fontWeight: "900",
   },
@@ -239,7 +249,6 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: "rgba(255,255,255,0.1)",
     justifyContent: "center",
     alignItems: "center",
   },
@@ -248,8 +257,6 @@ const styles = StyleSheet.create({
     paddingBottom: 100,
   },
   summaryCard: {
-    backgroundColor: Theme.colors.cardDark,
-    borderColor: Theme.colors.borderDark,
     borderWidth: 1,
     padding: 24,
     borderRadius: 32,
@@ -265,12 +272,10 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   summaryTitle: {
-    color: Theme.colors.white,
     fontSize: 20,
     fontWeight: "bold",
   },
   summarySubtitle: {
-    color: "rgba(255,255,255,0.6)",
   },
   babyIconBg: {
     width: 48,
@@ -285,7 +290,6 @@ const styles = StyleSheet.create({
   },
   progressBar: {
     height: 6,
-    backgroundColor: "rgba(255,255,255,0.1)",
     borderRadius: 3,
     marginBottom: 8,
     overflow: "hidden",
@@ -296,7 +300,6 @@ const styles = StyleSheet.create({
     borderRadius: 3,
   },
   progressText: {
-    color: "rgba(255,255,255,0.6)",
     textAlign: "right",
   },
   calendarStrip: {
@@ -309,7 +312,6 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   dayLabel: {
-    color: "rgba(255,255,255,0.4)",
     textTransform: "uppercase",
     fontSize: 12,
   },
@@ -321,7 +323,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "transparent",
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.1)",
   },
   dateCircleActive: {
     backgroundColor: Theme.colors.primary,
@@ -336,11 +337,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255, 75, 75, 0.1)",
   },
   dateText: {
-    color: "rgba(255,255,255,0.4)",
     fontWeight: "600",
-  },
-  dateTextActive: {
-    color: Theme.colors.white,
   },
   activeDot: {
     width: 4,
@@ -353,7 +350,6 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   sectionTitle: {
-    color: Theme.colors.white,
     fontSize: 20,
   },
   vitalsRow: {
@@ -363,9 +359,6 @@ const styles = StyleSheet.create({
   },
   vitalCard: {
     flex: 1,
-    backgroundColor: Theme.colors.cardDark,
-    borderColor: Theme.colors.borderDark,
-    borderWidth: 1,
     padding: 16,
     borderRadius: 24,
   },
@@ -378,20 +371,16 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   vitalValue: {
-    color: Theme.colors.white,
     fontSize: 24,
     fontWeight: "bold",
     marginBottom: 4,
   },
   vitalLabel: {
-    color: "rgba(255,255,255,0.5)",
     fontSize: 12,
   },
   logItem: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: Theme.colors.cardDark,
-    borderColor: Theme.colors.borderDark,
     borderWidth: 1,
     padding: 16,
     borderRadius: 24,
@@ -409,13 +398,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   logTitle: {
-    color: Theme.colors.white,
     fontSize: 16,
     fontWeight: "bold",
     marginBottom: 4,
   },
   logSubtitle: {
-    color: "rgba(255,255,255,0.5)",
   },
   fab: {
     position: "absolute",

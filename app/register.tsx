@@ -9,9 +9,9 @@ import { Input } from "../components/shared/Input";
 import { Screen } from "../components/shared/Screen";
 import { Typography } from "../components/shared/Typography";
 import Theme from "../constants/theme";
+import { useColorScheme } from "../hooks/use-color-scheme";
 import { useAuth } from "../hooks/useAuth";
 import { RegisterFormData, registerSchema } from "../schemas/auth";
-import { useColorScheme } from "../hooks/use-color-scheme";
 
 export default function RegisterScreen() {
   const router = useRouter();
@@ -120,14 +120,14 @@ export default function RegisterScreen() {
           {errorMessage && (
             <View
               style={{
-                backgroundColor: isDark ? "rgba(239, 68, 68, 0.1)" : "#FEF2F2",
-                borderColor: isDark ? "rgba(239, 68, 68, 0.2)" : "#FEE2E2",
+                backgroundColor: isDark ? Theme.colors.errorBgDark : Theme.colors.errorBg,
+                borderColor: isDark ? Theme.colors.errorBorderDark : Theme.colors.errorBorder,
               }}
               className="p-3 rounded-xl border"
             >
               <Typography
                 variant="caption"
-                color={Theme.colors.emergencyText}
+                color={isDark ? Theme.colors.errorTextDark : Theme.colors.errorText}
                 className="text-center font-medium"
               >
                 {errorMessage}

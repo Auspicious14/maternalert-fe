@@ -25,14 +25,27 @@ import { useUserProfile } from "../../hooks/useUserProfile";
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const { profile, isLoadingProfile, updateProfile, calculatedPregnancyWeeks } =
-    useUserProfile();
+  const {
+    profile,
+    isLoadingProfile,
+    updateProfile,
+    calculatedPregnancyWeeks,
+    isErrorProfile,
+    refetchProfile,
+  } = useUserProfile();
   const { data: priorityData } = useCarePriority();
   const { preference: themePreference, setPreference: setThemePreference } =
     useAppTheme();
   const { logout } = useAuth();
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
+
+  // Redirect to profile setup if profile is missing and not loading/error
+  React.useEffect(() => {
+    if (!isLoadingProfile && !isErrorProfile && profile === null) {
+      router.replace("/profile-setup");
+    }
+  }, [profile, isLoadingProfile, isErrorProfile]);
 
   const [isEditingContact, setIsEditingContact] = useState(false);
   const [contactRelationship, setContactRelationship] = useState(
@@ -238,6 +251,64 @@ export default function ProfileScreen() {
         <Skeleton height={80} borderRadius={16} variant={skeletonVariant} />
       </Screen>
     );
+  }
+
+  if (isErrorProfile) {
+    return (
+      <Screen style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={styles.iconButton}
+            onPress={() => router.back()}
+          >
+            <Ionicons name="arrow-back" size={24} color={Theme.colors.text} />
+          </TouchableOpacity>
+          <Typography variant="h2">My Profile</Typography>
+          <View style={styles.iconButton} />
+        </View>
+        <View
+          style={{
+            flex: 1,
+            justifyContent: "center",
+            alignItems: "center",
+            padding: 20,
+          }}
+        >
+          <Ionicons
+            name="alert-circle-outline"
+            size={64}
+            color={Theme.colors.emergency}
+          />
+          <Typography
+            variant="h2"
+            style={{ marginTop: 16, textAlign: "center" }}
+          >
+            Failed to load profile
+          </Typography>
+          <Typography
+            variant="body"
+            style={{
+              marginTop: 8,
+              textAlign: "center",
+              color: Theme.colors.textLight,
+            }}
+          >
+            An error occurred while fetching your profile information. Please
+            check your connection and try again.
+          </Typography>
+          <Button
+            title="Retry"
+            variant="outline"
+            containerStyle={{ marginTop: 24, width: "100%" }}
+            onPress={() => refetchProfile()}
+          />
+        </View>
+      </Screen>
+    );
+  }
+
+  if (profile === null) {
+    return null; // Redirecting in useEffect
   }
 
   return (

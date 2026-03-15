@@ -8,16 +8,16 @@ import {
   Lexend_700Bold,
 } from '@expo-google-fonts/lexend';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useFonts } from 'expo-font';
 import { Stack, useRouter } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
 import { TokenStorage } from '../api/storage';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ToastProvider } from "../components/ui/ToastProvider";
-import { AppThemeProvider, useAppTheme } from '../hooks/useAppTheme';
 import { Colors } from '../constants/theme';
+import { AppThemeProvider, useAppTheme } from '../hooks/useAppTheme';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 

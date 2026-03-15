@@ -8,6 +8,7 @@ import { Screen } from "../../components/shared/Screen";
 import { Typography } from "../../components/shared/Typography";
 import { Skeleton } from "../../components/ui/Skeleton";
 import Theme from "../../constants/theme";
+import { useColorScheme } from "../../hooks/use-color-scheme";
 
 import { useCarePriority } from "../../hooks/useCarePriority";
 import { useHealthData } from "../../hooks/useHealthData";
@@ -16,6 +17,8 @@ import { useUserProfile } from "../../hooks/useUserProfile";
 
 export default function HomeScreen() {
   const router = useRouter();
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === "dark";
   const { data: priorityData, isLoading: isLoadingPriority } =
     useCarePriority();
   const {
@@ -52,28 +55,28 @@ export default function HomeScreen() {
         return "ROUTINE CARE";
     }
   }, [priorityData?.priority]);
-  console.log({ recentSymptoms });
+  
   return (
-    <Screen className="pt-6" scrollable backgroundColor={Theme.colors.darkBg}>
+    <Screen className="pt-6" scrollable backgroundColor={isDark ? Theme.colors.darkBg : Theme.colors.background}>
       <View className="flex-row items-center justify-between px-6 mb-6">
         {/* <TouchableOpacity className="w-11 h-11 rounded-full bg-white/10 justify-center items-center">
           <Ionicons name="menu-outline" size={28} color="white" />
         </TouchableOpacity> */}
-        <Typography variant="h2" className="text-white text-xl">
+        <Typography variant="h2" className={`${isDark ? "text-white" : "text-text"} text-xl`}>
           Priority Dashboard
         </Typography>
         <View className="flex-row items-center gap-4">
           <TouchableOpacity
-            className="relative w-11 h-11 rounded-full bg-white/10 justify-center items-center"
+            className={`relative w-11 h-11 rounded-full ${isDark ? "bg-white/10" : "bg-gray-100"} justify-center items-center`}
             onPress={() => router.push("/notifications")}
           >
-            <Ionicons name="notifications" size={24} color="white" />
+            <Ionicons name="notifications" size={24} color={isDark ? "white" : "#1A212E"} />
             {unreadCount > 0 && (
-              <View className="absolute top-3 right-3 w-2 h-2 rounded-full bg-accent border-2 border-[#1A1512]" />
+              <View className={`absolute top-3 right-3 w-2 h-2 rounded-full bg-accent border-2 ${isDark ? "border-[#1A1512]" : "border-white"}`} />
             )}
           </TouchableOpacity>
           <TouchableOpacity
-            className="w-11 h-11 rounded-full overflow-hidden border-2 border-white/20"
+            className={`w-11 h-11 rounded-full overflow-hidden border-2 ${isDark ? "border-white/20" : "border-gray-200"}`}
             onPress={() => router.push("/(tabs)/profile")}
           >
             <Image
@@ -94,6 +97,7 @@ export default function HomeScreen() {
             height={220}
             borderRadius={28}
             style={{ marginBottom: 24 }}
+            variant={isDark ? "dark" : "light"}
           />
         ) : (
           <TouchableOpacity
@@ -159,19 +163,19 @@ export default function HomeScreen() {
         )}
 
         {/* Stats Row */}
-        <Card className="bg-card-dark border border-white/10 p-6 flex-row items-center justify-between mb-6 rounded-[24px]">
+        <Card className={`${isDark ? "bg-card-dark border-white/10" : "bg-white border-gray-100"} border p-6 flex-row items-center justify-between mb-6 rounded-[24px]`}>
           <View className="flex-1">
-            <Typography variant="caption" className="text-white/50 mb-1">
+            <Typography variant="caption" className={`${isDark ? "text-white/50" : "text-gray-500"} mb-1`}>
               Last BP Reading
             </Typography>
             {isLoadingLatestBP ? (
-              <Skeleton width={120} height={40} style={{ marginVertical: 8 }} />
+              <Skeleton width={120} height={40} style={{ marginVertical: 8 }} variant={isDark ? "dark" : "light"} />
             ) : (
               <View className="flex-row items-baseline gap-2 my-1">
                 <Typography
                   variant="h1"
                   weight="bold"
-                  className="text-white text-[32px]"
+                  className={`${isDark ? "text-white" : "text-text"} text-[32px]`}
                 >
                   {latestBP
                     ? `${latestBP.systolic}/${latestBP.diastolic}`
@@ -205,9 +209,9 @@ export default function HomeScreen() {
               </View>
             )}
             {isLoadingLatestBP ? (
-              <Skeleton width={150} height={16} />
+              <Skeleton width={150} height={16} variant={isDark ? "dark" : "light"} />
             ) : (
-              <Typography variant="caption" className="text-white/30">
+              <Typography variant="caption" className={`${isDark ? "text-white/30" : "text-gray-400"}`}>
                 {latestBP?.recordedAt
                   ? new Date(latestBP.recordedAt).toLocaleDateString(
                       undefined,
@@ -223,7 +227,7 @@ export default function HomeScreen() {
               </Typography>
             )}
           </View>
-          <View className="w-12 h-12 rounded-full bg-accent/10 justify-center items-center">
+          <View className={`w-12 h-12 rounded-full ${isDark ? "bg-accent/10" : "bg-orange-50"} justify-center items-center`}>
             <Ionicons name="pulse" size={24} color={Theme.colors.accent} />
           </View>
         </Card>
@@ -242,7 +246,7 @@ export default function HomeScreen() {
             </TouchableOpacity>
 
             <TouchableOpacity
-              className="flex-1 border border-white/10 bg-transparent h-12 rounded-full flex-row items-center justify-center gap-2"
+              className={`flex-1 border ${isDark ? "border-white/10" : "border-gray-200"} bg-transparent h-12 rounded-full flex-row items-center justify-center gap-2`}
               onPress={() => router.push("/clinic-finder")}
             >
               <Ionicons name="map" size={18} color={Theme.colors.accent} />
@@ -253,7 +257,7 @@ export default function HomeScreen() {
           </View>
 
           <TouchableOpacity
-            className="border border-white/10 bg-transparent h-12 rounded-full flex-row items-center justify-center gap-2"
+            className={`border ${isDark ? "border-white/10" : "border-gray-200"} bg-transparent h-12 rounded-full flex-row items-center justify-center gap-2`}
             onPress={() => router.push("/symptom-checker")}
           >
             <Ionicons name="list" size={18} color={Theme.colors.accent} />
@@ -265,7 +269,7 @@ export default function HomeScreen() {
 
         {/* Unwell Banner */}
         <TouchableOpacity
-          className="bg-card-dark p-4 rounded-[24px] flex-row items-center mb-10 border border-red-500/20 shadow-lexend-medium"
+          className={`${isDark ? "bg-card-dark border-red-500/20" : "bg-white border-red-100"} p-4 rounded-[24px] flex-row items-center mb-10 border shadow-lexend-medium`}
           onPress={() => router.push("/emergency")}
         >
           <View className="w-11 h-11 rounded-full bg-emergency justify-center items-center mr-4">
@@ -275,11 +279,11 @@ export default function HomeScreen() {
             <Typography
               variant="h3"
               weight="bold"
-              className="text-white text-base"
+              className={`${isDark ? "text-white" : "text-text"} text-base`}
             >
               Feeling unwell?
             </Typography>
-            <Typography variant="caption" className="text-white/50">
+            <Typography variant="caption" className={`${isDark ? "text-white/50" : "text-gray-500"}`}>
               Tap for immediate help
             </Typography>
           </View>
@@ -292,7 +296,7 @@ export default function HomeScreen() {
 
         {/* Recent Activity */}
         <View className="flex-row justify-between items-center mb-4">
-          <Typography variant="h2" className="text-white text-lg">
+          <Typography variant="h2" className={`${isDark ? "text-white" : "text-text"} text-lg`}>
             Recent Activity
           </Typography>
           <TouchableOpacity onPress={() => router.push("/symptom-results")}>
@@ -308,31 +312,33 @@ export default function HomeScreen() {
               height={80}
               borderRadius={20}
               style={{ marginBottom: 8 }}
+              variant={isDark ? "dark" : "light"}
             />
             <Skeleton
               height={80}
               borderRadius={20}
               style={{ marginBottom: 8 }}
+              variant={isDark ? "dark" : "light"}
             />
           </>
         ) : (recentSymptoms?.length || 0) > 0 ? (
           recentSymptoms?.map((symptom) => (
             <Card
               key={symptom.id}
-              className="bg-card-dark border border-white/10 p-4 flex-row items-center mb-2 rounded-[20px]"
+              className={`${isDark ? "bg-card-dark border-white/10" : "bg-white border-gray-100"} border p-4 flex-row items-center mb-2 rounded-[20px]`}
             >
               <View className="w-10 h-10 rounded-full bg-[#4C2456] justify-center items-center mr-4">
                 <Ionicons name="alert-circle" size={20} color="#E879F9" />
               </View>
               <View className="flex-1">
-                <Typography variant="h3" className="text-white text-[15px]">
+                <Typography variant="h3" className={`${isDark ? "text-white" : "text-text"} text-[15px]`}>
                   {symptom.symptomType.replace(/_/g, " ")}
                 </Typography>
-                <Typography variant="caption" className="text-white/40">
+                <Typography variant="caption" className={`${isDark ? "text-white/40" : "text-gray-400"}`}>
                   Reported
                 </Typography>
               </View>
-              <Typography variant="caption" className="text-white/30">
+              <Typography variant="caption" className={`${isDark ? "text-white/30" : "text-gray-300"}`}>
                 {new Date(symptom.recordedAt).toLocaleDateString(undefined, {
                   month: "short",
                   day: "numeric",
@@ -343,7 +349,7 @@ export default function HomeScreen() {
             </Card>
           ))
         ) : (
-          <Typography variant="body" className="text-white/30 text-center mt-5">
+          <Typography variant="body" className={`${isDark ? "text-white/30" : "text-gray-300"} text-center mt-5`}>
             No recent activity recorded
           </Typography>
         )}

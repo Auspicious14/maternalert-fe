@@ -25,115 +25,126 @@ export default function SymptomResultsScreen() {
     switch (priorityData?.priority) {
       case "EMERGENCY":
         return {
-          label: "Emergency Level",
+          label: "EMERGENCY CARE",
           color: Theme.colors.emergency,
           icon: "alert-circle",
           bgLight: isDark ? "#3D1A1A" : "#FEF2F2",
           bgInner: isDark ? "#5C2626" : "#FEE2E2",
+          description: "Immediate clinical attention is required. Please follow the instructions below.",
         };
       case "URGENT_REVIEW":
         return {
-          label: "Urgent Review",
+          label: "URGENT REVIEW",
           color: Theme.colors.accent,
           icon: "warning",
           bgLight: isDark ? "#3D2B1E" : "#FFF4E8",
           bgInner: isDark ? "#5C402D" : "#FFE8D1",
+          description: "Your symptoms require medical review within 24 hours.",
         };
       case "INCREASED_MONITORING":
         return {
-          label: "Increased Monitoring",
+          label: "INCREASED MONITORING",
           color: Theme.colors.primary,
           icon: "eye",
           bgLight: isDark ? "#1A2D1F" : "#F0FDF4",
           bgInner: isDark ? "#26452D" : "#DCFCE7",
+          description: "Monitor your symptoms closely and report any changes.",
         };
       default:
         return {
-          label: "Routine Care",
+          label: "ROUTINE CARE",
           color: Theme.colors.primary,
           icon: "checkmark-circle",
           bgLight: isDark ? "#1A2D1F" : "#F0FDF4",
           bgInner: isDark ? "#26452D" : "#DCFCE7",
+          description: "Your health data is within normal range. Continue regular tracking.",
         };
     }
   }, [priorityData?.priority, isDark]);
 
+  const textColor = isDark ? "#FFFFFF" : "#1A212E";
+  const subTextColor = isDark ? "#94A3B8" : "#64748B";
+
   return (
     <Screen>
-      <View className="flex-row items-center justify-between px-6 pt-4 mb-5">
+      <View className="flex-row items-center justify-between px-6 pt-4 mb-2">
         <TouchableOpacity
           onPress={() => router.back()}
           className="w-11 h-11 justify-center items-center"
         >
           <Ionicons name="arrow-back" size={28} color={iconColor} />
         </TouchableOpacity>
-        <Typography variant="h2" weight="bold" className="text-xl">
+        <Typography variant="h2" weight="bold" style={{ color: textColor }} className="text-xl">
           Care Recommendation
         </Typography>
         <View className="w-7" />
       </View>
 
       <ScrollView
-        contentContainerStyle={{ paddingHorizontal: 40, paddingBottom: 40 }}
+        contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 40 }}
         showsVerticalScrollIndicator={false}
       >
-        <View className="items-center my-10">
+        <View className="items-center mt-8 mb-6">
           <View
             style={{
               backgroundColor: priorityInfo.bgLight,
             }}
-            className="w-[180px] h-[180px] rounded-full justify-center items-center mb-6"
+            className="w-48 h-48 rounded-full justify-center items-center mb-6"
           >
             <View
               style={{
                 backgroundColor: priorityInfo.bgInner,
               }}
-              className="w-[140px] h-[140px] rounded-full justify-center items-center relative"
+              className="w-36 h-36 rounded-full justify-center items-center relative"
             >
               <View
                 style={{
-                  backgroundColor: isDark ? "#4D3626" : "white",
-                  shadowColor: "#000",
-                  shadowOffset: { width: 0, height: 2 },
-                  shadowOpacity: 0.1,
-                  shadowRadius: 4,
+                  backgroundColor: isDark ? "#1A1512" : "white",
+                  shadowColor: priorityInfo.color,
+                  shadowOffset: { width: 0, height: 4 },
+                  shadowOpacity: 0.2,
+                  shadowRadius: 8,
+                  elevation: 4,
                 }}
                 className="w-20 h-20 rounded-full justify-center items-center"
               >
                 <Ionicons
                   name={priorityInfo.icon as any}
-                  size={40}
-                  color={priorityInfo.color}
-                />
-              </View>
-              <View
-                style={{
-                  backgroundColor: isDark ? "#26211E" : "white",
-                  borderColor: isDark ? "#3A3430" : "#FEE2E2",
-                }}
-                className="absolute bottom-[-5px] w-8 h-8 rounded-full justify-center items-center border shadow-sm"
-              >
-                <Ionicons
-                  name={priorityInfo.icon as any}
-                  size={16}
+                  size={44}
                   color={priorityInfo.color}
                 />
               </View>
             </View>
           </View>
+          
+          <View
+            style={{ backgroundColor: priorityInfo.bgLight }}
+            className="px-4 py-1 rounded-full mb-3"
+          >
+            <Typography
+              variant="caption"
+              weight="bold"
+              style={{ color: priorityInfo.color }}
+              className="tracking-widest uppercase text-xs"
+            >
+              {priorityInfo.label}
+            </Typography>
+          </View>
+
           <Typography
             variant="h1"
-            style={{ color: priorityInfo.color }}
-            className="text-[28px] font-black mb-2 shadow-lexend-bold"
+            style={{ color: textColor }}
+            className="text-2xl text-center px-4 mb-2 font-black"
           >
-            {priorityInfo.label}
+            {priorityData?.message || "Assessing your health status..."}
           </Typography>
+          
           <Typography
-            variant="h2"
-            weight="bold"
-            className="text-xl text-center px-10 leading-7"
+            variant="body"
+            style={{ color: subTextColor }}
+            className="text-center px-6 leading-5"
           >
-            {priorityData?.message || "Assessing your care needs..."}
+            {priorityInfo.description}
           </Typography>
         </View>
 
@@ -142,61 +153,78 @@ export default function SymptomResultsScreen() {
             backgroundColor: cardBg,
             borderColor: borderColor,
           }}
-          className="rounded-[40px] p-[30px] mb-5 border"
+          className="rounded-3xl p-6 mb-8 border shadow-sm"
         >
-          <View className="flex-row gap-4 items-start mb-5">
-            <Ionicons name="medical" size={24} color={Theme.colors.primary} />
-            <Typography variant="body" className="flex-1 leading-6 text-lg">
-              {priorityData?.reasons && priorityData.reasons.length > 0
-                ? `Factors: ${priorityData.reasons.join(", ")}`
-                : "No immediate clinical concerns identified from your data."}
-            </Typography>
+          <View className="flex-row gap-4 items-start mb-6">
+            <View className="w-10 h-10 rounded-xl bg-primary/10 justify-center items-center">
+              <Ionicons name="medical" size={20} color={Theme.colors.primary} />
+            </View>
+            <View className="flex-1">
+              <Typography variant="h3" weight="bold" style={{ color: textColor }} className="mb-1">
+                Assessment Factors
+              </Typography>
+              <Typography variant="body" style={{ color: subTextColor }} className="leading-5 text-[15px]">
+                {priorityData?.reasons && priorityData.reasons.length > 0
+                  ? priorityData.reasons.join(", ")
+                  : "No immediate clinical concerns identified from your data."}
+              </Typography>
+            </View>
           </View>
+
           <View
             style={{ borderTopColor: borderColor }}
-            className="flex-row items-center gap-2 border-t pt-4"
+            className="flex-row items-center justify-between border-t pt-4"
           >
-            <Ionicons
-              name="time"
-              size={18}
-              color={isDark ? "#9CA3AF" : Theme.colors.textLight}
-            />
-            <Typography
-              variant="caption"
-              className={isDark ? "text-gray-400" : "text-gray-500"}
-            >
-              {latestBP
-                ? `Last reading: ${new Date(latestBP.recordedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
-                : "No recent readings"}
-            </Typography>
+            <View className="flex-row items-center gap-2">
+              <Ionicons
+                name="time-outline"
+                size={18}
+                color={subTextColor}
+              />
+              <Typography
+                variant="caption"
+                style={{ color: subTextColor }}
+              >
+                {latestBP
+                  ? `Reading from ${new Date(latestBP.recordedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
+                  : "No recent readings"}
+              </Typography>
+            </View>
+            {latestBP && (
+              <Typography variant="caption" weight="bold" style={{ color: Theme.colors.primary }}>
+                {latestBP.systolic}/{latestBP.diastolic}
+              </Typography>
+            )}
           </View>
         </Card>
 
         <View className="gap-4">
           <TouchableOpacity
-            className="bg-primary h-[70px] rounded-[35px] flex-row items-center justify-center gap-3 shadow-md"
+            activeOpacity={0.8}
+            className="bg-primary h-[64px] rounded-2xl flex-row items-center justify-center gap-3 shadow-md"
             onPress={() => router.push("/clinic-finder")}
           >
-            <Ionicons name="location" size={24} color="#1A212E" />
+            <Ionicons name="location" size={22} color="#1A212E" />
             <Typography
               variant="h2"
               weight="bold"
               className="text-lg text-[#1A212E]"
             >
-              Find nearest clinic
+              Find Nearest Clinic
             </Typography>
           </TouchableOpacity>
 
           <TouchableOpacity
+            activeOpacity={0.8}
             style={{
               backgroundColor: isDark ? "#2D2118" : "#FFF4E8",
             }}
-            className="h-[70px] rounded-[35px] flex-row items-center justify-center gap-3 shadow-sm"
+            className="h-[64px] rounded-2xl flex-row items-center justify-center gap-3"
             onPress={() => router.push("/emergency")}
           >
             <Ionicons
               name="call"
-              size={24}
+              size={22}
               color={isDark ? "#FFA14A" : Theme.colors.urgentText}
             />
             <Typography
@@ -205,20 +233,21 @@ export default function SymptomResultsScreen() {
               style={{ color: isDark ? "#FFA14A" : "#92400E" }}
               className="text-lg"
             >
-              Call emergency contact
+              Call Emergency Contact
             </Typography>
           </TouchableOpacity>
 
           <TouchableOpacity
-            className="items-center mt-2.5"
+            activeOpacity={0.7}
+            className="items-center py-4"
             onPress={() => router.replace("/(tabs)")}
           >
             <Typography
               variant="h3"
               weight="bold"
-              className={isDark ? "text-gray-400" : "text-gray-500"}
+              style={{ color: subTextColor }}
             >
-              Back to Home
+              Dismiss
             </Typography>
           </TouchableOpacity>
         </View>

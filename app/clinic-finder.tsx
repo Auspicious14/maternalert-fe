@@ -3,15 +3,17 @@ import * as ExpoLocation from "expo-location";
 import { useRouter } from "expo-router";
 import React, { useEffect, useMemo, useState } from "react";
 import {
-  Alert,
-  Linking,
-  Platform,
-  ScrollView,
-  TextInput,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    Alert,
+    Linking,
+    Platform,
+    ScrollView,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import { WebView } from "react-native-webview";
+import { TokenStorage } from "../api/storage";
 import { Card } from "../components/shared/Card";
 import { Screen } from "../components/shared/Screen";
 import { Typography } from "../components/shared/Typography";
@@ -22,6 +24,15 @@ import { ClinicLocation, useClinics } from "../hooks/useClinics";
 export default function ClinicFinderScreen() {
   const router = useRouter();
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [search]);
+
   const [showAll, setShowAll] = useState(false);
   const [userLocation, setUserLocation] =
     useState<ExpoLocation.LocationObject | null>(null);
@@ -39,15 +50,26 @@ export default function ClinicFinderScreen() {
         radius: 5000, // 5km search radius
       };
     }
-    return "Lagos";
+    return null; // Don't fetch until we have a location or search query
   }, [userLocation]);
 
-  const { data: clinics, isLoading } = useClinics(clinicParams);
+  const { data: clinics, isLoading } = useClinics(
+    clinicParams || (debouncedSearch ? debouncedSearch : "Lagos"),
+  );
 
   useEffect(() => {
     (async () => {
       setIsLocating(true);
       try {
+        // First, check for cached location
+        const cachedLocation = await TokenStorage.getLastLocation();
+        if (cachedLocation) {
+          setUserLocation({
+            coords: cachedLocation,
+            timestamp: Date.now(),
+          } as any);
+        }
+
         let { status } = await ExpoLocation.requestForegroundPermissionsAsync();
         if (status !== "granted") {
           setLocationError("Permission to access location was denied");
@@ -55,32 +77,17 @@ export default function ClinicFinderScreen() {
           return;
         }
 
-        let location = await ExpoLocation.getCurrentPositionAsync({});
-        console.log(
-          `[DEBUG] User coordinates: ${location.coords.latitude}, ${location.coords.longitude}`,
-        );
+        let location = await ExpoLocation.getCurrentPositionAsync({
+          accuracy: ExpoLocation.Accuracy.Balanced,
+        });
+
         setUserLocation(location);
 
-        // Reverse geocode to find city
-        let reverseGeocode = await ExpoLocation.reverseGeocodeAsync({
+        // Cache the new location
+        await TokenStorage.saveLastLocation({
           latitude: location.coords.latitude,
           longitude: location.coords.longitude,
         });
-
-        console.log(
-          `[DEBUG] Reverse geocode results:`,
-          JSON.stringify(reverseGeocode),
-        );
-
-        if (reverseGeocode.length > 0) {
-          // Check for city, district, or subregion
-          const detectedCity =
-            reverseGeocode[0].city ||
-            reverseGeocode[0].district ||
-            reverseGeocode[0].subregion ||
-            "Lagos";
-          console.log(`[DEBUG] Detected location: ${detectedCity}`);
-        }
       } catch (error) {
         console.error(`[ERROR] Geolocation error:`, error);
         setLocationError("Could not fetch location");
@@ -131,12 +138,12 @@ export default function ClinicFinderScreen() {
     const all = clinics || [];
     const filtered = all.filter(
       (clinic) =>
-        clinic.name.toLowerCase().includes(search.toLowerCase()) ||
-        clinic.address.toLowerCase().includes(search.toLowerCase()) ||
-        clinic.city.toLowerCase().includes(search.toLowerCase()),
+        clinic.name.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+        clinic.address.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+        clinic.city.toLowerCase().includes(debouncedSearch.toLowerCase()),
     );
     return showAll ? filtered : filtered.slice(0, 3);
-  }, [clinics, search, showAll]);
+  }, [clinics, debouncedSearch, showAll]);
 
   const handleOpenMaps = (clinic: ClinicLocation) => {
     const scheme = Platform.select({
@@ -161,10 +168,10 @@ export default function ClinicFinderScreen() {
   };
 
   const defaultRegion = {
-    latitude: 6.45,
-    longitude: 3.39,
-    latitudeDelta: 0.1,
-    longitudeDelta: 0.1,
+    latitude: 9.082, // Default to Abuja, Nigeria center
+    longitude: 7.533,
+    latitudeDelta: 2.0,
+    longitudeDelta: 2.0,
   };
 
   const initialRegion =
@@ -326,6 +333,14 @@ export default function ClinicFinderScreen() {
           style={{ borderColor: borderColor }}
           className="h-72 rounded-[40px] overflow-hidden border relative"
         >
+          {isLocating && !userLocation ? (
+            <View className="absolute inset-0 z-10 bg-white/50 items-center justify-center">
+              <ActivityIndicator size="large" color={Theme.colors.primary} />
+              <Typography variant="caption" className="mt-2 text-gray-500">
+                Finding your location...
+              </Typography>
+            </View>
+          ) : null}
           <WebView
             style={{ flex: 1 }}
             source={{ html: mapHtml }}

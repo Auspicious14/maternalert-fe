@@ -11,7 +11,7 @@ interface TypographyProps extends TextProps {
   className?: string;
 }
 
-export const Typography: React.FC<TypographyProps> = ({ 
+export const Typography: React.FC<TypographyProps> = React.memo(({ 
   children, 
   variant = 'body', 
   weight,
@@ -82,7 +82,7 @@ export const Typography: React.FC<TypographyProps> = ({
       {children}
     </Text>
   );
-};
+});
 
 cssInterop(Typography, {
   className: 'style',

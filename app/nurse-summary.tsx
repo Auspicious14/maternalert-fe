@@ -3,11 +3,11 @@ import { useRouter } from "expo-router";
 import React from "react";
 import {
   Linking,
-  SafeAreaView,
   ScrollView,
   TouchableOpacity,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Card } from "../components/shared/Card";
 import { Screen } from "../components/shared/Screen";
 import { Typography } from "../components/shared/Typography";
@@ -38,7 +38,7 @@ export default function NurseSummaryScreen() {
   const backgroundColor = isDark ? Theme.colors.darkBg : "#FFFFFF";
 
   return (
-    <SafeAreaView className="flex-1" style={{ backgroundColor: "#EF4444" }}>
+    <SafeAreaView className="flex-1" style={{ backgroundColor }}>
       <Screen backgroundColor={backgroundColor}>
         {/* Urgent Header Banner */}
         <View className="bg-emergency py-10 px-10 items-center rounded-b-[60px]">
@@ -116,9 +116,13 @@ export default function NurseSummaryScreen() {
                   className="text-emergency text-xs mt-0.5 tracking-[1px]"
                 >
                   (
-                  {latestBP?.systolic && latestBP.systolic >= 160
-                    ? "CRITICAL"
-                    : "ELEVATED"}
+                  {latestBP
+                    ? latestBP.systolic >= 160 || latestBP.diastolic >= 110
+                      ? "CRITICAL"
+                      : latestBP.systolic >= 130 || latestBP.diastolic >= 80
+                      ? "ELEVATED"
+                      : "NORMAL"
+                    : ""}
                   )
                 </Typography>
               </View>

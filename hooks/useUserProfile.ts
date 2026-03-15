@@ -30,9 +30,18 @@ export const useUserProfile = () => {
   const profile = useQuery<UserProfile>({
     queryKey: ["user-profile"],
     queryFn: async () => {
-      const response = await apiClient.get("/user-profile");
-      return response.data;
+      try {
+        const response = await apiClient.get("/user-profile");
+        return response.data;
+      } catch (error: any) {
+        if (error.response?.status === 404) {
+          // Profile doesn't exist yet, return null instead of throwing
+          return null;
+        }
+        throw error;
+      }
     },
+    retry: 2,
   });
 
   const calculatedPregnancyWeeks = useMemo(() => {
@@ -65,10 +74,15 @@ export const useUserProfile = () => {
     },
   });
 
+  const { refetch } = profile;
+
   return {
     profile: profile.data,
     calculatedPregnancyWeeks,
     isLoadingProfile: profile.isLoading,
+    isErrorProfile: profile.isError,
+    errorProfile: profile.error,
+    refetchProfile: refetch,
     createProfile: createProfileMutation.mutateAsync,
     isCreatingProfile: createProfileMutation.isPending,
     updateProfile: updateProfileMutation.mutateAsync,

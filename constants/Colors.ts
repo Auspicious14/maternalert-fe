@@ -15,6 +15,14 @@ export const Colors = {
   urgent: "#FF9B3E",
   critical: "#FF4B4B",
 
+  // Error States
+  errorText: "#991B1B",
+  errorBg: "#FEF2F2",
+  errorBorder: "#FEE2E2",
+  errorTextDark: "#FCA5A5",
+  errorBgDark: "rgba(239, 68, 68, 0.1)",
+  errorBorderDark: "rgba(239, 68, 68, 0.2)",
+
   // Text Colors
   text: "#1A212E", // Default text
   textLight: "#6B7280",
