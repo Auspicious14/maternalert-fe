@@ -1,9 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import React, { useMemo } from "react";
+import React, { memo, useMemo } from "react";
 import {
     SafeAreaView,
-    ScrollView,
     StyleSheet,
     TouchableOpacity,
     View,
@@ -15,6 +14,104 @@ import Theme from "../../constants/theme";
 import { useColorScheme } from "../../hooks/use-color-scheme";
 import { useHealthData } from "../../hooks/useHealthData";
 import { useUserProfile } from "../../hooks/useUserProfile";
+
+// Optimized Summary Card Component
+const SummaryCard = memo(({ 
+  currentWeeks, 
+  firstPregnancy, 
+  isDark, 
+  cardBg, 
+  borderColor, 
+  subTextColor, 
+  textColor 
+}: any) => (
+  <Card style={[styles.summaryCard, { backgroundColor: cardBg, borderColor: borderColor }]}>
+    <View style={styles.summaryHeader}>
+      <View style={styles.summaryInfo}>
+        <Typography variant="h3" style={[styles.summaryTitle, { color: textColor }]}>
+          {currentWeeks} Weeks Pregnant
+        </Typography>
+        <Typography variant="caption" style={[styles.summarySubtitle, { color: subTextColor }]}>
+          {firstPregnancy ? "First Pregnancy" : "Healthy Progress"}
+        </Typography>
+      </View>
+      <View style={styles.babyIconBg}>
+        <Ionicons
+          name="fitness"
+          size={24}
+          color={Theme.colors.primary}
+        />
+      </View>
+    </View>
+    <View style={styles.progressContainer}>
+      <View style={[styles.progressBar, { backgroundColor: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)" }]}>
+        <View
+          style={[
+            styles.progressFill,
+            {
+              width: `${(currentWeeks / 40) * 100}%`,
+            },
+          ]}
+        />
+      </View>
+      <Typography variant="caption" style={[styles.progressText, { color: subTextColor }]}>
+        {Math.round((currentWeeks / 40) * 100)}% complete
+      </Typography>
+    </View>
+  </Card>
+));
+
+// Optimized Calendar Day Component
+const CalendarDay = memo(({ item, isDark }: any) => (
+  <View style={styles.dayItem}>
+    <Typography variant="caption" style={[styles.dayLabel, { color: isDark ? "rgba(255,255,255,0.4)" : "#94A3B8" }]}>
+      {item.day}
+    </Typography>
+    <View
+      style={[
+        styles.dateCircle,
+        { borderColor: isDark ? "rgba(255,255,255,0.1)" : "#E2E8F0" },
+        item.current && styles.dateCircleActive,
+        item.status === "stable" && styles.dateCircleStable,
+        item.status === "urgent" && styles.dateCircleUrgent,
+      ]}
+    >
+      <Typography
+        variant="body"
+        style={[
+          styles.dateText,
+          { color: isDark ? "rgba(255,255,255,0.4)" : "#64748B" },
+          (item.current || item.status !== "none") &&
+            { color: isDark ? "#FFFFFF" : "#1A212E" },
+          item.current && { color: "#FFFFFF" }
+        ]}
+      >
+        {item.date}
+      </Typography>
+    </View>
+    {item.current && <View style={styles.activeDot} />}
+  </View>
+));
+
+// Optimized Vitals Card Component
+const VitalsCard = memo(({ avgBP, cardBg, borderColor, textColor, subTextColor }: any) => (
+  <Card style={[styles.vitalCard, { backgroundColor: cardBg, borderColor: borderColor }]}>
+    <View
+      style={[
+        styles.vitalIcon,
+        { backgroundColor: "rgba(45, 228, 116, 0.1)" },
+      ]}
+    >
+      <Ionicons name="pulse" size={20} color={Theme.colors.primary} />
+    </View>
+    <Typography variant="h2" style={[styles.vitalValue, { color: textColor }]}>
+      {avgBP ? `${avgBP.systolic}/${avgBP.diastolic}` : "--/--"}
+    </Typography>
+    <Typography variant="caption" style={[styles.vitalLabel, { color: subTextColor }]}>
+      Avg. Blood Pressure
+    </Typography>
+  </Card>
+));
 
 export default function TrackingScreen() {
   const router = useRouter();
@@ -69,7 +166,7 @@ export default function TrackingScreen() {
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: bgColor }]}>
-      <Screen style={styles.container} backgroundColor={bgColor}>
+      <Screen style={styles.container} backgroundColor={bgColor} scrollable={true}>
         {/* Header */}
         <View style={styles.header}>
           <Typography variant="h1" style={[styles.title, { color: textColor }]}>
@@ -78,85 +175,27 @@ export default function TrackingScreen() {
           <TouchableOpacity style={[styles.calendarButton, { backgroundColor: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)" }]}>
             <Ionicons
               name="calendar-outline"
-              size={24}
+              size={24} 
               color={isDark ? "#FFFFFF" : "#1A212E"}
             />
           </TouchableOpacity>
         </View>
 
-        <ScrollView
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.scrollContent}
-        >
-          {/* Summary Banner */}
-          <Card style={[styles.summaryCard, { backgroundColor: cardBg, borderColor: borderColor }]}>
-            <View style={styles.summaryHeader}>
-              <View style={styles.summaryInfo}>
-                <Typography variant="h3" style={[styles.summaryTitle, { color: textColor }]}>
-                  {currentWeeks} Weeks Pregnant
-                </Typography>
-                <Typography variant="caption" style={[styles.summarySubtitle, { color: subTextColor }]}>
-                  {profile?.firstPregnancy
-                    ? "First Pregnancy"
-                    : "Healthy Progress"}
-                </Typography>
-              </View>
-              <View style={styles.babyIconBg}>
-                <Ionicons
-                  name="fitness"
-                  size={24}
-                  color={Theme.colors.primary}
-                />
-              </View>
-            </View>
-            <View style={styles.progressContainer}>
-              <View style={[styles.progressBar, { backgroundColor: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)" }]}>
-                <View
-                  style={[
-                    styles.progressFill,
-                    {
-                      width: `${(currentWeeks / 40) * 100}%`,
-                    },
-                  ]}
-                />
-              </View>
-              <Typography variant="caption" style={[styles.progressText, { color: subTextColor }]}>
-                {Math.round((currentWeeks / 40) * 100)}% complete
-              </Typography>
-            </View>
-          </Card>
+        <View style={styles.scrollContent}>
+          <SummaryCard 
+            currentWeeks={currentWeeks}
+            firstPregnancy={profile?.firstPregnancy}
+            isDark={isDark}
+            cardBg={cardBg}
+            borderColor={borderColor}
+            subTextColor={subTextColor}
+            textColor={textColor}
+          />
 
           {/* Calendar Strip */}
           <View style={styles.calendarStrip}>
             {weekDays.map((item, index) => (
-              <View key={index} style={styles.dayItem}>
-                <Typography variant="caption" style={[styles.dayLabel, { color: isDark ? "rgba(255,255,255,0.4)" : "#94A3B8" }]}>
-                  {item.day}
-                </Typography>
-                <View
-                  style={[
-                    styles.dateCircle,
-                    { borderColor: isDark ? "rgba(255,255,255,0.1)" : "#E2E8F0" },
-                    item.current && styles.dateCircleActive,
-                    item.status === "stable" && styles.dateCircleStable,
-                    item.status === "urgent" && styles.dateCircleUrgent,
-                  ]}
-                >
-                  <Typography
-                    variant="body"
-                    style={[
-                      styles.dateText,
-                      { color: isDark ? "rgba(255,255,255,0.4)" : "#64748B" },
-                      (item.current || item.status !== "none") &&
-                        { color: isDark ? "#FFFFFF" : "#1A212E" },
-                      item.current && { color: "#FFFFFF" }
-                    ]}
-                  >
-                    {item.date}
-                  </Typography>
-                </View>
-                {item.current && <View style={styles.activeDot} />}
-              </View>
+              <CalendarDay key={index} item={item} isDark={isDark} />
             ))}
           </View>
 
@@ -168,22 +207,13 @@ export default function TrackingScreen() {
           </View>
 
           <View style={styles.vitalsRow}>
-            <Card style={[styles.vitalCard, { backgroundColor: cardBg, borderColor: borderColor }]}>
-              <View
-                style={[
-                  styles.vitalIcon,
-                  { backgroundColor: "rgba(45, 228, 116, 0.1)" },
-                ]}
-              >
-                <Ionicons name="pulse" size={20} color={Theme.colors.primary} />
-              </View>
-              <Typography variant="h2" style={[styles.vitalValue, { color: textColor }]}>
-                {avgBP ? `${avgBP.systolic}/${avgBP.diastolic}` : "--/--"}
-              </Typography>
-              <Typography variant="caption" style={[styles.vitalLabel, { color: subTextColor }]}>
-                Avg. Blood Pressure
-              </Typography>
-            </Card>
+            <VitalsCard 
+              avgBP={avgBP}
+              cardBg={cardBg}
+              borderColor={borderColor}
+              textColor={textColor}
+              subTextColor={subTextColor}
+            />
           </View>
 
           {/* Logs */}
@@ -211,17 +241,17 @@ export default function TrackingScreen() {
               color={isDark ? "rgba(255,255,255,0.2)" : "rgba(0,0,0,0.2)"}
             />
           </Card>
-        </ScrollView>
-
-        {/* FAB Refined */}
-        <TouchableOpacity
-          style={styles.fab}
-          activeOpacity={0.9}
-          onPress={() => router.push("/bp-entry")}
-        >
-          <Ionicons name="add" size={32} color={isDark ? Theme.colors.darkBg : "#FFFFFF"} />
-        </TouchableOpacity>
+        </View>
       </Screen>
+
+      {/* FAB Refined */}
+      <TouchableOpacity
+        style={styles.fab}
+        activeOpacity={0.9}
+        onPress={() => router.push("/bp-entry")}
+      >
+        <Ionicons name="add" size={32} color={isDark ? Theme.colors.darkBg : "#FFFFFF"} />
+      </TouchableOpacity>
     </SafeAreaView>
   );
 }

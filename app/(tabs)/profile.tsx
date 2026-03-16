@@ -2,13 +2,13 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
-    Image,
-    Linking,
-    Platform,
-    StyleSheet,
-    TextInput,
-    TouchableOpacity,
-    View
+  Image,
+  Linking,
+  Platform,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
+  View
 } from "react-native";
 import { Badge } from "../../components/shared/Badge";
 import { Button } from "../../components/shared/Button";
@@ -298,7 +298,7 @@ export default function ProfileScreen() {
           </Typography>
           <Button
             title="Retry"
-            variant="outline"
+            // variant="outline"
             containerStyle={{ marginTop: 24, width: "100%" }}
             onPress={() => refetchProfile()}
           />

@@ -10,7 +10,7 @@ interface CardProps extends ViewProps {
   className?: string;
 }
 
-export const Card: React.FC<CardProps> = ({ 
+export const Card: React.FC<CardProps> = React.memo(({ 
   children, 
   style, 
   variant = 'white', 
@@ -42,7 +42,7 @@ export const Card: React.FC<CardProps> = ({
       {children}
     </View>
   );
-};
+});
 
 cssInterop(Card, {
   className: 'style',

@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import React from "react";
 import apiClient from "../api/client";
 
 export interface Notification {
@@ -29,7 +30,9 @@ export const useNotifications = () => {
     refetchInterval: 30000,
   });
 
-  const unreadCount = notifications.filter((n) => !n.read).length;
+  const unreadCount = React.useMemo(() => 
+    notifications.filter((n) => !n.read).length, 
+  [notifications]);
 
   const markAsReadMutation = useMutation({
     mutationFn: async (id: string) => {

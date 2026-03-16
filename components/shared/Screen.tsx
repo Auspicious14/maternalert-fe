@@ -22,7 +22,7 @@ interface ScreenProps {
   className?: string;
 }
 
-export const Screen: React.FC<ScreenProps> = ({
+export const Screen: React.FC<ScreenProps> = React.memo(({
   children,
   style,
   scrollable = false,
@@ -64,7 +64,7 @@ export const Screen: React.FC<ScreenProps> = ({
       </KeyboardAvoidingView>
     </Container>
   );
-};
+});
 
 cssInterop(Screen, {
   className: 'style',
