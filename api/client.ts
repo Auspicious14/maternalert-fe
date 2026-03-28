@@ -82,7 +82,17 @@ apiClient.interceptors.response.use(
           return apiClient(originalRequest);
         } catch (refreshError) {
           await TokenStorage.clearTokens();
+          // Emit an event or trigger a callback for session expiry
+          if (typeof window !== "undefined") {
+            window.dispatchEvent(new CustomEvent("session-expired"));
+          }
           return Promise.reject(refreshError);
+        }
+      } else {
+        // No refresh token, clear everything and notify
+        await TokenStorage.clearTokens();
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new CustomEvent("session-expired"));
         }
       }
     }

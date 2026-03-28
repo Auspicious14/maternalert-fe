@@ -1,70 +1,93 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { memo, useMemo } from "react";
-import {
-    SafeAreaView,
-    StyleSheet,
-    TouchableOpacity,
-    View,
-} from "react-native";
+import { SafeAreaView, StyleSheet, TouchableOpacity, View } from "react-native";
 import { Card } from "../../components/shared/Card";
 import { Screen } from "../../components/shared/Screen";
 import { Typography } from "../../components/shared/Typography";
 import Theme from "../../constants/theme";
 import { useColorScheme } from "../../hooks/use-color-scheme";
 import { useHealthData } from "../../hooks/useHealthData";
+import { useTrends } from "../../hooks/useTrends";
 import { useUserProfile } from "../../hooks/useUserProfile";
 
 // Optimized Summary Card Component
-const SummaryCard = memo(({ 
-  currentWeeks, 
-  firstPregnancy, 
-  isDark, 
-  cardBg, 
-  borderColor, 
-  subTextColor, 
-  textColor 
-}: any) => (
-  <Card style={[styles.summaryCard, { backgroundColor: cardBg, borderColor: borderColor }]}>
-    <View style={styles.summaryHeader}>
-      <View style={styles.summaryInfo}>
-        <Typography variant="h3" style={[styles.summaryTitle, { color: textColor }]}>
-          {currentWeeks} Weeks Pregnant
-        </Typography>
-        <Typography variant="caption" style={[styles.summarySubtitle, { color: subTextColor }]}>
-          {firstPregnancy ? "First Pregnancy" : "Healthy Progress"}
-        </Typography>
+const SummaryCard = memo(
+  ({
+    currentWeeks,
+    firstPregnancy,
+    isDark,
+    cardBg,
+    borderColor,
+    subTextColor,
+    textColor,
+  }: any) => (
+    <Card
+      style={[
+        styles.summaryCard,
+        { backgroundColor: cardBg, borderColor: borderColor },
+      ]}
+    >
+      <View style={styles.summaryHeader}>
+        <View style={styles.summaryInfo}>
+          <Typography
+            variant="h3"
+            style={[styles.summaryTitle, { color: textColor }]}
+          >
+            {currentWeeks} Weeks Pregnant
+          </Typography>
+          <Typography
+            variant="caption"
+            style={[styles.summarySubtitle, { color: subTextColor }]}
+          >
+            {firstPregnancy ? "First Pregnancy" : "Healthy Progress"}
+          </Typography>
+        </View>
+        <View style={styles.babyIconBg}>
+          <Ionicons name="fitness" size={24} color={Theme.colors.primary} />
+        </View>
       </View>
-      <View style={styles.babyIconBg}>
-        <Ionicons
-          name="fitness"
-          size={24}
-          color={Theme.colors.primary}
-        />
-      </View>
-    </View>
-    <View style={styles.progressContainer}>
-      <View style={[styles.progressBar, { backgroundColor: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)" }]}>
+      <View style={styles.progressContainer}>
         <View
           style={[
-            styles.progressFill,
+            styles.progressBar,
             {
-              width: `${(currentWeeks / 40) * 100}%`,
+              backgroundColor: isDark
+                ? "rgba(255,255,255,0.1)"
+                : "rgba(0,0,0,0.05)",
             },
           ]}
-        />
+        >
+          <View
+            style={[
+              styles.progressFill,
+              {
+                width: `${(currentWeeks / 40) * 100}%`,
+              },
+            ]}
+          />
+        </View>
+        <Typography
+          variant="caption"
+          style={[styles.progressText, { color: subTextColor }]}
+        >
+          {Math.round((currentWeeks / 40) * 100)}% complete
+        </Typography>
       </View>
-      <Typography variant="caption" style={[styles.progressText, { color: subTextColor }]}>
-        {Math.round((currentWeeks / 40) * 100)}% complete
-      </Typography>
-    </View>
-  </Card>
-));
+    </Card>
+  ),
+);
 
 // Optimized Calendar Day Component
 const CalendarDay = memo(({ item, isDark }: any) => (
   <View style={styles.dayItem}>
-    <Typography variant="caption" style={[styles.dayLabel, { color: isDark ? "rgba(255,255,255,0.4)" : "#94A3B8" }]}>
+    <Typography
+      variant="caption"
+      style={[
+        styles.dayLabel,
+        { color: isDark ? "rgba(255,255,255,0.4)" : "#94A3B8" },
+      ]}
+    >
       {item.day}
     </Typography>
     <View
@@ -81,9 +104,10 @@ const CalendarDay = memo(({ item, isDark }: any) => (
         style={[
           styles.dateText,
           { color: isDark ? "rgba(255,255,255,0.4)" : "#64748B" },
-          (item.current || item.status !== "none") &&
-            { color: isDark ? "#FFFFFF" : "#1A212E" },
-          item.current && { color: "#FFFFFF" }
+          (item.current || item.status !== "none") && {
+            color: isDark ? "#FFFFFF" : "#1A212E",
+          },
+          item.current && { color: "#FFFFFF" },
         ]}
       >
         {item.date}
@@ -94,24 +118,37 @@ const CalendarDay = memo(({ item, isDark }: any) => (
 ));
 
 // Optimized Vitals Card Component
-const VitalsCard = memo(({ avgBP, cardBg, borderColor, textColor, subTextColor }: any) => (
-  <Card style={[styles.vitalCard, { backgroundColor: cardBg, borderColor: borderColor }]}>
-    <View
+const VitalsCard = memo(
+  ({ avgBP, cardBg, borderColor, textColor, subTextColor }: any) => (
+    <Card
       style={[
-        styles.vitalIcon,
-        { backgroundColor: "rgba(45, 228, 116, 0.1)" },
+        styles.vitalCard,
+        { backgroundColor: cardBg, borderColor: borderColor },
       ]}
     >
-      <Ionicons name="pulse" size={20} color={Theme.colors.primary} />
-    </View>
-    <Typography variant="h2" style={[styles.vitalValue, { color: textColor }]}>
-      {avgBP ? `${avgBP.systolic}/${avgBP.diastolic}` : "--/--"}
-    </Typography>
-    <Typography variant="caption" style={[styles.vitalLabel, { color: subTextColor }]}>
-      Avg. Blood Pressure
-    </Typography>
-  </Card>
-));
+      <View
+        style={[
+          styles.vitalIcon,
+          { backgroundColor: "rgba(45, 228, 116, 0.1)" },
+        ]}
+      >
+        <Ionicons name="pulse" size={20} color={Theme.colors.primary} />
+      </View>
+      <Typography
+        variant="h2"
+        style={[styles.vitalValue, { color: textColor }]}
+      >
+        {avgBP ? `${avgBP.systolic}/${avgBP.diastolic}` : "--/--"}
+      </Typography>
+      <Typography
+        variant="caption"
+        style={[styles.vitalLabel, { color: subTextColor }]}
+      >
+        Avg. Blood Pressure
+      </Typography>
+    </Card>
+  ),
+);
 
 export default function TrackingScreen() {
   const router = useRouter();
@@ -119,6 +156,7 @@ export default function TrackingScreen() {
   const isDark = colorScheme === "dark";
   const { bpHistory, recentSymptoms } = useHealthData();
   const { profile, calculatedPregnancyWeeks } = useUserProfile();
+  const { trendAlerts } = useTrends();
 
   const currentWeeks =
     calculatedPregnancyWeeks || profile?.pregnancyWeeks || 24;
@@ -166,23 +204,36 @@ export default function TrackingScreen() {
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: bgColor }]}>
-      <Screen style={styles.container} backgroundColor={bgColor} scrollable={true}>
+      <Screen
+        style={styles.container}
+        backgroundColor={bgColor}
+        scrollable={true}
+      >
         {/* Header */}
         <View style={styles.header}>
           <Typography variant="h1" style={[styles.title, { color: textColor }]}>
             Health Tracking
           </Typography>
-          <TouchableOpacity style={[styles.calendarButton, { backgroundColor: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)" }]}>
+          <TouchableOpacity
+            style={[
+              styles.calendarButton,
+              {
+                backgroundColor: isDark
+                  ? "rgba(255,255,255,0.1)"
+                  : "rgba(0,0,0,0.05)",
+              },
+            ]}
+          >
             <Ionicons
               name="calendar-outline"
-              size={24} 
+              size={24}
               color={isDark ? "#FFFFFF" : "#1A212E"}
             />
           </TouchableOpacity>
         </View>
 
         <View style={styles.scrollContent}>
-          <SummaryCard 
+          <SummaryCard
             currentWeeks={currentWeeks}
             firstPregnancy={profile?.firstPregnancy}
             isDark={isDark}
@@ -201,13 +252,16 @@ export default function TrackingScreen() {
 
           {/* Vitals Section */}
           <View style={styles.sectionHeader}>
-            <Typography variant="h2" style={[styles.sectionTitle, { color: textColor }]}>
+            <Typography
+              variant="h2"
+              style={[styles.sectionTitle, { color: textColor }]}
+            >
               Vitals Overview
             </Typography>
           </View>
 
           <View style={styles.vitalsRow}>
-            <VitalsCard 
+            <VitalsCard
               avgBP={avgBP}
               cardBg={cardBg}
               borderColor={borderColor}
@@ -218,20 +272,34 @@ export default function TrackingScreen() {
 
           {/* Logs */}
           <View style={styles.sectionHeader}>
-            <Typography variant="h2" style={[styles.sectionTitle, { color: textColor }]}>
+            <Typography
+              variant="h2"
+              style={[styles.sectionTitle, { color: textColor }]}
+            >
               Daily Logs
             </Typography>
           </View>
 
-          <Card style={[styles.logItem, { backgroundColor: cardBg, borderColor: borderColor }]}>
+          <Card
+            style={[
+              styles.logItem,
+              { backgroundColor: cardBg, borderColor: borderColor },
+            ]}
+          >
             <View style={[styles.logIcon, { backgroundColor: "#FF4B4B" }]}>
               <Ionicons name="sad" size={20} color="#FFFFFF" />
             </View>
             <View style={styles.logInfo}>
-              <Typography variant="h3" style={[styles.logTitle, { color: textColor }]}>
+              <Typography
+                variant="h3"
+                style={[styles.logTitle, { color: textColor }]}
+              >
                 Symptoms
               </Typography>
-              <Typography variant="caption" style={[styles.logSubtitle, { color: subTextColor }]}>
+              <Typography
+                variant="caption"
+                style={[styles.logSubtitle, { color: subTextColor }]}
+              >
                 {recentSymptoms?.length || 0} signs reported recently
               </Typography>
             </View>
@@ -241,6 +309,59 @@ export default function TrackingScreen() {
               color={isDark ? "rgba(255,255,255,0.2)" : "rgba(0,0,0,0.2)"}
             />
           </Card>
+
+          {/* Trends Log */}
+          {trendAlerts.length > 0 && (
+            <View style={styles.sectionHeader}>
+              <Typography
+                variant="h2"
+                style={[styles.sectionTitle, { color: textColor }]}
+              >
+                Health Trends
+              </Typography>
+            </View>
+          )}
+
+          {trendAlerts.map((alert) => (
+            <Card
+              key={alert.id}
+              style={[
+                styles.trendCard,
+                {
+                  backgroundColor: cardBg,
+                  borderColor:
+                    alert.type === "CREEPING_RISE"
+                      ? Theme.colors.emergency
+                      : Theme.colors.accent,
+                  borderLeftWidth: 4,
+                },
+              ]}
+            >
+              <View style={styles.trendHeader}>
+                <Ionicons
+                  name={alert.type === "SUDDEN_SPIKE" ? "flash" : "trending-up"}
+                  size={20}
+                  color={
+                    alert.type === "CREEPING_RISE"
+                      ? Theme.colors.emergency
+                      : Theme.colors.accent
+                  }
+                />
+                <Typography
+                  variant="caption"
+                  style={[styles.trendDate, { color: subTextColor }]}
+                >
+                  {new Date(alert.detectedAt).toLocaleDateString()}
+                </Typography>
+              </View>
+              <Typography
+                variant="body"
+                style={[styles.trendMessage, { color: textColor }]}
+              >
+                {alert.message}
+              </Typography>
+            </Card>
+          ))}
         </View>
       </Screen>
 
@@ -250,7 +371,11 @@ export default function TrackingScreen() {
         activeOpacity={0.9}
         onPress={() => router.push("/bp-entry")}
       >
-        <Ionicons name="add" size={32} color={isDark ? Theme.colors.darkBg : "#FFFFFF"} />
+        <Ionicons
+          name="add"
+          size={32}
+          color={isDark ? Theme.colors.darkBg : "#FFFFFF"}
+        />
       </TouchableOpacity>
     </SafeAreaView>
   );
@@ -305,8 +430,7 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "bold",
   },
-  summarySubtitle: {
-  },
+  summarySubtitle: {},
   babyIconBg: {
     width: 48,
     height: 48,
@@ -432,7 +556,25 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginBottom: 4,
   },
-  logSubtitle: {
+  logSubtitle: {},
+  trendCard: {
+    marginBottom: 12,
+    padding: 16,
+    borderRadius: 16,
+    borderWidth: 1,
+  },
+  trendHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 8,
+  },
+  trendDate: {
+    fontSize: 12,
+  },
+  trendMessage: {
+    fontSize: 14,
+    lineHeight: 20,
   },
   fab: {
     position: "absolute",

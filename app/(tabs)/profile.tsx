@@ -2,14 +2,15 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
-  Image,
-  Linking,
-  Platform,
-  StyleSheet,
-  TextInput,
-  TouchableOpacity,
-  View
+    Image,
+    Linking,
+    Platform,
+    StyleSheet,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from "react-native";
+import { TokenStorage } from "../../api/storage";
 import { Badge } from "../../components/shared/Badge";
 import { Button } from "../../components/shared/Button";
 import { Card } from "../../components/shared/Card";
@@ -22,6 +23,7 @@ import { useAppTheme } from "../../hooks/useAppTheme";
 import { useAuth } from "../../hooks/useAuth";
 import { useCarePriority } from "../../hooks/useCarePriority";
 import { useUserProfile } from "../../hooks/useUserProfile";
+import { notificationService } from "../../services/notifications";
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -39,6 +41,23 @@ export default function ProfileScreen() {
   const { logout } = useAuth();
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
+
+  const [reminderTime, setReminderTime] = useState("09:00");
+
+  React.useEffect(() => {
+    const loadReminderTime = async () => {
+      const time = await TokenStorage.getReminderTime();
+      if (time) setReminderTime(time);
+    };
+    loadReminderTime();
+  }, []);
+
+  const handleUpdateReminder = async (time: string) => {
+    setReminderTime(time);
+    await TokenStorage.saveReminderTime(time);
+    const [hour, minute] = time.split(":").map(Number);
+    await notificationService.scheduleDailyBPReminder(hour, minute);
+  };
 
   // Redirect to profile setup if profile is missing and not loading/error
   React.useEffect(() => {
@@ -729,6 +748,55 @@ export default function ProfileScreen() {
         </View>
       </Card>
       */}
+
+      <View style={styles.sectionHeader}>
+        <Typography variant="h2">Reminders</Typography>
+      </View>
+      <Card style={styles.clinicCard}>
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
+          <View style={{ flex: 1 }}>
+            <Typography variant="body" style={{ fontWeight: "bold" }}>
+              Daily BP Reminder
+            </Typography>
+            <Typography variant="caption" color={Theme.colors.textLight}>
+              We'll remind you to log your BP every day.
+            </Typography>
+          </View>
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              backgroundColor: isDark ? "#26211E" : "#F8FAFC",
+              padding: 8,
+              borderRadius: 8,
+            }}
+          >
+            <TextInput
+              value={reminderTime}
+              onChangeText={handleUpdateReminder}
+              placeholder="09:00"
+              style={{
+                color: Theme.colors.primary,
+                fontWeight: "bold",
+                fontSize: 18,
+                marginRight: 8,
+              }}
+              maxLength={5}
+            />
+            <Ionicons
+              name="time-outline"
+              size={20}
+              color={Theme.colors.primary}
+            />
+          </View>
+        </View>
+      </Card>
 
       <View style={styles.sectionHeader}>
         <Typography variant="h2">Appearance</Typography>

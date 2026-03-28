@@ -4,8 +4,43 @@ const TOKEN_KEY = "maternalert_auth_token";
 const REFRESH_TOKEN_KEY = "maternalert_refresh_token";
 const HAS_LAUNCHED_KEY = "maternalert_has_launched";
 const LAST_LOCATION_KEY = "maternalert_last_location";
+const PUSH_TOKEN_KEY = "maternalert_push_token";
+const REMINDER_TIME_KEY = "maternalert_reminder_time";
 
 export const TokenStorage = {
+  async savePushToken(token: string) {
+    try {
+      await SecureStore.setItemAsync(PUSH_TOKEN_KEY, token);
+    } catch (error) {
+      console.error("Error saving push token", error);
+    }
+  },
+
+  async getPushToken() {
+    try {
+      return await SecureStore.getItemAsync(PUSH_TOKEN_KEY);
+    } catch (error) {
+      console.error("Error getting push token", error);
+      return null;
+    }
+  },
+
+  async saveReminderTime(time: string) {
+    try {
+      await SecureStore.setItemAsync(REMINDER_TIME_KEY, time);
+    } catch (error) {
+      console.error("Error saving reminder time", error);
+    }
+  },
+
+  async getReminderTime() {
+    try {
+      return await SecureStore.getItemAsync(REMINDER_TIME_KEY);
+    } catch (error) {
+      console.error("Error getting reminder time", error);
+      return "09:00"; // Default 9:00 AM
+    }
+  },
   async saveToken(token: string) {
     try {
       await SecureStore.setItemAsync(TOKEN_KEY, token);
@@ -68,7 +103,10 @@ export const TokenStorage = {
 
   async saveLastLocation(location: { latitude: number; longitude: number }) {
     try {
-      await SecureStore.setItemAsync(LAST_LOCATION_KEY, JSON.stringify(location));
+      await SecureStore.setItemAsync(
+        LAST_LOCATION_KEY,
+        JSON.stringify(location),
+      );
     } catch (error) {
       console.error("Error saving location", error);
     }
@@ -80,6 +118,23 @@ export const TokenStorage = {
       return locationStr ? JSON.parse(locationStr) : null;
     } catch (error) {
       console.error("Error getting location", error);
+      return null;
+    }
+  },
+
+  async saveTokenStorageItem(key: string, value: string) {
+    try {
+      await SecureStore.setItemAsync(key, value);
+    } catch (error) {
+      console.error(`Error saving ${key}`, error);
+    }
+  },
+
+  async getTokenStorageItem(key: string) {
+    try {
+      return await SecureStore.getItemAsync(key);
+    } catch (error) {
+      console.error(`Error getting ${key}`, error);
       return null;
     }
   },

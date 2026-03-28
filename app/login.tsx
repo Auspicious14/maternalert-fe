@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import React from "react";
 import { Controller, useForm } from "react-hook-form";
 import { Image, TouchableOpacity, View } from "react-native";
@@ -9,15 +9,18 @@ import { Input } from "../components/shared/Input";
 import { Screen } from "../components/shared/Screen";
 import { Typography } from "../components/shared/Typography";
 import Theme from "../constants/theme";
+import { useColorScheme } from "../hooks/use-color-scheme";
 import { useAuth } from "../hooks/useAuth";
 import { LoginFormData, loginSchema } from "../schemas/auth";
-import { useColorScheme } from "../hooks/use-color-scheme";
 
 export default function LoginScreen() {
   const router = useRouter();
+  const { message } = useLocalSearchParams<{ message?: string }>();
   const { login, isLoggingIn, loginError } = useAuth();
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
+
+  const isSessionExpired = message === "session_expired";
 
   const {
     control,
@@ -72,6 +75,14 @@ export default function LoginScreen() {
           Welcome back! Please enter your details.
         </Typography>
 
+        {isSessionExpired && (
+          <View className="bg-red-50 p-4 rounded-xl mb-6 border border-red-100">
+            <Typography className="text-red-800 text-center font-medium">
+              Your session has expired. Please log in again.
+            </Typography>
+          </View>
+        )}
+
         <View className="gap-4 mb-8">
           <Controller
             control={control}
@@ -107,7 +118,7 @@ export default function LoginScreen() {
             )}
           />
 
-          <TouchableOpacity 
+          <TouchableOpacity
             onPress={() => router.push("/forgot-password")}
             className="self-end -mt-2"
           >
@@ -123,14 +134,20 @@ export default function LoginScreen() {
           {loginError && (
             <View
               style={{
-                backgroundColor: isDark ? Theme.colors.errorBgDark : Theme.colors.errorBg,
-                borderColor: isDark ? Theme.colors.errorBorderDark : Theme.colors.errorBorder,
+                backgroundColor: isDark
+                  ? Theme.colors.errorBgDark
+                  : Theme.colors.errorBg,
+                borderColor: isDark
+                  ? Theme.colors.errorBorderDark
+                  : Theme.colors.errorBorder,
               }}
               className="p-3 rounded-xl border mt-2"
             >
               <Typography
                 variant="caption"
-                color={isDark ? Theme.colors.errorTextDark : Theme.colors.errorText}
+                color={
+                  isDark ? Theme.colors.errorTextDark : Theme.colors.errorText
+                }
                 className="text-center font-medium"
               >
                 Invalid email or password. Please try again.

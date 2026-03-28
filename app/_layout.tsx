@@ -1,23 +1,34 @@
-import 'react-native-reanimated';
-import '../global.css';
+import "react-native-reanimated";
+import "../global.css";
 
 import {
-  Lexend_400Regular,
-  Lexend_500Medium,
-  Lexend_600SemiBold,
-  Lexend_700Bold,
-} from '@expo-google-fonts/lexend';
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { useFonts } from 'expo-font';
-import { Stack, useRouter } from 'expo-router';
-import * as SplashScreen from 'expo-splash-screen';
-import { StatusBar } from 'expo-status-bar';
-import { useEffect, useState } from 'react';
-import { TokenStorage } from '../api/storage';
+    Lexend_400Regular,
+    Lexend_500Medium,
+    Lexend_600SemiBold,
+    Lexend_700Bold,
+} from "@expo-google-fonts/lexend";
+import {
+    DarkTheme,
+    DefaultTheme,
+    ThemeProvider,
+} from "@react-navigation/native";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { useFonts } from "expo-font";
+import { Stack, useRouter } from "expo-router";
+import * as SplashScreen from "expo-splash-screen";
+import { StatusBar } from "expo-status-bar";
+import { useEffect, useState } from "react";
+import { TokenStorage } from "../api/storage";
 import { ToastProvider } from "../components/ui/ToastProvider";
-import { Colors } from '../constants/theme';
-import { AppThemeProvider, useAppTheme } from '../hooks/useAppTheme';
+import { Colors } from "../constants/theme";
+import { AppThemeProvider, useAppTheme } from "../hooks/useAppTheme";
+
+import * as Notifications from "expo-notifications";
+import { TouchableWithoutFeedback, View } from "react-native";
+import { NotificationBanner } from "../components/notifications/NotificationBanner";
+import { AuthProvider } from "../context/AuthContext";
+import { useSession } from "../hooks/useSession";
+import { notificationService } from "../services/notifications";
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -49,27 +60,62 @@ const NavigationDarkTheme = {
 
 function RootNavigation() {
   const { colorScheme } = useAppTheme();
-  const navigationTheme = colorScheme === 'dark' ? NavigationDarkTheme : NavigationLightTheme;
-  const statusBarStyle = colorScheme === 'dark' ? 'light' : 'dark';
+  const navigationTheme =
+    colorScheme === "dark" ? NavigationDarkTheme : NavigationLightTheme;
+  const statusBarStyle = colorScheme === "dark" ? "light" : "dark";
+  const { resetActivity } = useSession();
+  const router = useRouter();
+
+  useEffect(() => {
+    notificationService.setRouter(router);
+    notificationService.registerForPushNotificationsAsync();
+
+    const notificationListener = Notifications.addNotificationReceivedListener(
+      (notification) => {
+        console.log("Notification received:", notification);
+      },
+    );
+
+    const responseListener =
+      Notifications.addNotificationResponseReceivedListener((response) => {
+        notificationService.handleNotificationResponse(response);
+      });
+
+    return () => {
+      notificationListener.remove();
+      responseListener.remove();
+    };
+  }, []);
 
   return (
     <ThemeProvider value={navigationTheme}>
-      <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="index" />
-        <Stack.Screen name="onboarding" />
-        <Stack.Screen name="login" />
-        <Stack.Screen name="register" />
-        <Stack.Screen name="disclaimer" />
-        <Stack.Screen name="profile-setup" />
-        <Stack.Screen name="(tabs)" />
-        <Stack.Screen name="emergency" options={{ presentation: 'modal' }} />
-        <Stack.Screen name="symptom-checker" />
-        <Stack.Screen name="symptom-results" />
-        <Stack.Screen name="nurse-summary" options={{ presentation: 'fullScreenModal' }} />
-        <Stack.Screen name="bp-entry" options={{ presentation: 'modal' }} />
-        <Stack.Screen name="clinic-finder" />
-        <Stack.Screen name="+not-found" />
-      </Stack>
+      <NotificationBanner />
+      <TouchableWithoutFeedback onPress={resetActivity} accessible={false}>
+        <View style={{ flex: 1 }}>
+          <Stack screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="index" />
+            <Stack.Screen name="onboarding" />
+            <Stack.Screen name="login" />
+            <Stack.Screen name="register" />
+            <Stack.Screen name="disclaimer" />
+            <Stack.Screen name="profile-setup" />
+            <Stack.Screen name="(tabs)" />
+            <Stack.Screen
+              name="emergency"
+              options={{ presentation: "modal" }}
+            />
+            <Stack.Screen name="symptom-checker" />
+            <Stack.Screen name="symptom-results" />
+            <Stack.Screen
+              name="nurse-summary"
+              options={{ presentation: "fullScreenModal" }}
+            />
+            <Stack.Screen name="bp-entry" options={{ presentation: "modal" }} />
+            <Stack.Screen name="clinic-finder" />
+            <Stack.Screen name="+not-found" />
+          </Stack>
+        </View>
+      </TouchableWithoutFeedback>
       <StatusBar style={statusBarStyle} />
     </ThemeProvider>
   );
@@ -77,10 +123,10 @@ function RootNavigation() {
 
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts({
-    'Lexend-Regular': Lexend_400Regular,
-    'Lexend-Medium': Lexend_500Medium,
-    'Lexend-SemiBold': Lexend_600SemiBold,
-    'Lexend-Bold': Lexend_700Bold,
+    "Lexend-Regular": Lexend_400Regular,
+    "Lexend-Medium": Lexend_500Medium,
+    "Lexend-SemiBold": Lexend_600SemiBold,
+    "Lexend-Bold": Lexend_700Bold,
   });
 
   const [isAuthReady, setIsAuthReady] = useState(false);
@@ -95,16 +141,16 @@ export default function RootLayout() {
         setTimeout(() => {
           if (!hasLaunched) {
             TokenStorage.setHasLaunched();
-            router.replace('/onboarding');
+            router.replace("/onboarding");
           } else if (token) {
-            router.replace('/(tabs)');
+            router.replace("/(tabs)");
           } else {
-            router.replace('/login');
+            router.replace("/login");
           }
           setIsAuthReady(true);
         }, 500);
       } catch (e) {
-        console.warn('Auth preparation error:', e);
+        console.warn("Auth preparation error:", e);
         setIsAuthReady(true);
       }
     }
@@ -131,11 +177,13 @@ export default function RootLayout() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <AppThemeProvider>
-        <ToastProvider>
-          <RootNavigation />
-        </ToastProvider>
-      </AppThemeProvider>
+      <AuthProvider>
+        <AppThemeProvider>
+          <ToastProvider>
+            <RootNavigation />
+          </ToastProvider>
+        </AppThemeProvider>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }
