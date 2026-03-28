@@ -35,6 +35,13 @@
           "resizeMode": "cover",
           "backgroundColor": "#E6F0FF"
         }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/matern-logo.png",
+          "color": "#2DE474"
+        }
       ]
     ],
     "experiments": {
@@ -45,7 +52,8 @@
       "router": {},
       "eas": {
         "projectId": "fd1b8c99-55ce-463d-8fd3-23857dd9f2ec"
-      }
+      },
+      "apiUrl": "https://maternalert-be.vercel.app/api/v1"
     }
   }
 }
