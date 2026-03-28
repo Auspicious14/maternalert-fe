@@ -2,33 +2,39 @@ import "react-native-reanimated";
 import "../global.css";
 
 import {
-    Lexend_400Regular,
-    Lexend_500Medium,
-    Lexend_600SemiBold,
-    Lexend_700Bold,
+  Lexend_400Regular,
+  Lexend_500Medium,
+  Lexend_600SemiBold,
+  Lexend_700Bold,
 } from "@expo-google-fonts/lexend";
 import {
-    DarkTheme,
-    DefaultTheme,
-    ThemeProvider,
+  DarkTheme,
+  DefaultTheme,
+  ThemeProvider,
 } from "@react-navigation/native";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useFonts } from "expo-font";
 import { Stack, useRouter } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
-import { useEffect, useState } from "react";
-import { TokenStorage } from "../api/storage";
-import { ToastProvider } from "../components/ui/ToastProvider";
-import { Colors } from "../constants/theme";
-import { AppThemeProvider, useAppTheme } from "../hooks/useAppTheme";
-
-import * as Notifications from "expo-notifications";
+import { useEffect } from "react";
 import { TouchableWithoutFeedback, View } from "react-native";
 import { NotificationBanner } from "../components/notifications/NotificationBanner";
+import { ToastProvider } from "../components/ui/ToastProvider";
+import { Colors } from "../constants/theme";
 import { AuthProvider } from "../context/AuthContext";
+import { AppThemeProvider, useAppTheme } from "../hooks/useAppTheme";
 import { useSession } from "../hooks/useSession";
 import { notificationService } from "../services/notifications";
+
+// ── Only import Notifications outside Expo Go ──
+import Constants, { ExecutionEnvironment } from "expo-constants";
+const isExpoGo =
+  Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
+let Notifications: typeof import("expo-notifications") | null = null;
+if (!isExpoGo) {
+  Notifications = require("expo-notifications");
+}
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -67,6 +73,8 @@ function RootNavigation() {
   const router = useRouter();
 
   useEffect(() => {
+    if (!Notifications) return;
+
     notificationService.setRouter(router);
     notificationService.registerForPushNotificationsAsync();
 
@@ -129,47 +137,20 @@ export default function RootLayout() {
     "Lexend-Bold": Lexend_700Bold,
   });
 
-  const [isAuthReady, setIsAuthReady] = useState(false);
-  const router = useRouter();
-
+  // ── Hide splash screen once fonts are loaded ──
+  // Navigation and auth routing is handled entirely by AuthContext
   useEffect(() => {
-    async function prepare() {
-      try {
-        const hasLaunched = await TokenStorage.getHasLaunched();
-        const token = await TokenStorage.getToken();
-
-        setTimeout(() => {
-          if (!hasLaunched) {
-            TokenStorage.setHasLaunched();
-            router.replace("/onboarding");
-          } else if (token) {
-            router.replace("/(tabs)");
-          } else {
-            router.replace("/login");
-          }
-          setIsAuthReady(true);
-        }, 500);
-      } catch (e) {
-        console.warn("Auth preparation error:", e);
-        setIsAuthReady(true);
-      }
-    }
-
-    prepare();
-  }, []);
-
-  useEffect(() => {
-    if (fontsLoaded && isAuthReady) {
+    if (fontsLoaded || fontError) {
       SplashScreen.hideAsync().catch(() => {});
     }
 
+    // Fallback — hide splash after 5 seconds no matter what
     const timer = setTimeout(() => {
       SplashScreen.hideAsync().catch(() => {});
-      setIsAuthReady(true);
     }, 5000);
 
     return () => clearTimeout(timer);
-  }, [fontsLoaded, isAuthReady]);
+  }, [fontsLoaded, fontError]);
 
   if (!fontsLoaded && !fontError) {
     return null;

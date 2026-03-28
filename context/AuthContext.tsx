@@ -125,42 +125,53 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   // ── Route protection ──
   useEffect(() => {
-    if (isLoading || !isNavReady) return;
+    const guard = async () => {
+      if (isLoading || !isNavReady) return;
 
-    const rootSegment = segments[0] as string | undefined;
+      const rootSegment = segments[0] as string | undefined;
 
-    const inAuthGroup =
-      !rootSegment ||
-      rootSegment === "index" ||
-      rootSegment === "login" ||
-      rootSegment === "register" ||
-      rootSegment === "onboarding" ||
-      rootSegment === "forgot-password" ||
-      rootSegment === "disclaimer";
+      const inAuthGroup =
+        !rootSegment ||
+        rootSegment === "index" ||
+        rootSegment === "login" ||
+        rootSegment === "register" ||
+        rootSegment === "onboarding" ||
+        rootSegment === "forgot-password" ||
+        rootSegment === "disclaimer";
 
-    console.log(
-      `[AUTH] user=${!!user}, rootSegment=${rootSegment}, inAuthGroup=${inAuthGroup}`,
-    );
+      console.log(
+        `[AUTH] user=${!!user}, rootSegment=${rootSegment}, inAuthGroup=${inAuthGroup}`,
+      );
 
-    if (!user && !inAuthGroup) {
-      const fullPath = segments.join("/");
-      if (fullPath && fullPath !== "login") {
-        setIntendedDestination(fullPath);
+      if (!user && !inAuthGroup) {
+        const fullPath = segments.join("/");
+        if (fullPath && fullPath !== "login") {
+          setIntendedDestination(fullPath);
+        }
+        console.log("[AUTH] Unauthorized — redirecting to /login");
+        router.replace("/login");
+      } else if (!user && inAuthGroup) {
+        const hasLaunched = await TokenStorage.getHasLaunched();
+        if (!hasLaunched) {
+          await TokenStorage.setHasLaunched();
+          router.replace("/onboarding");
+          return;
+        }
+      } else if (user && inAuthGroup) {
+        if (intendedDestination) {
+          console.log(
+            `[AUTH] Redirecting to intended destination: ${intendedDestination}`,
+          );
+          router.replace(intendedDestination as any);
+          setIntendedDestination(null);
+        } else {
+          console.log("[AUTH] Authenticated — redirecting to /(tabs)");
+          router.replace("/(tabs)");
+        }
       }
-      console.log("[AUTH] Unauthorized — redirecting to /login");
-      router.replace("/login");
-    } else if (user && inAuthGroup) {
-      if (intendedDestination) {
-        console.log(
-          `[AUTH] Redirecting to intended destination: ${intendedDestination}`,
-        );
-        router.replace(intendedDestination as any);
-        setIntendedDestination(null);
-      } else {
-        console.log("[AUTH] Authenticated — redirecting to /(tabs)");
-        router.replace("/(tabs)");
-      }
-    }
+    };
+
+    guard();
   }, [user, segments, isLoading, isNavReady, intendedDestination]);
 
   const login = async (token: string, refreshToken: string, userData: User) => {
