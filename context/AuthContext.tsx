@@ -1,13 +1,14 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRootNavigationState, useRouter, useSegments } from "expo-router";
 import React, {
-    createContext,
-    useContext,
-    useEffect,
-    useRef,
-    useState,
+  createContext,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
 } from "react";
 import apiClient from "../api/client";
+import { appEvents } from "../api/event-emitter";
 import { TokenStorage } from "../api/storage";
 
 interface User {
@@ -21,7 +22,7 @@ interface AuthContextType {
   isLoading: boolean;
   isAuthenticated: boolean;
   login: (token: string, refreshToken: string, user: User) => Promise<void>;
-  logout: () => Promise<void>;
+  logout: (reason?: string) => Promise<void>;
   checkSession: () => Promise<void>;
 }
 
@@ -35,13 +36,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const queryClient = useQueryClient();
   const navigationState = useRootNavigationState();
   const isNavReady = navigationState?.key !== undefined;
+  const perfStartTime = useRef<number>(Date.now());
 
   const [intendedDestination, setIntendedDestination] = useState<string | null>(
     null,
   );
-  const perfStartTime = useRef<number>(Date.now());
 
-  // React Query is our source of truth for user session
   const {
     data: user,
     status,
@@ -52,12 +52,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     queryFn: async () => {
       const start = Date.now();
       const token = await TokenStorage.getToken();
+
       if (!token) {
         console.log(
           `[PERF] No token found. Checked in ${Date.now() - start}ms`,
         );
         return null;
       }
+
       try {
         const response = await apiClient.get("/auth/me");
         console.log(`[PERF] /auth/me call took ${Date.now() - start}ms`);
@@ -69,10 +71,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       }
     },
     retry: false,
-    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
+    staleTime: 1000 * 60 * 5,
   });
 
-  // Derived loading state
   const isLoading = isQueryLoading || status === "pending";
 
   useEffect(() => {
@@ -83,19 +84,51 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }, [isLoading, user]);
 
+  const logout = async (reason?: string) => {
+    try {
+      await apiClient.post("/auth/logout");
+    } catch (error) {
+      // Ignore logout API errors — we always clear locally
+      console.error("Logout API error (ignored):", error);
+    } finally {
+      await TokenStorage.clearTokens();
+      queryClient.setQueryData(["user-session"], null);
+      queryClient.clear();
+
+      if (reason === "expired") {
+        router.replace("/login?message=session_expired");
+      } else {
+        router.replace("/login");
+      }
+    }
+  };
+
   const checkSession = async () => {
     const start = Date.now();
     await refetch();
     console.log(`[PERF] Manual session check took ${Date.now() - start}ms`);
   };
 
+  // ── Listen for session expiry emitted by apiClient interceptor ──
   useEffect(() => {
-    // Wait for auth state to be resolved and navigation to be ready
+    const handleSessionExpired = () => {
+      console.log("[AUTH] Session expired event received");
+      logout("expired");
+    };
+
+    appEvents.on("session-expired", handleSessionExpired);
+
+    return () => {
+      appEvents.off("session-expired", handleSessionExpired);
+    };
+  }, []);
+
+  // ── Route protection ──
+  useEffect(() => {
     if (isLoading || !isNavReady) return;
 
     const rootSegment = segments[0] as string | undefined;
 
-    // Auth-related routes
     const inAuthGroup =
       !rootSegment ||
       rootSegment === "index" ||
@@ -106,27 +139,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       rootSegment === "disclaimer";
 
     console.log(
-      `[AUTH] Checking redirection: user=${!!user}, rootSegment=${rootSegment}, inAuthGroup=${inAuthGroup}, isNavReady=${isNavReady}`,
+      `[AUTH] user=${!!user}, rootSegment=${rootSegment}, inAuthGroup=${inAuthGroup}`,
     );
 
     if (!user && !inAuthGroup) {
-      // User is not logged in and trying to access a protected route
       const fullPath = segments.join("/");
       if (fullPath && fullPath !== "login") {
         setIntendedDestination(fullPath);
       }
-      console.log("[AUTH] Unauthorized access, redirecting to /login");
+      console.log("[AUTH] Unauthorized — redirecting to /login");
       router.replace("/login");
     } else if (user && inAuthGroup) {
-      // User is logged in but on an auth-related route
       if (intendedDestination) {
         console.log(
-          `[AUTH] Authenticated, redirecting to intended destination: ${intendedDestination}`,
+          `[AUTH] Redirecting to intended destination: ${intendedDestination}`,
         );
         router.replace(intendedDestination as any);
         setIntendedDestination(null);
       } else {
-        console.log("[AUTH] Authenticated, redirecting to /(tabs)");
+        console.log("[AUTH] Authenticated — redirecting to /(tabs)");
         router.replace("/(tabs)");
       }
     }
@@ -136,44 +167,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     const start = Date.now();
     await TokenStorage.saveToken(token);
     await TokenStorage.saveRefreshToken(refreshToken);
-
-    // Update React Query cache immediately
     queryClient.setQueryData(["user-session"], userData);
-
     console.log(`[PERF] Login state update took ${Date.now() - start}ms`);
   };
-
-  const logout = async (reason?: string) => {
-    try {
-      await apiClient.post("/auth/logout");
-    } catch (error) {
-      console.error("Logout error:", error);
-    } finally {
-      await TokenStorage.clearTokens();
-      queryClient.setQueryData(["user-session"], null);
-      if (reason === "expired") {
-        router.replace("/login?message=session_expired");
-      } else {
-        router.replace("/login");
-      }
-    }
-  };
-
-  useEffect(() => {
-    const handleSessionExpired = () => {
-      logout("expired");
-    };
-
-    if (typeof window !== "undefined") {
-      window.addEventListener("session-expired", handleSessionExpired);
-    }
-
-    return () => {
-      if (typeof window !== "undefined") {
-        window.removeEventListener("session-expired", handleSessionExpired);
-      }
-    };
-  }, []);
 
   return (
     <AuthContext.Provider
