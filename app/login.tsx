@@ -1,3 +1,4 @@
+import { useAuthContext } from "@/context/AuthContext";
 import { Ionicons } from "@expo/vector-icons";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -17,6 +18,7 @@ export default function LoginScreen() {
   const router = useRouter();
   const { message } = useLocalSearchParams<{ message?: string }>();
   const { login, isLoggingIn, loginError } = useAuth();
+  const { login: loginContext } = useAuthContext();
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
 
@@ -35,9 +37,10 @@ export default function LoginScreen() {
     },
   });
 
-  const handleLogin = async (data: LoginFormData) => {
+  const handleLogin = async (payload: LoginFormData) => {
     try {
-      await login(data);
+      const data = await login(payload);
+      loginContext(data.token, data.refreshToken, data.user);
     } catch (error) {
       console.error("Login failed", error);
     }

@@ -15,7 +15,7 @@ export const useAuth = () => {
     onSuccess: async (data) => {
       await TokenStorage.saveToken(data.accessToken);
       await TokenStorage.saveRefreshToken(data.refreshToken);
-      queryClient.setQueryData(["user"], data.user);
+      // queryClient.setQueryData(["user"], data.user);
       router.replace("/(tabs)");
     },
   });
