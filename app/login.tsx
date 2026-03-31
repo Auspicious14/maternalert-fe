@@ -40,7 +40,7 @@ export default function LoginScreen() {
   const handleLogin = async (payload: LoginFormData) => {
     try {
       const data = await login(payload);
-      loginContext(data.token, data.refreshToken, data.user);
+      loginContext(data.accessToken, data.refreshToken, data.user);
     } catch (error) {
       console.error("Login failed", error);
     }
