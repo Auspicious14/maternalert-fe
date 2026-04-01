@@ -10,11 +10,13 @@ import React, {
 import apiClient from "../api/client";
 import { appEvents } from "../api/event-emitter";
 import { TokenStorage } from "../api/storage";
+import { sessionService } from "../services/session";
 
 interface User {
   id: string;
   email: string;
   name?: string;
+  needsProfile?: boolean;
 }
 
 interface AuthContextType {
@@ -61,12 +63,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       }
 
       try {
-        const response = await apiClient.get("/auth/me");
+        // First check if the session is valid
+        const authResponse = await apiClient.post("/auth/me");
+        const authUser = authResponse.data;
         console.log(`[PERF] /auth/me call took ${Date.now() - start}ms`);
-        return response.data;
+
+        // Then try to get the profile (but don't fail if it's missing)
+        try {
+          const profileResponse = await apiClient.get("/user-profile");
+          return { ...authUser, ...profileResponse.data };
+        } catch (profileError: any) {
+          if (profileError.response?.status === 404) {
+            console.log("[AUTH] Authenticated but NO profile found");
+            return { ...authUser, needsProfile: true };
+          }
+          throw profileError;
+        }
       } catch (error) {
-        console.error("Session check failed:", error);
-        await TokenStorage.clearTokens();
+        console.error("Session check failed (not clearing tokens):", error);
         return null;
       }
     },
@@ -85,8 +99,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   }, [isLoading, user]);
 
   const logout = async (reason?: string) => {
+    console.log(`[AUTH] Logout requested. Reason: ${reason || "none"}`);
     try {
-      await apiClient.post("/auth/logout");
+      // Only call logout API if we have a token
+      const token = await TokenStorage.getToken();
+      if (token) {
+        await apiClient.post("/auth/logout");
+      }
     } catch (error) {
       // Ignore logout API errors — we always clear locally
       console.error("Logout API error (ignored):", error);
@@ -125,11 +144,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   // ── Route protection ──
   useEffect(() => {
+    console.log(
+      `[AUTH-EFFECT] Triggered. user=${!!user}, isLoading=${isLoading}, isNavReady=${isNavReady}`,
+    );
     const guard = async () => {
-      if (isLoading || !isNavReady) return;
+      if (isLoading || !isNavReady) {
+        console.log(
+          `[AUTH-GUARD] Still loading (isLoading=${isLoading}, isNavReady=${isNavReady})`,
+        );
+        return;
+      }
 
       const rootSegment = segments[0] as string | undefined;
-
       const inAuthGroup =
         !rootSegment ||
         rootSegment === "index" ||
@@ -137,37 +163,51 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         rootSegment === "register" ||
         rootSegment === "onboarding" ||
         rootSegment === "forgot-password" ||
-        rootSegment === "disclaimer";
+        rootSegment === "disclaimer" ||
+        rootSegment === "profile-setup";
 
       console.log(
-        `[AUTH] user=${!!user}, rootSegment=${rootSegment}, inAuthGroup=${inAuthGroup}`,
+        `[AUTH-GUARD] user=${!!user}, needsProfile=${user?.needsProfile}, rootSegment=${rootSegment}, inAuthGroup=${inAuthGroup}, path=${segments.join("/")}`,
       );
 
       if (!user && !inAuthGroup) {
         const fullPath = segments.join("/");
         if (fullPath && fullPath !== "login") {
+          console.log(
+            `[AUTH-GUARD] Setting intended destination to: ${fullPath}`,
+          );
           setIntendedDestination(fullPath);
         }
-        console.log("[AUTH] Unauthorized — redirecting to /login");
+        console.log("[AUTH-GUARD] Unauthorized — redirecting to /login");
         router.replace("/login");
       } else if (!user && inAuthGroup) {
         const hasLaunched = await TokenStorage.getHasLaunched();
-        if (!hasLaunched) {
+        if (!hasLaunched && rootSegment !== "onboarding") {
+          console.log("[AUTH-GUARD] First launch — redirecting to /onboarding");
           await TokenStorage.setHasLaunched();
           router.replace("/onboarding");
           return;
         }
-      } else if (user && inAuthGroup) {
-        if (intendedDestination) {
+      } else if (user) {
+        if (user.needsProfile && rootSegment !== "profile-setup") {
           console.log(
-            `[AUTH] Redirecting to intended destination: ${intendedDestination}`,
+            "[AUTH-GUARD] Authenticated but missing profile — redirecting to /profile-setup",
           );
-          router.replace(intendedDestination as any);
-          setIntendedDestination(null);
-        } else {
-          console.log("[AUTH] Authenticated — redirecting to /(tabs)");
-          router.replace("/(tabs)");
+          router.replace("/profile-setup");
+        } else if (!user.needsProfile && inAuthGroup) {
+          if (intendedDestination) {
+            console.log(
+              `[AUTH-GUARD] Redirecting to intended destination: ${intendedDestination}`,
+            );
+            router.replace(intendedDestination as any);
+            setIntendedDestination(null);
+          } else {
+            console.log("[AUTH-GUARD] Authenticated — redirecting to /(tabs)");
+            router.replace("/(tabs)");
+          }
         }
+      } else {
+        console.log("[AUTH-GUARD] State ok. No redirect needed.");
       }
     };
 
@@ -176,9 +216,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const login = async (token: string, refreshToken: string, userData: User) => {
     const start = Date.now();
+    console.log("[AUTH] Updating login state...");
     await TokenStorage.saveToken(token);
     await TokenStorage.saveRefreshToken(refreshToken);
+
+    // Set query data and ensure it's in a success state
     queryClient.setQueryData(["user-session"], userData);
+    console.log(
+      "[AUTH] queryClient data set:",
+      !!queryClient.getQueryData(["user-session"]),
+    );
+
+    sessionService.reset();
+
+    // Invalidate so all observers are updated correctly
+    await queryClient.invalidateQueries({ queryKey: ["user-session"] });
+    console.log("[AUTH] queryClient invalidated");
+
     console.log(`[PERF] Login state update took ${Date.now() - start}ms`);
   };
 

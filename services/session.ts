@@ -18,6 +18,12 @@ class SessionService {
   updateActivity() {
     this.lastActivity = Date.now();
     this.resetTimers();
+    console.log("[SESSION] Activity updated, timers reset");
+  }
+
+  // Allow resetting timers externally (e.g. after login)
+  reset() {
+    this.updateActivity();
   }
 
   private resetTimers() {

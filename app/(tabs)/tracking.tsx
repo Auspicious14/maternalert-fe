@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { memo, useMemo } from "react";
-import { SafeAreaView, StyleSheet, TouchableOpacity, View } from "react-native";
+import { StyleSheet, TouchableOpacity, View } from "react-native";
 import { Card } from "../../components/shared/Card";
 import { Screen } from "../../components/shared/Screen";
 import { Typography } from "../../components/shared/Typography";
@@ -203,167 +203,166 @@ export default function TrackingScreen() {
   }, []);
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: bgColor }]}>
-      <Screen
-        style={styles.container}
-        backgroundColor={bgColor}
-        scrollable={true}
-      >
-        {/* Header */}
-        <View style={styles.header}>
-          <Typography variant="h1" style={[styles.title, { color: textColor }]}>
-            Health Tracking
+    <Screen
+      style={styles.container}
+      backgroundColor={bgColor}
+      scrollable={true}
+      // safe={false}
+    >
+      {/* Header */}
+      <View style={styles.header}>
+        <Typography variant="h1" style={[styles.title, { color: textColor }]}>
+          Health Tracking
+        </Typography>
+        <TouchableOpacity
+          style={[
+            styles.calendarButton,
+            {
+              backgroundColor: isDark
+                ? "rgba(255,255,255,0.1)"
+                : "rgba(0,0,0,0.05)",
+            },
+          ]}
+        >
+          <Ionicons
+            name="calendar-outline"
+            size={24}
+            color={isDark ? "#FFFFFF" : "#1A212E"}
+          />
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.scrollContent}>
+        <SummaryCard
+          currentWeeks={currentWeeks}
+          firstPregnancy={profile?.firstPregnancy}
+          isDark={isDark}
+          cardBg={cardBg}
+          borderColor={borderColor}
+          subTextColor={subTextColor}
+          textColor={textColor}
+        />
+
+        {/* Calendar Strip */}
+        <View style={styles.calendarStrip}>
+          {weekDays.map((item, index) => (
+            <CalendarDay key={index} item={item} isDark={isDark} />
+          ))}
+        </View>
+
+        {/* Vitals Section */}
+        <View style={styles.sectionHeader}>
+          <Typography
+            variant="h2"
+            style={[styles.sectionTitle, { color: textColor }]}
+          >
+            Vitals Overview
           </Typography>
-          <TouchableOpacity
+        </View>
+
+        <View style={styles.vitalsRow}>
+          <VitalsCard
+            avgBP={avgBP}
+            cardBg={cardBg}
+            borderColor={borderColor}
+            textColor={textColor}
+            subTextColor={subTextColor}
+          />
+        </View>
+
+        {/* Logs */}
+        <View style={styles.sectionHeader}>
+          <Typography
+            variant="h2"
+            style={[styles.sectionTitle, { color: textColor }]}
+          >
+            Daily Logs
+          </Typography>
+        </View>
+
+        <Card
+          style={[
+            styles.logItem,
+            { backgroundColor: cardBg, borderColor: borderColor },
+          ]}
+        >
+          <View style={[styles.logIcon, { backgroundColor: "#FF4B4B" }]}>
+            <Ionicons name="sad" size={20} color="#FFFFFF" />
+          </View>
+          <View style={styles.logInfo}>
+            <Typography
+              variant="h3"
+              style={[styles.logTitle, { color: textColor }]}
+            >
+              Symptoms
+            </Typography>
+            <Typography
+              variant="caption"
+              style={[styles.logSubtitle, { color: subTextColor }]}
+            >
+              {recentSymptoms?.length || 0} signs reported recently
+            </Typography>
+          </View>
+          <Ionicons
+            name="chevron-forward"
+            size={20}
+            color={isDark ? "rgba(255,255,255,0.2)" : "rgba(0,0,0,0.2)"}
+          />
+        </Card>
+
+        {/* Trends Log */}
+        {trendAlerts.length > 0 && (
+          <View style={styles.sectionHeader}>
+            <Typography
+              variant="h2"
+              style={[styles.sectionTitle, { color: textColor }]}
+            >
+              Health Trends
+            </Typography>
+          </View>
+        )}
+
+        {trendAlerts.map((alert) => (
+          <Card
+            key={alert.id}
             style={[
-              styles.calendarButton,
+              styles.trendCard,
               {
-                backgroundColor: isDark
-                  ? "rgba(255,255,255,0.1)"
-                  : "rgba(0,0,0,0.05)",
+                backgroundColor: cardBg,
+                borderColor:
+                  alert.type === "CREEPING_RISE"
+                    ? Theme.colors.emergency
+                    : Theme.colors.accent,
+                borderLeftWidth: 4,
               },
             ]}
           >
-            <Ionicons
-              name="calendar-outline"
-              size={24}
-              color={isDark ? "#FFFFFF" : "#1A212E"}
-            />
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.scrollContent}>
-          <SummaryCard
-            currentWeeks={currentWeeks}
-            firstPregnancy={profile?.firstPregnancy}
-            isDark={isDark}
-            cardBg={cardBg}
-            borderColor={borderColor}
-            subTextColor={subTextColor}
-            textColor={textColor}
-          />
-
-          {/* Calendar Strip */}
-          <View style={styles.calendarStrip}>
-            {weekDays.map((item, index) => (
-              <CalendarDay key={index} item={item} isDark={isDark} />
-            ))}
-          </View>
-
-          {/* Vitals Section */}
-          <View style={styles.sectionHeader}>
-            <Typography
-              variant="h2"
-              style={[styles.sectionTitle, { color: textColor }]}
-            >
-              Vitals Overview
-            </Typography>
-          </View>
-
-          <View style={styles.vitalsRow}>
-            <VitalsCard
-              avgBP={avgBP}
-              cardBg={cardBg}
-              borderColor={borderColor}
-              textColor={textColor}
-              subTextColor={subTextColor}
-            />
-          </View>
-
-          {/* Logs */}
-          <View style={styles.sectionHeader}>
-            <Typography
-              variant="h2"
-              style={[styles.sectionTitle, { color: textColor }]}
-            >
-              Daily Logs
-            </Typography>
-          </View>
-
-          <Card
-            style={[
-              styles.logItem,
-              { backgroundColor: cardBg, borderColor: borderColor },
-            ]}
-          >
-            <View style={[styles.logIcon, { backgroundColor: "#FF4B4B" }]}>
-              <Ionicons name="sad" size={20} color="#FFFFFF" />
-            </View>
-            <View style={styles.logInfo}>
-              <Typography
-                variant="h3"
-                style={[styles.logTitle, { color: textColor }]}
-              >
-                Symptoms
-              </Typography>
+            <View style={styles.trendHeader}>
+              <Ionicons
+                name={alert.type === "SUDDEN_SPIKE" ? "flash" : "trending-up"}
+                size={20}
+                color={
+                  alert.type === "CREEPING_RISE"
+                    ? Theme.colors.emergency
+                    : Theme.colors.accent
+                }
+              />
               <Typography
                 variant="caption"
-                style={[styles.logSubtitle, { color: subTextColor }]}
+                style={[styles.trendDate, { color: subTextColor }]}
               >
-                {recentSymptoms?.length || 0} signs reported recently
+                {new Date(alert.detectedAt).toLocaleDateString()}
               </Typography>
             </View>
-            <Ionicons
-              name="chevron-forward"
-              size={20}
-              color={isDark ? "rgba(255,255,255,0.2)" : "rgba(0,0,0,0.2)"}
-            />
-          </Card>
-
-          {/* Trends Log */}
-          {trendAlerts.length > 0 && (
-            <View style={styles.sectionHeader}>
-              <Typography
-                variant="h2"
-                style={[styles.sectionTitle, { color: textColor }]}
-              >
-                Health Trends
-              </Typography>
-            </View>
-          )}
-
-          {trendAlerts.map((alert) => (
-            <Card
-              key={alert.id}
-              style={[
-                styles.trendCard,
-                {
-                  backgroundColor: cardBg,
-                  borderColor:
-                    alert.type === "CREEPING_RISE"
-                      ? Theme.colors.emergency
-                      : Theme.colors.accent,
-                  borderLeftWidth: 4,
-                },
-              ]}
+            <Typography
+              variant="body"
+              style={[styles.trendMessage, { color: textColor }]}
             >
-              <View style={styles.trendHeader}>
-                <Ionicons
-                  name={alert.type === "SUDDEN_SPIKE" ? "flash" : "trending-up"}
-                  size={20}
-                  color={
-                    alert.type === "CREEPING_RISE"
-                      ? Theme.colors.emergency
-                      : Theme.colors.accent
-                  }
-                />
-                <Typography
-                  variant="caption"
-                  style={[styles.trendDate, { color: subTextColor }]}
-                >
-                  {new Date(alert.detectedAt).toLocaleDateString()}
-                </Typography>
-              </View>
-              <Typography
-                variant="body"
-                style={[styles.trendMessage, { color: textColor }]}
-              >
-                {alert.message}
-              </Typography>
-            </Card>
-          ))}
-        </View>
-      </Screen>
+              {alert.message}
+            </Typography>
+          </Card>
+        ))}
+      </View>
 
       {/* FAB Refined */}
       <TouchableOpacity
@@ -377,14 +376,11 @@ export default function TrackingScreen() {
           color={isDark ? Theme.colors.darkBg : "#FFFFFF"}
         />
       </TouchableOpacity>
-    </SafeAreaView>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-  },
   container: {
     paddingHorizontal: 0,
   },
@@ -578,7 +574,7 @@ const styles = StyleSheet.create({
   },
   fab: {
     position: "absolute",
-    bottom: 110,
+    bottom: 20,
     right: 20,
     width: 64,
     height: 64,

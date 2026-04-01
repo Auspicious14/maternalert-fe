@@ -1,11 +1,11 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useRouter } from "expo-router";
 import apiClient from "../api/client";
 import { TokenStorage } from "../api/storage";
+import { useAuthContext } from "../context/AuthContext";
 
 export const useAuth = () => {
   const queryClient = useQueryClient();
-  const router = useRouter();
+  const { login: loginContext } = useAuthContext();
 
   const loginMutation = useMutation({
     mutationFn: async (credentials: any) => {
@@ -13,10 +13,8 @@ export const useAuth = () => {
       return response.data;
     },
     onSuccess: async (data) => {
-      await TokenStorage.saveToken(data.accessToken);
-      await TokenStorage.saveRefreshToken(data.refreshToken);
-      // queryClient.setQueryData(["user"], data.user);
-      router.replace("/(tabs)");
+      // Let AuthContext handle everything — tokens, cache, routing
+      await loginContext(data.accessToken, data.refreshToken, data.user);
     },
   });
 
@@ -26,10 +24,13 @@ export const useAuth = () => {
       return response.data;
     },
     onSuccess: async (data) => {
+      // Save tokens then set user-session so AuthContext guard fires
       await TokenStorage.saveToken(data.accessToken);
       await TokenStorage.saveRefreshToken(data.refreshToken);
-      queryClient.setQueryData(["user"], data.user);
-      router.replace("/profile-setup");
+      queryClient.setQueryData(["user-session"], data.user);
+      // AuthContext guard will redirect to /(tabs) automatically
+      // profile-setup redirect needs to be handled separately
+      // since new users shouldn't go to /(tabs) yet
     },
     onError: (err: any) => {
       console.log("Registration Error:", {
@@ -58,16 +59,13 @@ export const useAuth = () => {
     try {
       await apiClient.post("/auth/logout");
     } catch (error: any) {
-      console.log("Logout Error:", {
-        message: error.message,
-        status: error.response?.status,
-        data: error.response?.data,
-      });
+      console.log("Logout Error:", error.message);
     } finally {
       await TokenStorage.clearTokens();
       queryClient.clear();
-      router.replace("/login");
+      queryClient.setQueryData(["user-session"], null);
     }
+    // AuthContext guard will redirect to /login automatically
   };
 
   return {

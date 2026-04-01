@@ -2,13 +2,13 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
-    Image,
-    Linking,
-    Platform,
-    StyleSheet,
-    TextInput,
-    TouchableOpacity,
-    View,
+  Image,
+  Linking,
+  Platform,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { TokenStorage } from "../../api/storage";
 import { Badge } from "../../components/shared/Badge";
@@ -23,7 +23,7 @@ import { useAppTheme } from "../../hooks/useAppTheme";
 import { useAuth } from "../../hooks/useAuth";
 import { useCarePriority } from "../../hooks/useCarePriority";
 import { useUserProfile } from "../../hooks/useUserProfile";
-import { notificationService } from "../../services/notifications";
+// import { notificationService } from "../../services/notifications";
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -56,7 +56,7 @@ export default function ProfileScreen() {
     setReminderTime(time);
     await TokenStorage.saveReminderTime(time);
     const [hour, minute] = time.split(":").map(Number);
-    await notificationService.scheduleDailyBPReminder(hour, minute);
+    // await notificationService.scheduleDailyBPReminder(hour, minute);
   };
 
   // Redirect to profile setup if profile is missing and not loading/error
@@ -198,7 +198,7 @@ export default function ProfileScreen() {
   if (isLoadingProfile) {
     const skeletonVariant = isDark ? "dark" : "light";
     return (
-      <Screen style={styles.container} scrollable={false}>
+      <Screen style={styles.container} scrollable={false} safe={false}>
         <View style={[styles.header, { marginBottom: 32 }]}>
           <Skeleton
             width={32}
@@ -274,7 +274,7 @@ export default function ProfileScreen() {
 
   if (isErrorProfile) {
     return (
-      <Screen style={styles.container}>
+      <Screen style={styles.container} safe={false}>
         <View style={styles.header}>
           <TouchableOpacity
             style={styles.iconButton}
@@ -331,7 +331,7 @@ export default function ProfileScreen() {
   }
 
   return (
-    <Screen style={styles.container} scrollable>
+    <Screen style={styles.container} scrollable={true}>
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.iconButton}
@@ -709,46 +709,6 @@ export default function ProfileScreen() {
         </Card>
       )}
 
-      {/* 
-      <View style={styles.sectionHeader}>
-        <Typography variant="h2">Notification Settings</Typography>
-      </View>
-      <Card style={styles.clinicCard}>
-        <View style={[styles.settingRow, isDark && styles.settingRowDark]}>
-          <Typography variant="body">Care Priorities</Typography>
-          <Switch
-            value={profile?.notifyCarePriority ?? true}
-            onValueChange={(val) => updateProfile({ notifyCarePriority: val })}
-            trackColor={{ false: "#767577", true: "#34E875" }}
-          />
-        </View>
-        <View style={[styles.settingRow, isDark && styles.settingRowDark]}>
-          <Typography variant="body">Blood Pressure Alerts</Typography>
-          <Switch
-            value={profile?.notifyBpAlert ?? true}
-            onValueChange={(val) => updateProfile({ notifyBpAlert: val })}
-            trackColor={{ false: "#767577", true: "#34E875" }}
-          />
-        </View>
-        <View style={[styles.settingRow, isDark && styles.settingRowDark]}>
-          <Typography variant="body">Symptom Alerts</Typography>
-          <Switch
-            value={profile?.notifySymptomAlert ?? true}
-            onValueChange={(val) => updateProfile({ notifySymptomAlert: val })}
-            trackColor={{ false: "#767577", true: "#34E875" }}
-          />
-        </View>
-        <View style={[styles.settingRow, isDark && styles.settingRowDark]}>
-          <Typography variant="body">Daily Reminders</Typography>
-          <Switch
-            value={profile?.notifyReminders ?? true}
-            onValueChange={(val) => updateProfile({ notifyReminders: val })}
-            trackColor={{ false: "#767577", true: "#34E875" }}
-          />
-        </View>
-      </Card>
-      */}
-
       <View style={styles.sectionHeader}>
         <Typography variant="h2">Reminders</Typography>
       </View>
@@ -846,7 +806,9 @@ export default function ProfileScreen() {
       </Card>
       <View style={{ marginTop: 16 }}>
         <TouchableOpacity style={styles.logoutButton} onPress={logout}>
-          <Typography variant="body">Logout</Typography>
+          <Typography variant="body" style={{ color: "#FFFFFF" }}>
+            Logout
+          </Typography>
         </TouchableOpacity>
       </View>
     </Screen>
@@ -857,7 +819,6 @@ const styles = StyleSheet.create({
   container: {
     paddingHorizontal: Theme.spacing.m,
     paddingTop: Theme.spacing.s,
-    paddingBottom: 100,
   },
   header: {
     flexDirection: "row",
@@ -867,10 +828,6 @@ const styles = StyleSheet.create({
   },
   iconButton: {
     padding: 4,
-  },
-  editText: {
-    color: "#34E875",
-    fontWeight: "bold",
   },
   profileInfo: {
     alignItems: "center",
@@ -908,9 +865,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderWidth: 3,
     borderColor: Theme.colors.white,
-  },
-  userName: {
-    marginBottom: Theme.spacing.xs,
   },
   badgeRow: {
     flexDirection: "row",
@@ -1031,7 +985,6 @@ const styles = StyleSheet.create({
   },
   cancelButton: {
     height: 40,
-    // minWidth: 100,
     width: "50%",
   },
   contactHeaderRow: {
@@ -1082,7 +1035,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: Theme.spacing.m,
   },
-
   settingRow: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -1094,7 +1046,6 @@ const styles = StyleSheet.create({
   settingRowDark: {
     borderBottomColor: "#3A3430",
   },
-
   themeRow: {
     flexDirection: "row",
     justifyContent: "space-between",

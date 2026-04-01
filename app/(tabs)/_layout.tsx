@@ -1,14 +1,13 @@
-import { Ionicons } from '@expo/vector-icons';
-import { Tabs } from 'expo-router';
-import React from 'react';
-import { StyleSheet, View } from 'react-native';
-import { Typography } from '../../components/shared/Typography';
-import Theme from '../../constants/theme';
-import { useColorScheme } from '../../hooks/use-color-scheme';
+import { Ionicons } from "@expo/vector-icons";
+import { Tabs } from "expo-router";
+import React from "react";
+import { StyleSheet, View } from "react-native";
+import Theme from "../../constants/theme";
+import { useColorScheme } from "../../hooks/use-color-scheme";
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const isDark = colorScheme === "dark";
 
   return (
     <Tabs
@@ -18,7 +17,9 @@ export default function TabLayout() {
           styles.tabBar,
           {
             backgroundColor: isDark ? Theme.colors.darkBg : Theme.colors.white,
-            borderTopColor: isDark ? Theme.colors.borderDark : Theme.colors.border,
+            borderTopColor: isDark
+              ? Theme.colors.borderDark
+              : Theme.colors.border,
           },
         ],
         tabBarShowLabel: true,
@@ -30,64 +31,92 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Home',
+          title: "Home",
           tabBarIcon: ({ focused, color }) => (
-            <View style={[styles.iconContainer, focused && (isDark ? styles.activeIconContainerDark : styles.activeIconContainerLight)]}>
-              <Ionicons name={focused ? 'home' : 'home-outline'} size={24} color={color} />
+            <View
+              style={[
+                styles.iconContainer,
+                focused &&
+                  (isDark
+                    ? styles.activeIconContainerDark
+                    : styles.activeIconContainerLight),
+              ]}
+            >
+              <Ionicons
+                name={focused ? "home" : "home-outline"}
+                size={24}
+                color={color}
+              />
             </View>
-          ),
-          tabBarLabel: ({ focused, color }) => (
-            <Typography variant="caption" style={[styles.label, { color, fontWeight: focused ? 'bold' : 'normal' }]}>
-              Home
-            </Typography>
           ),
         }}
       />
       <Tabs.Screen
         name="tracking"
         options={{
-          title: 'Tracking',
+          title: "Tracking",
           tabBarIcon: ({ focused, color }) => (
-            <View style={[styles.iconContainer, focused && (isDark ? styles.activeIconContainerDark : styles.activeIconContainerLight)]}>
-              <Ionicons name={focused ? 'stats-chart' : 'stats-chart-outline'} size={24} color={color} />
+            <View
+              style={[
+                styles.iconContainer,
+                focused &&
+                  (isDark
+                    ? styles.activeIconContainerDark
+                    : styles.activeIconContainerLight),
+              ]}
+            >
+              <Ionicons
+                name={focused ? "stats-chart" : "stats-chart-outline"}
+                size={24}
+                color={color}
+              />
             </View>
-          ),
-          tabBarLabel: ({ focused, color }) => (
-            <Typography variant="caption" style={[styles.label, { color, fontWeight: focused ? 'bold' : 'normal' }]}>
-              Tracking
-            </Typography>
           ),
         }}
       />
       <Tabs.Screen
         name="education"
         options={{
-          title: 'Education',
+          title: "Education",
           tabBarIcon: ({ focused, color }) => (
-            <View style={[styles.iconContainer, focused && (isDark ? styles.activeIconContainerDark : styles.activeIconContainerLight)]}>
-              <Ionicons name={focused ? 'book' : 'book-outline'} size={24} color={color} />
+            <View
+              style={[
+                styles.iconContainer,
+                focused &&
+                  (isDark
+                    ? styles.activeIconContainerDark
+                    : styles.activeIconContainerLight),
+              ]}
+            >
+              <Ionicons
+                name={focused ? "book" : "book-outline"}
+                size={24}
+                color={color}
+              />
             </View>
-          ),
-          tabBarLabel: ({ focused, color }) => (
-            <Typography variant="caption" style={[styles.label, { color, fontWeight: focused ? 'bold' : 'normal' }]}>
-              Education
-            </Typography>
           ),
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
-          title: 'Profile',
+          title: "Profile",
           tabBarIcon: ({ focused, color }) => (
-            <View style={[styles.iconContainer, focused && (isDark ? styles.activeIconContainerDark : styles.activeIconContainerLight)]}>
-              <Ionicons name={focused ? 'person' : 'person-outline'} size={24} color={color} />
+            <View
+              style={[
+                styles.iconContainer,
+                focused &&
+                  (isDark
+                    ? styles.activeIconContainerDark
+                    : styles.activeIconContainerLight),
+              ]}
+            >
+              <Ionicons
+                name={focused ? "person" : "person-outline"}
+                size={24}
+                color={color}
+              />
             </View>
-          ),
-          tabBarLabel: ({ focused, color }) => (
-            <Typography variant="caption" style={[styles.label, { color, fontWeight: focused ? 'bold' : 'normal' }]}>
-              Profile
-            </Typography>
           ),
         }}
       />
@@ -102,12 +131,9 @@ const styles = StyleSheet.create({
     paddingTop: 10,
     borderTopLeftRadius: Theme.borderRadius.large,
     borderTopRightRadius: Theme.borderRadius.large,
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
+    borderTopWidth: 1,
     elevation: 10,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: -2 },
     shadowOpacity: 0.1,
     shadowRadius: 10,
@@ -120,8 +146,8 @@ const styles = StyleSheet.create({
     width: 60,
     height: 32,
     borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   activeIconContainer: {
     backgroundColor: Theme.colors.secondary,
@@ -130,7 +156,7 @@ const styles = StyleSheet.create({
     backgroundColor: Theme.colors.secondary,
   },
   activeIconContainerDark: {
-    backgroundColor: 'rgba(45, 228, 116, 0.2)',
+    backgroundColor: "rgba(45, 228, 116, 0.2)",
     borderWidth: 1,
     borderColor: Theme.colors.primary,
   },
