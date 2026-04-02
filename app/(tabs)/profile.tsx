@@ -1,3 +1,4 @@
+import { notificationService } from "@/services/notifications";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
@@ -56,7 +57,7 @@ export default function ProfileScreen() {
     setReminderTime(time);
     await TokenStorage.saveReminderTime(time);
     const [hour, minute] = time.split(":").map(Number);
-    // await notificationService.scheduleDailyBPReminder(hour, minute);
+    await notificationService.scheduleDailyBPReminder(hour, minute);
   };
 
   // Redirect to profile setup if profile is missing and not loading/error
