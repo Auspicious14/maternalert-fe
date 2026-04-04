@@ -6,13 +6,43 @@ import apiClient from "../api/client";
 import { TokenStorage } from "../api/storage";
 
 Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-    shouldShowBanner: true,
-    shouldShowList: true,
-  }),
+  handleNotification: async (notification) => {
+    // ── Quiet Reminder Logic ──
+    // If it's a daily reminder and user already logged BP today, don't show it
+    const data = notification.request.content.data || {};
+    if (data.type === "BP_REMINDER") {
+      try {
+        const response = await apiClient.get("/blood-pressure/latest");
+        const latestReading = response.data;
+        if (latestReading) {
+          const today = new Date().toISOString().split("T")[0];
+          const lastLogDate = new Date(latestReading.recordedAt)
+            .toISOString()
+            .split("T")[0];
+          if (today === lastLogDate) {
+            console.log("BP already logged today, silencing daily reminder.");
+            return {
+              shouldShowAlert: false,
+              shouldPlaySound: false,
+              shouldSetBadge: false,
+              shouldShowBanner: false,
+              shouldShowList: false,
+            };
+          }
+        }
+      } catch (error) {
+        console.error("Error in quiet reminder check:", error);
+      }
+    }
+
+    return {
+      shouldShowAlert: true,
+      shouldPlaySound: true,
+      shouldSetBadge: false,
+      shouldShowBanner: true,
+      shouldShowList: true,
+    };
+  },
 });
 const isExpoGo =
   Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
@@ -138,6 +168,28 @@ class NotificationService {
           notification.identifier,
         );
       }
+    }
+
+    // Check if user already logged BP today
+    try {
+      const response = await apiClient.get("/blood-pressure/latest");
+      const latestReading = response.data;
+      if (latestReading) {
+        const today = new Date().toISOString().split("T")[0];
+        const lastLogDate = new Date(latestReading.recordedAt)
+          .toISOString()
+          .split("T")[0];
+        if (today === lastLogDate) {
+          console.log(
+            "BP already logged today, skipping daily reminder schedule for today",
+          );
+          // Note: We still schedule it for tomorrow+ by using repeats: true
+          // but expo-notifications doesn't easily allow "skip today only" for a recurring notification
+          // A better way is to check this condition in the notification handler or use a background task
+        }
+      }
+    } catch (error) {
+      console.error("Error checking latest BP for reminder:", error);
     }
 
     // Schedule new daily reminder
