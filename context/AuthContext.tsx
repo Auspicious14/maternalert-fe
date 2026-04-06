@@ -93,6 +93,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   useEffect(() => {
     const loadLaunchState = async () => {
       const launched = await TokenStorage.getHasLaunched();
+      console.log(`[AUTH] Loaded raw launch state: "${launched}"`);
       setHasLaunched(launched === "true");
     };
     loadLaunchState();
@@ -197,10 +198,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         console.log("[AUTH-GUARD] Unauthorized — redirecting to /login");
         router.replace("/login");
       } else if (!user && isPublicRoute) {
-        if (!hasLaunched && rootSegment !== "onboarding") {
+        if (hasLaunched === false && rootSegment !== "onboarding") {
           console.log("[AUTH-GUARD] First launch — redirecting to /onboarding");
           router.replace("/onboarding");
-        } else if (hasLaunched && rootSegment === "onboarding") {
+        } else if (hasLaunched === true && rootSegment === "onboarding") {
           console.log("[AUTH-GUARD] Already launched — redirecting to /login");
           router.replace("/login");
         }

@@ -16,7 +16,7 @@ export default function OnboardingScreen() {
 
   return (
     <Screen safe={true} scrollable={true}>
-      <View className="flex-1 px-6 pb-10">
+      <View className="px-6 pb-10">
         <View className="flex-row justify-end pt-4 mb-4">
           <TouchableOpacity
             style={{
@@ -57,8 +57,8 @@ export default function OnboardingScreen() {
             variant="body"
             className="text-center leading-6 text-base px-2"
           >
-            Notice warning signs early and know exactly when to seek professional
-            care.
+            Notice warning signs early and know exactly when to seek
+            professional care.
           </Typography>
         </View>
 
@@ -113,7 +113,7 @@ export default function OnboardingScreen() {
           </View>
         </View>
 
-        <View className="px-4 mt-auto">
+        <View className="px-4 pb-10">
           <TouchableOpacity
             className="bg-primary w-full h-16 rounded-[20px] flex-row items-center justify-center gap-3 mb-5 shadow-sm"
             activeOpacity={0.8}
@@ -131,17 +131,11 @@ export default function OnboardingScreen() {
           >
             By continuing, you acknowledge that this app does not replace
             medical advice. See our{" "}
-            <Typography
-              variant="caption"
-              className="underline"
-            >
+            <Typography variant="caption" className="underline">
               Terms
             </Typography>{" "}
             &{" "}
-            <Typography
-              variant="caption"
-              className="underline"
-            >
+            <Typography variant="caption" className="underline">
               Privacy Policy
             </Typography>
             .
