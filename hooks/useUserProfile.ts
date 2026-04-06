@@ -21,6 +21,7 @@ export interface UserProfile {
   notifyBpAlert?: boolean;
   notifySymptomAlert?: boolean;
   notifyReminders?: boolean;
+  reminderTime?: string;
   createdAt: string;
 }
 

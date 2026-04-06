@@ -47,11 +47,18 @@ export default function ProfileScreen() {
 
   React.useEffect(() => {
     const loadReminderTime = async () => {
-      const time = await TokenStorage.getReminderTime();
-      if (time) setReminderTime(time);
+      // Prioritize profile data from backend
+      if (profile?.reminderTime) {
+        setReminderTime(profile.reminderTime);
+        await TokenStorage.saveReminderTime(profile.reminderTime);
+      } else {
+        // Fallback to local storage if profile is missing it
+        const localTime = await TokenStorage.getReminderTime();
+        if (localTime) setReminderTime(localTime);
+      }
     };
     loadReminderTime();
-  }, []);
+  }, [profile]);
 
   const handleUpdateReminder = async (time: string) => {
     setReminderTime(time);
@@ -60,7 +67,16 @@ export default function ProfileScreen() {
     if (timeRegex.test(time)) {
       await TokenStorage.saveReminderTime(time);
       const [hour, minute] = time.split(":").map(Number);
+
+      // Update local notification service
       await notificationService.scheduleDailyBPReminder(hour, minute);
+
+      // Update backend preference for persistent reminders
+      try {
+        await updateProfile({ reminderTime: time });
+      } catch (error) {
+        console.error("Failed to update reminder time on backend:", error);
+      }
     }
   };
 
