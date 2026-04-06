@@ -55,9 +55,13 @@ export default function ProfileScreen() {
 
   const handleUpdateReminder = async (time: string) => {
     setReminderTime(time);
-    await TokenStorage.saveReminderTime(time);
-    const [hour, minute] = time.split(":").map(Number);
-    await notificationService.scheduleDailyBPReminder(hour, minute);
+    // Only schedule if it's a valid HH:mm format
+    const timeRegex = /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/;
+    if (timeRegex.test(time)) {
+      await TokenStorage.saveReminderTime(time);
+      const [hour, minute] = time.split(":").map(Number);
+      await notificationService.scheduleDailyBPReminder(hour, minute);
+    }
   };
 
   // Redirect to profile setup if profile is missing and not loading/error
@@ -726,7 +730,7 @@ export default function ProfileScreen() {
               Daily BP Reminder
             </Typography>
             <Typography variant="caption" color={Theme.colors.textLight}>
-              We'll remind you to log your BP every day.
+              We'll remind you daily. (24h format)
             </Typography>
           </View>
           <View
