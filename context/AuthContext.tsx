@@ -88,17 +88,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     staleTime: 1000 * 60 * 5,
   });
 
-  const isLoading = isQueryLoading || status === "pending";
+  const [hasLaunched, setHasLaunched] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    const loadLaunchState = async () => {
+      const launched = await TokenStorage.getHasLaunched();
+      setHasLaunched(launched === "true");
+    };
+    loadLaunchState();
+  }, []);
+
+  const isLoading =
+    isQueryLoading || status === "pending" || hasLaunched === null;
 
   useEffect(() => {
     if (!isLoading) {
       console.log(
-        `[PERF] Auth state resolved in ${Date.now() - perfStartTime.current}ms (User: ${!!user})`,
+        `[PERF] Auth state resolved in ${Date.now() - perfStartTime.current}ms (User: ${!!user}, HasLaunched: ${hasLaunched})`,
       );
     }
-  }, [isLoading, user]);
+  }, [isLoading, user, hasLaunched]);
+
+  const logoutInProgress = useRef(false);
 
   const logout = async (reason?: string) => {
+    if (logoutInProgress.current) return;
+    logoutInProgress.current = true;
     console.log(`[AUTH] Logout requested. Reason: ${reason || "none"}`);
     try {
       // Only call logout API if we have a token
@@ -119,6 +134,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       } else {
         router.replace("/login");
       }
+      logoutInProgress.current = false;
     }
   };
 
@@ -156,23 +172,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       }
 
       const rootSegment = segments[0] as string | undefined;
-      const inAuthGroup =
-        !rootSegment ||
-        rootSegment === "index" ||
+      const inAuthGroup = segments.some((s) => s === "(tabs)");
+      const isPublicRoute =
         rootSegment === "login" ||
         rootSegment === "register" ||
         rootSegment === "onboarding" ||
-        rootSegment === "forgot-password" ||
         rootSegment === "disclaimer" ||
-        rootSegment === "profile-setup";
+        rootSegment === "forgot-password" ||
+        rootSegment === "reset-password";
 
-      console.log(
-        `[AUTH-GUARD] user=${!!user}, needsProfile=${user?.needsProfile}, rootSegment=${rootSegment}, inAuthGroup=${inAuthGroup}, path=${segments.join("/")}`,
-      );
-
-      if (!user && !inAuthGroup) {
+      if (!user && !isPublicRoute) {
         const fullPath = segments.join("/");
-        if (fullPath && fullPath !== "login") {
+        if (
+          fullPath &&
+          fullPath !== "login" &&
+          fullPath !== "" &&
+          fullPath !== "index"
+        ) {
           console.log(
             `[AUTH-GUARD] Setting intended destination to: ${fullPath}`,
           );
@@ -180,13 +196,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         }
         console.log("[AUTH-GUARD] Unauthorized — redirecting to /login");
         router.replace("/login");
-      } else if (!user && inAuthGroup) {
-        const hasLaunched = await TokenStorage.getHasLaunched();
+      } else if (!user && isPublicRoute) {
         if (!hasLaunched && rootSegment !== "onboarding") {
           console.log("[AUTH-GUARD] First launch — redirecting to /onboarding");
-          await TokenStorage.setHasLaunched();
           router.replace("/onboarding");
-          return;
+        } else if (hasLaunched && rootSegment === "onboarding") {
+          console.log("[AUTH-GUARD] Already launched — redirecting to /login");
+          router.replace("/login");
         }
       } else if (user) {
         if (user.needsProfile && rootSegment !== "profile-setup") {
@@ -194,7 +210,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
             "[AUTH-GUARD] Authenticated but missing profile — redirecting to /profile-setup",
           );
           router.replace("/profile-setup");
-        } else if (!user.needsProfile && inAuthGroup) {
+        } else if (
+          !user.needsProfile &&
+          (isPublicRoute ||
+            rootSegment === "profile-setup" ||
+            !rootSegment ||
+            rootSegment === "index")
+        ) {
           if (intendedDestination) {
             console.log(
               `[AUTH-GUARD] Redirecting to intended destination: ${intendedDestination}`,
@@ -212,7 +234,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     };
 
     guard();
-  }, [user, segments, isLoading, isNavReady, intendedDestination]);
+  }, [user, segments, isLoading, isNavReady, intendedDestination, hasLaunched]);
 
   const login = async (token: string, refreshToken: string, userData: User) => {
     const start = Date.now();

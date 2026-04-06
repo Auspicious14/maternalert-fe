@@ -2,6 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import { SafeAreaView, ScrollView, TouchableOpacity, View } from "react-native";
+import { TokenStorage } from "../api/storage";
 import { Button } from "../components/shared/Button";
 import { Typography } from "../components/shared/Typography";
 import Theme from "../constants/theme";
@@ -17,6 +18,11 @@ export default function DisclaimerScreen() {
   const borderColor = isDark ? Theme.colors.borderDark : "#E2E8F0";
   const iconBgColor = isDark ? "rgba(198, 40, 40, 0.1)" : "#FFEBEE";
   const checkboxBorderColor = isDark ? Theme.colors.borderDark : "#CBD5E0";
+
+  const handleAccept = async () => {
+    await TokenStorage.setHasLaunched();
+    router.replace("/register");
+  };
 
   return (
     <SafeAreaView style={{ backgroundColor: bgColor }} className="flex-1">
@@ -114,7 +120,7 @@ export default function DisclaimerScreen() {
             variant="primary"
             size="large"
             disabled={!agreed}
-            onPress={() => router.replace("/register")}
+            onPress={handleAccept}
             className="w-full"
           />
         </View>

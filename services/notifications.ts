@@ -94,7 +94,11 @@ class NotificationService {
         console.log("Failed to get push token for push notification!");
         return;
       }
-      token = (await Notifications.getExpoPushTokenAsync()).data;
+      token = (
+        await Notifications.getExpoPushTokenAsync({
+          projectId: "fd1b8c99-55ce-463d-8fd3-23857dd9f2ec",
+        })
+      ).data;
       console.log("Expo Push Token:", token);
 
       // Register token with backend

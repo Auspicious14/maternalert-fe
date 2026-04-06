@@ -11,6 +11,7 @@ import {
 import { Screen } from "../components/shared/Screen";
 import { Typography } from "../components/shared/Typography";
 import Theme from "../constants/theme";
+import { useAuthContext } from "../context/AuthContext";
 import { useColorScheme } from "../hooks/use-color-scheme";
 import { useUserProfile } from "../hooks/useUserProfile";
 
@@ -19,6 +20,7 @@ const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 export default function ProfileSetupScreen() {
   const router = useRouter();
   const { createProfile, isCreatingProfile } = useUserProfile();
+  const { checkSession } = useAuthContext();
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
   const [step, setStep] = useState(1);
@@ -75,6 +77,9 @@ export default function ProfileSetupScreen() {
             mappedConditions.length > 0 ? mappedConditions : ["NONE"],
         });
 
+        // Crucial: Update auth state before redirecting
+        await checkSession();
+        
         router.replace("/(tabs)");
       } catch (error) {
         console.error("Failed to create profile", error);
