@@ -39,6 +39,7 @@ export const Colors = {
   orangeGradient: ["#FF9B3E", "#E67E22"],
   redGradient: ["#FF4B4B", "#C62828"],
   greenGradient: ["#2DE474", "#15803D"],
+  yellowGradient: ["#FFD700", "#FFA500"],
 
   // Specifics
   inputBg: "#E8FCF1",

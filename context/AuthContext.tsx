@@ -23,6 +23,8 @@ interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   isAuthenticated: boolean;
+  hasLaunched: boolean | null;
+  markAsLaunched: () => Promise<void>;
   login: (token: string, refreshToken: string, user: User) => Promise<void>;
   logout: (reason?: string) => Promise<void>;
   checkSession: () => Promise<void>;
@@ -137,6 +139,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       }
       logoutInProgress.current = false;
     }
+  };
+
+  const markAsLaunched = async () => {
+    await TokenStorage.setHasLaunched();
+    setHasLaunched(true); // ← updates React state immediately
   };
 
   const checkSession = async () => {
@@ -269,6 +276,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         user: user ?? null,
         isLoading,
         isAuthenticated: !!user,
+        hasLaunched,
+        markAsLaunched,
         login,
         logout,
         checkSession,

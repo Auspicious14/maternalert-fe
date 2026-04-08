@@ -10,12 +10,15 @@ import { Skeleton } from "../../components/ui/Skeleton";
 import Theme from "../../constants/theme";
 import { useColorScheme } from "../../hooks/use-color-scheme";
 
-import { useCarePriority } from "../../hooks/useCarePriority";
 import {
-    BloodPressure,
-    Symptom,
-    useHealthData,
+  BloodPressure,
+  Symptom,
+  useHealthData,
 } from "../../hooks/useHealthData";
+import {
+  FollowUpTaskResponse,
+  useMonitoringData,
+} from "../../hooks/useMonitoringData";
 import { useNotifications } from "../../hooks/useNotifications";
 import { useUserProfile } from "../../hooks/useUserProfile";
 
@@ -233,8 +236,12 @@ export default function HomeScreen() {
   const router = useRouter();
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
-  const { data: priorityData, isLoading: isLoadingPriority } =
-    useCarePriority();
+  const {
+    monitoringState,
+    followUpTasks,
+    isLoadingMonitoringState,
+    isLoadingFollowUpTasks,
+  } = useMonitoringData();
   const {
     latestBP,
     recentSymptoms,
@@ -245,30 +252,38 @@ export default function HomeScreen() {
   const { unreadCount } = useNotifications();
 
   const statusColors = useMemo(() => {
-    switch (priorityData?.priority) {
+    switch (monitoringState?.state) {
       case "EMERGENCY":
         return Theme.colors.redGradient;
-      case "URGENT_REVIEW":
+      case "URGENT":
         return Theme.colors.orangeGradient;
-      case "INCREASED_MONITORING":
-        return Theme.colors.greenGradient;
+      case "MONITOR":
+        return Theme.colors.yellowGradient;
       default:
         return Theme.colors.greenGradient;
     }
-  }, [priorityData?.priority]);
+  }, [monitoringState?.state]);
 
   const statusLabel = useMemo(() => {
-    switch (priorityData?.priority) {
+    switch (monitoringState?.state) {
       case "EMERGENCY":
         return "EMERGENCY";
-      case "URGENT_REVIEW":
-        return "ATTENTION NEEDED";
-      case "INCREASED_MONITORING":
+      case "URGENT":
+        return "URGENT ATTENTION";
+      case "MONITOR":
         return "INCREASED MONITORING";
       default:
-        return "ROUTINE CARE";
+        return "NORMAL";
     }
-  }, [priorityData?.priority]);
+  }, [monitoringState?.state]);
+
+  const statusMessage = useMemo(() => {
+    return monitoringState?.reason || "All readings are within normal range.";
+  }, [monitoringState?.reason]);
+
+  const nextActionMessage = useMemo(() => {
+    return monitoringState?.nextAction || "Continue routine monitoring.";
+  }, [monitoringState?.nextAction]);
 
   return (
     <Screen
@@ -314,19 +329,97 @@ export default function HomeScreen() {
       <View style={{ paddingHorizontal: 24, paddingBottom: 120 }}>
         {/* Urgent Status Card */}
         <StatusCard
-          priorityData={priorityData}
+          priorityData={{
+            priority: monitoringState?.state,
+            message: statusMessage,
+            nextAction: nextActionMessage,
+          }}
           statusColors={statusColors}
           statusLabel={statusLabel}
-          isLoading={isLoadingPriority}
+          isLoading={isLoadingMonitoringState}
           isDark={isDark}
-          onPress={() =>
-            router.push(
-              priorityData?.priority === "EMERGENCY"
-                ? "/emergency"
-                : "/symptom-results",
-            )
-          }
+          onPress={() => {
+            if (monitoringState?.state === "EMERGENCY") {
+              router.push("/emergency");
+            } else if (monitoringState?.state === "URGENT") {
+              // Navigate to a specific urgent action screen if needed
+              router.push("/symptom-results"); // Placeholder
+            } else if (
+              followUpTasks &&
+              followUpTasks.some((task) => task.type === "RECHECK")
+            ) {
+              router.push("/bp-entry");
+            }
+          }}
         />
+
+        {/* Follow-up Task Card */}
+        {isLoadingFollowUpTasks ? (
+          <Skeleton
+            height={100}
+            borderRadius={28}
+            style={{ marginBottom: 24 }}
+            variant={isDark ? "dark" : "light"}
+          />
+        ) : (
+          followUpTasks &&
+          followUpTasks.length > 0 && (
+            <Card
+              className={`${isDark ? "bg-card-dark border-white/10" : "bg-white border-gray-100"} border p-6 mb-6 rounded-[24px]`}
+            >
+              <Typography
+                variant="h3"
+                weight="bold"
+                className={`${isDark ? "text-white" : "text-text"} text-lg mb-2`}
+              >
+                Action Required
+              </Typography>
+              {followUpTasks.map((task: FollowUpTaskResponse) => (
+                <View
+                  key={task.id}
+                  className="flex-row items-center justify-between mb-2"
+                >
+                  <View className="flex-1">
+                    <Typography
+                      variant="body"
+                      className={`${isDark ? "text-white" : "text-text"}`}
+                    >
+                      {task.type === "RECHECK"
+                        ? "Recheck your blood pressure"
+                        : "Seek medical care"}
+                    </Typography>
+                    <Typography
+                      variant="caption"
+                      className={`${isDark ? "text-white/50" : "text-gray-500"}`}
+                    >
+                      Due:{" "}
+                      {new Date(task.dueAt).toLocaleDateString(undefined, {
+                        month: "short",
+                        day: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </Typography>
+                  </View>
+                  <TouchableOpacity
+                    className="bg-primary px-4 py-2 rounded-full"
+                    onPress={() => {
+                      if (task.type === "RECHECK") {
+                        router.push("/bp-entry");
+                      } else {
+                        router.push("/clinic-finder");
+                      }
+                    }}
+                  >
+                    <Typography variant="caption" weight="bold">
+                      {task.type === "RECHECK" ? "Log BP" : "Find Clinic"}
+                    </Typography>
+                  </TouchableOpacity>
+                </View>
+              ))}
+            </Card>
+          )
+        )}
 
         {/* Stats Row */}
         <StatsCard

@@ -1,8 +1,8 @@
+import { useAuthContext } from "@/context/AuthContext";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import { SafeAreaView, ScrollView, TouchableOpacity, View } from "react-native";
-import { TokenStorage } from "../api/storage";
 import { Button } from "../components/shared/Button";
 import { Typography } from "../components/shared/Typography";
 import Theme from "../constants/theme";
@@ -12,6 +12,8 @@ export default function DisclaimerScreen() {
   const router = useRouter();
   const [agreed, setAgreed] = useState(false);
   const colorScheme = useColorScheme();
+  const { markAsLaunched } = useAuthContext();
+
   const isDark = colorScheme === "dark";
 
   const bgColor = isDark ? Theme.colors.darkBg : "#F9FAFB";
@@ -20,7 +22,8 @@ export default function DisclaimerScreen() {
   const checkboxBorderColor = isDark ? Theme.colors.borderDark : "#CBD5E0";
 
   const handleAccept = async () => {
-    await TokenStorage.setHasLaunched();
+    // await TokenStorage.setHasLaunched();
+    await markAsLaunched();
     router.replace("/register");
   };
 
