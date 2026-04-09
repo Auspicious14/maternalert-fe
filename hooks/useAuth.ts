@@ -24,13 +24,8 @@ export const useAuth = () => {
       return response.data;
     },
     onSuccess: async (data) => {
-      // Save tokens then set user-session so AuthContext guard fires
-      await TokenStorage.saveToken(data.accessToken);
-      await TokenStorage.saveRefreshToken(data.refreshToken);
-      queryClient.setQueryData(["user-session"], data.user);
-      // AuthContext guard will redirect to /(tabs) automatically
-      // profile-setup redirect needs to be handled separately
-      // since new users shouldn't go to /(tabs) yet
+      // Use loginContext for consistent session setup (tokens, user state, and push registration)
+      await loginContext(data.accessToken, data.refreshToken, data.user);
     },
     onError: (err: any) => {
       console.log("Registration Error:", {

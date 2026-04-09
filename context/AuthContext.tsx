@@ -255,6 +255,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     await TokenStorage.saveRefreshToken(refreshToken);
 
     // Set query data and ensure it's in a success state
+    // We now get the user object directly from the login/register response
     queryClient.setQueryData(["user-session"], userData);
     console.log(
       "[AUTH] queryClient data set:",
@@ -262,6 +263,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     );
 
     sessionService.reset();
+
+    // Register for push notifications now that we are authenticated
+    try {
+      const { notificationService } = await import("../services/notifications");
+      await notificationService.registerForPushNotificationsAsync();
+    } catch (pushError) {
+      console.error(
+        "[AUTH] Failed to register push notifications after login:",
+        pushError,
+      );
+    }
 
     // Invalidate so all observers are updated correctly
     await queryClient.invalidateQueries({ queryKey: ["user-session"] });
