@@ -173,23 +173,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     );
     const guard = async () => {
       if (isLoading || !isNavReady) {
-        console.log(
-          `[AUTH-GUARD] Still loading (isLoading=${isLoading}, isNavReady=${isNavReady})`,
-        );
         return;
       }
 
+      // ── Determine public route status ──
       const rootSegment = segments[0] as string | undefined;
-      const inAuthGroup = segments.some((s) => s === "(tabs)");
-      const isPublicRoute =
-        rootSegment === "login" ||
-        rootSegment === "register" ||
-        rootSegment === "onboarding" ||
-        rootSegment === "disclaimer" ||
-        rootSegment === "forgot-password" ||
-        rootSegment === "reset-password";
+      const publicRoutes = [
+        "login",
+        "register",
+        "onboarding",
+        "disclaimer",
+        "forgot-password",
+        "reset-password",
+      ];
+      const isPublicRoute = !!rootSegment && publicRoutes.includes(rootSegment);
 
       if (!user && !isPublicRoute) {
+        // CASE A: Not logged in and trying to access private page
         const fullPath = segments.join("/");
         if (
           fullPath &&
@@ -197,23 +197,43 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           fullPath !== "" &&
           fullPath !== "index"
         ) {
+          const absolutePath = fullPath.startsWith("/")
+            ? fullPath
+            : `/${fullPath}`;
           console.log(
-            `[AUTH-GUARD] Setting intended destination to: ${fullPath}`,
+            `[AUTH-GUARD] Saving intended destination: ${absolutePath}`,
           );
-          setIntendedDestination(fullPath);
+          setIntendedDestination(absolutePath);
         }
-        console.log("[AUTH-GUARD] Unauthorized — redirecting to /login");
-        router.replace("/login");
+
+        // Only redirect if not already on login (avoids double-redirect with useSession)
+        if (rootSegment !== "login") {
+          console.log("[AUTH-GUARD] Unauthorized — redirecting to /login");
+          router.replace("/login");
+        }
       } else if (!user && isPublicRoute) {
-        if (hasLaunched === false && rootSegment !== "onboarding") {
-          router.replace("/onboarding");
+        // CASE B: Not logged in and on a public page
+        if (hasLaunched === false) {
+          const isOnboardingFlow =
+            rootSegment === "onboarding" ||
+            rootSegment === "disclaimer" ||
+            rootSegment === "register";
+
+          if (!isOnboardingFlow) {
+            console.log(
+              `[AUTH-GUARD] New user on public route ${rootSegment} — forcing /onboarding`,
+            );
+            router.replace("/onboarding");
+          }
         } else if (hasLaunched === true && rootSegment === "onboarding") {
+          console.log("[AUTH-GUARD] Already launched — skipping onboarding");
           router.replace("/login");
         }
       } else if (user) {
+        // CASE C: Authenticated
         if (user.needsProfile && rootSegment !== "profile-setup") {
           console.log(
-            "[AUTH-GUARD] Authenticated but missing profile — redirecting to /profile-setup",
+            "[AUTH-GUARD] Missing profile — redirecting to /profile-setup",
           );
           router.replace("/profile-setup");
         } else if (
@@ -224,11 +244,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
             rootSegment === "index")
         ) {
           if (intendedDestination) {
+            const dest = intendedDestination;
             console.log(
-              `[AUTH-GUARD] Redirecting to intended destination: ${intendedDestination}`,
+              `[AUTH-GUARD] Redirecting to intended destination: ${dest}`,
             );
-            router.replace(intendedDestination as any);
             setIntendedDestination(null);
+            router.replace(dest as any);
           } else {
             console.log("[AUTH-GUARD] Authenticated — redirecting to /(tabs)");
             router.replace("/(tabs)");

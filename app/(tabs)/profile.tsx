@@ -18,6 +18,7 @@ import { Card } from "../../components/shared/Card";
 import { Screen } from "../../components/shared/Screen";
 import { Typography } from "../../components/shared/Typography";
 import { Skeleton } from "../../components/ui/Skeleton";
+import { useToast } from "../../components/ui/ToastProvider";
 import Theme from "../../constants/theme";
 import { useColorScheme } from "../../hooks/use-color-scheme";
 import { useAppTheme } from "../../hooks/useAppTheme";
@@ -40,10 +41,12 @@ export default function ProfileScreen() {
   const { preference: themePreference, setPreference: setThemePreference } =
     useAppTheme();
   const { logout } = useAuth();
+  const { showToast } = useToast();
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
 
   const [reminderTime, setReminderTime] = useState("09:00");
+  const [isUpdatingReminder, setIsUpdatingReminder] = useState(false);
 
   React.useEffect(() => {
     const loadReminderTime = async () => {
@@ -58,25 +61,45 @@ export default function ProfileScreen() {
       }
     };
     loadReminderTime();
-  }, [profile]);
+  }, [profile?.id]); // Only load when profile ID changes (initial load)
 
-  const handleUpdateReminder = async (time: string) => {
-    setReminderTime(time);
+  const handleUpdateReminder = async (time: string | null = null) => {
+    const finalTime = time || reminderTime;
+
     // Only schedule if it's a valid HH:mm format
     const timeRegex = /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/;
-    if (timeRegex.test(time)) {
-      await TokenStorage.saveReminderTime(time);
-      const [hour, minute] = time.split(":").map(Number);
-
-      // Update local notification service
-      await notificationService.scheduleDailyBPReminder(hour, minute);
-
-      // Update backend preference for persistent reminders
+    if (timeRegex.test(finalTime)) {
       try {
-        await updateProfile({ reminderTime: time });
+        setIsUpdatingReminder(true);
+        await TokenStorage.saveReminderTime(finalTime);
+        const [hour, minute] = finalTime.split(":").map(Number);
+
+        // Update local notification service
+        await notificationService.scheduleDailyBPReminder(hour, minute);
+
+        // Update backend preference for persistent reminders
+        await updateProfile({ reminderTime: finalTime });
+
+        showToast({
+          type: "success",
+          message: `Daily reminder set for ${finalTime}`,
+        });
       } catch (error) {
-        console.error("Failed to update reminder time on backend:", error);
+        console.error("Failed to update reminder time:", error);
+        showToast({
+          type: "error",
+          message: "Failed to save reminder time. Please try again.",
+        });
+      } finally {
+        setIsUpdatingReminder(false);
       }
+    } else if (time === null) {
+      // If called from onBlur/onSubmit and invalid, reset to current profile value
+      setReminderTime(profile?.reminderTime || "09:00");
+      showToast({
+        type: "info",
+        message: "Please use HH:mm format (e.g., 20:30)",
+      });
     }
   };
 
@@ -760,15 +783,20 @@ export default function ProfileScreen() {
           >
             <TextInput
               value={reminderTime}
-              onChangeText={handleUpdateReminder}
+              onChangeText={setReminderTime}
+              onBlur={() => handleUpdateReminder()}
+              onSubmitEditing={() => handleUpdateReminder()}
               placeholder="09:00"
               style={{
                 color: Theme.colors.primary,
                 fontWeight: "bold",
                 fontSize: 18,
                 marginRight: 8,
+                opacity: isUpdatingReminder ? 0.5 : 1,
               }}
               maxLength={5}
+              keyboardType="numbers-and-punctuation"
+              returnKeyType="done"
             />
             <Ionicons
               name="time-outline"
