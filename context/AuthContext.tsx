@@ -205,15 +205,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         console.log("[AUTH-GUARD] Unauthorized — redirecting to /login");
         router.replace("/login");
       } else if (!user && isPublicRoute) {
-        if (
-          hasLaunched === false &&
-          rootSegment !== "onboarding" &&
-          rootSegment !== "disclaimer" &&
-          rootSegment !== "register"
-        ) {
+        if (hasLaunched === false && rootSegment !== "onboarding") {
           router.replace("/onboarding");
         } else if (hasLaunched === true && rootSegment === "onboarding") {
-          console.log("[AUTH-GUARD] Already launched — redirecting to /login");
           router.replace("/login");
         }
       } else if (user) {
