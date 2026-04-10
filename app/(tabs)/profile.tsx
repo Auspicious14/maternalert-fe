@@ -64,7 +64,13 @@ export default function ProfileScreen() {
   }, [profile?.id]); // Only load when profile ID changes (initial load)
 
   const handleUpdateReminder = async (time: string | null = null) => {
-    const finalTime = time || reminderTime;
+    let finalTime = (time || reminderTime).trim();
+
+    // Auto-pad single hour digit (e.g., "9:00" -> "09:00")
+    if (/^[0-9]:[0-5][0-9]$/.test(finalTime)) {
+      finalTime = "0" + finalTime;
+      setReminderTime(finalTime);
+    }
 
     // Only schedule if it's a valid HH:mm format
     const timeRegex = /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/;

@@ -151,67 +151,82 @@ class NotificationService {
     data: any,
     trigger: Notifications.NotificationTriggerInput,
   ) {
-    return await Notifications.scheduleNotificationAsync({
-      content: {
-        title,
-        body,
-        data,
-      },
-      trigger,
-    });
+    try {
+      return await Notifications.scheduleNotificationAsync({
+        content: {
+          title,
+          body,
+          data,
+        },
+        trigger,
+      });
+    } catch (error) {
+      console.error("Error scheduling notification:", error);
+      return null;
+    }
   }
 
   async cancelNotification(identifier: string) {
-    await Notifications.cancelScheduledNotificationAsync(identifier);
+    try {
+      await Notifications.cancelScheduledNotificationAsync(identifier);
+    } catch (error) {
+      console.error("Error cancelling notification:", error);
+    }
   }
 
   async scheduleDailyBPReminder(hour: number, minute: number) {
-    // First, cancel any existing BP reminders
-    const scheduled = await Notifications.getAllScheduledNotificationsAsync();
-    for (const notification of scheduled) {
-      if (notification.content.data?.type === AppNotificationType.BP_REMINDER) {
-        await Notifications.cancelScheduledNotificationAsync(
-          notification.identifier,
-        );
-      }
-    }
-
-    // Check if user already logged BP today
     try {
-      const response = await apiClient.get("/blood-pressure/latest");
-      const latestReading = response.data;
-      if (latestReading) {
-        const today = new Date().toISOString().split("T")[0];
-        const lastLogDate = new Date(latestReading.recordedAt)
-          .toISOString()
-          .split("T")[0];
-        if (today === lastLogDate) {
-          console.log(
-            "BP already logged today, skipping daily reminder schedule for today",
+      // First, cancel any existing BP reminders
+      const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+      for (const notification of scheduled) {
+        if (
+          notification.content.data?.type === AppNotificationType.BP_REMINDER
+        ) {
+          await Notifications.cancelScheduledNotificationAsync(
+            notification.identifier,
           );
-          // Note: We still schedule it for tomorrow+ by using repeats: true
-          // but expo-notifications doesn't easily allow "skip today only" for a recurring notification
-          // A better way is to check this condition in the notification handler or use a background task
         }
       }
-    } catch (error) {
-      console.error("Error checking latest BP for reminder:", error);
-    }
 
-    // Schedule new daily reminder
-    return await Notifications.scheduleNotificationAsync({
-      content: {
-        title: "Time to check your blood pressure",
-        body: "It takes 30 seconds. Stay on top of your pregnancy health.",
-        data: { type: AppNotificationType.BP_REMINDER },
-      },
-      trigger: {
-        type: Notifications.SchedulableTriggerInputTypes.CALENDAR,
-        hour,
-        minute,
-        repeats: true,
-      },
-    });
+      // Check if user already logged BP today (quiet check)
+      try {
+        const response = await apiClient.get("/blood-pressure/latest");
+        const latestReading = response.data;
+        if (latestReading) {
+          const today = new Date().toISOString().split("T")[0];
+          const lastLogDate = new Date(latestReading.recordedAt)
+            .toISOString()
+            .split("T")[0];
+          if (today === lastLogDate) {
+            console.log(
+              "BP already logged today, skipping daily reminder schedule for today",
+            );
+          }
+        }
+      } catch (error) {
+        console.error("Error checking latest BP for reminder:", error);
+      }
+
+      // Schedule new daily reminder
+      return await Notifications.scheduleNotificationAsync({
+        content: {
+          title: "Time to check your blood pressure",
+          body: "It takes 30 seconds. Stay on top of your pregnancy health.",
+          data: { type: AppNotificationType.BP_REMINDER },
+        },
+        trigger: {
+          type: Notifications.SchedulableTriggerInputTypes.CALENDAR,
+          hour,
+          minute,
+          repeats: true,
+        },
+      });
+    } catch (error) {
+      console.error("Critical error in scheduleDailyBPReminder:", error);
+      // We don't re-throw here to prevent crashing the UI flow (like saving BP)
+      // because missing a reminder is better than failing to save medical data
+      return null;
+    }
   }
 }
 
