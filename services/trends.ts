@@ -14,13 +14,12 @@ class TrendService {
     const alerts: TrendAlert[] = [];
     if (readings.length === 0) return alerts;
 
-    // Sort by date ascending for trend analysis
     const sortedReadings = [...readings].sort(
       (a, b) =>
         new Date(a.recordedAt).getTime() - new Date(b.recordedAt).getTime(),
     );
 
-    // Pattern 1: Creeping rise (last 3 readings)
+    // Pattern 1: Creeping rise
     if (sortedReadings.length >= 3) {
       const last3 = sortedReadings.slice(-3);
       const diff1 = last3[1].systolic - last3[0].systolic;
@@ -28,7 +27,7 @@ class TrendService {
 
       if (diff1 >= 5 && diff2 >= 5) {
         alerts.push({
-          id: `rise-${Date.now()}`,
+          id: `rise-${last3[2].id}`, // Use reading ID not Date.now() — prevents duplicates on re-render
           type: "CREEPING_RISE",
           message:
             "Your blood pressure has been rising consistently over your last 3 readings. This pattern needs medical attention.",
@@ -49,7 +48,7 @@ class TrendService {
 
     if (highReadings.length >= 2) {
       alerts.push({
-        id: `high-${Date.now()}`,
+        id: `high-${highReadings[highReadings.length - 1].id}`, // stable ID
         type: "REPEATED_HIGH",
         message:
           "You have had multiple high BP readings this week. Please contact your clinic today.",
@@ -57,7 +56,7 @@ class TrendService {
       });
     }
 
-    // Pattern 3: Sudden spike (30+ higher than average)
+    // Pattern 3: Sudden spike
     if (sortedReadings.length >= 2) {
       const latest = sortedReadings[sortedReadings.length - 1];
       const previousReadings = sortedReadings.slice(0, -1);
@@ -67,7 +66,7 @@ class TrendService {
 
       if (latest.systolic >= averageSystolic + 30) {
         alerts.push({
-          id: `spike-${Date.now()}`,
+          id: `spike-${latest.id}`, // stable ID
           type: "SUDDEN_SPIKE",
           message:
             "This reading is significantly higher than your usual numbers. Recheck in 1 hour and seek help if it remains high.",
@@ -80,17 +79,33 @@ class TrendService {
   }
 
   async triggerTrendNotifications(alerts: TrendAlert[]) {
-    for (const alert of alerts) {
-      await notificationService.scheduleNotification(
-        "Trend Alert",
-        alert.message,
-        { type: "TREND_ALERT", alertType: alert.type },
-        {
-          type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
-          seconds: 1,
-        },
-      );
+    // Cancel existing trend notifications before firing new ones
+    // This prevents the duplicate triggering you noticed
+    const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+    for (const n of scheduled) {
+      if (n.content.data?.type === "TREND_ALERT") {
+        await Notifications.cancelScheduledNotificationAsync(n.identifier);
+      }
     }
+
+    // Only notify for the most severe alert, not all of them
+    // Priority: CREEPING_RISE > REPEATED_HIGH > SUDDEN_SPIKE
+    const priority = ["CREEPING_RISE", "REPEATED_HIGH", "SUDDEN_SPIKE"];
+    const mostSevere = alerts.sort(
+      (a, b) => priority.indexOf(a.type) - priority.indexOf(b.type),
+    )[0];
+
+    if (!mostSevere) return;
+
+    await notificationService.scheduleNotification(
+      "Blood Pressure Trend Detected",
+      mostSevere.message,
+      { type: "TREND_ALERT", alertType: mostSevere.type },
+      {
+        type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+        seconds: 2,
+      },
+    );
   }
 }
 

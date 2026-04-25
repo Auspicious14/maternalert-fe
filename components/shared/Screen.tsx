@@ -2,7 +2,6 @@ import { cssInterop } from "nativewind";
 import React from "react";
 import {
   KeyboardAvoidingView,
-  Platform,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -49,12 +48,9 @@ export const Screen: React.FC<ScreenProps> = React.memo(
         edges={safe ? ["top", "bottom", "left", "right"] : []}
       >
         <StatusBar barStyle={barStyle} backgroundColor={resolvedBackground} />
-        <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-          style={styles.flex}
-        >
+        <KeyboardAvoidingView behavior="padding" style={styles.flex}>
           <ContentContainer
-            style={scrollable ? undefined : styles.flex} // ← only change needed
+            style={styles.flex}
             showsVerticalScrollIndicator={false}
             contentContainerStyle={
               scrollable ? styles.scrollContent : { flex: 1 }
