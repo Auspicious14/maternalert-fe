@@ -20,7 +20,7 @@ interface ClinicQueryParams {
   radius?: number;
 }
 
-export const useClinics = (params?: ClinicQueryParams | string) => {
+export const useClinics = (params?: ClinicQueryParams | string, enabled = true) => {
   const queryKeyParams = typeof params === "string" ? { city: params } : params;
 
   return useQuery<ClinicLocation[]>({
@@ -31,5 +31,6 @@ export const useClinics = (params?: ClinicQueryParams | string) => {
       });
       return response.data;
     },
+    enabled: enabled && Boolean(queryKeyParams),
   });
 };

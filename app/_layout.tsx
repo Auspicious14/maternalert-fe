@@ -18,7 +18,7 @@ import { Stack, useRouter } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
-import { TouchableWithoutFeedback, View } from "react-native";
+import { View } from "react-native";
 import { NotificationBanner } from "../components/notifications/NotificationBanner";
 import { ToastProvider } from "../components/ui/ToastProvider";
 import { Colors } from "../constants/theme";
@@ -98,8 +98,7 @@ function RootNavigation() {
   return (
     <ThemeProvider value={navigationTheme}>
       <NotificationBanner />
-      <TouchableWithoutFeedback onPress={resetActivity} accessible={false}>
-        <View style={{ flex: 1 }}>
+      <View style={{ flex: 1 }} onTouchStart={resetActivity}>
           <Stack screenOptions={{ headerShown: false }}>
             <Stack.Screen name="index" />
             <Stack.Screen name="onboarding" />
@@ -124,8 +123,7 @@ function RootNavigation() {
             <Stack.Screen name="clinic-finder" />
             <Stack.Screen name="+not-found" />
           </Stack>
-        </View>
-      </TouchableWithoutFeedback>
+      </View>
       <StatusBar style={statusBarStyle} />
     </ThemeProvider>
   );

@@ -19,7 +19,7 @@ export const ToastProvider = ({ children }: { children: React.ReactNode }) => {
   const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
   const opacity = useRef(new Animated.Value(0)).current;
   const translateY = useRef(new Animated.Value(40)).current;
-  const hideTimeout = useRef<NodeJS.Timeout | null>(null);
+  const hideTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const hide = useCallback(() => {
     Animated.timing(opacity, {

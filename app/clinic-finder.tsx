@@ -53,9 +53,8 @@ export default function ClinicFinderScreen() {
     return null; // Don't fetch until we have a location or search query
   }, [userLocation]);
 
-  const { data: clinics, isLoading } = useClinics(
-    clinicParams || (debouncedSearch ? debouncedSearch : "Lagos"),
-  );
+  const clinicQuery = clinicParams || (debouncedSearch ? debouncedSearch : undefined);
+  const { data: clinics, isLoading } = useClinics(clinicQuery, Boolean(clinicQuery));
 
   useEffect(() => {
     (async () => {
@@ -78,7 +77,8 @@ export default function ClinicFinderScreen() {
         }
 
         let location = await ExpoLocation.getCurrentPositionAsync({
-          accuracy: ExpoLocation.Accuracy.Balanced,
+          accuracy: ExpoLocation.Accuracy.High,
+          mayShowUserSettingsDialog: true,
         });
 
         setUserLocation(location);
@@ -111,10 +111,18 @@ export default function ClinicFinderScreen() {
         return;
       }
 
-      let location = await ExpoLocation.getCurrentPositionAsync({});
+      let location = await ExpoLocation.getCurrentPositionAsync({
+        accuracy: ExpoLocation.Accuracy.High,
+        mayShowUserSettingsDialog: true,
+      });
       setUserLocation(location);
 
       let reverseGeocode = await ExpoLocation.reverseGeocodeAsync({
+        latitude: location.coords.latitude,
+        longitude: location.coords.longitude,
+      });
+
+      await TokenStorage.saveLastLocation({
         latitude: location.coords.latitude,
         longitude: location.coords.longitude,
       });
@@ -124,7 +132,7 @@ export default function ClinicFinderScreen() {
           reverseGeocode[0].city ||
           reverseGeocode[0].district ||
           reverseGeocode[0].subregion ||
-          "Lagos";
+          "your area";
         console.log(`[DEBUG] Detected location (manual): ${detectedCity}`);
       }
     } catch (error) {
@@ -167,22 +175,6 @@ export default function ClinicFinderScreen() {
     Linking.openURL("tel:+234800MATERNAL");
   };
 
-  const defaultRegion = {
-    latitude: 9.082, // Default to Abuja, Nigeria center
-    longitude: 7.533,
-    latitudeDelta: 2.0,
-    longitudeDelta: 2.0,
-  };
-
-  const initialRegion =
-    clinics && clinics.length > 0
-      ? {
-          latitude: clinics[0].latitude,
-          longitude: clinics[0].longitude,
-          latitudeDelta: 0.05,
-          longitudeDelta: 0.05,
-        }
-      : defaultRegion;
 
   const iconColor = isDark ? "#FFFFFF" : "#1A212E";
   const searchBg = isDark ? Theme.colors.cardDark : "#FFFFFF";
@@ -225,13 +217,13 @@ export default function ClinicFinderScreen() {
       ? userLocation.coords.latitude
       : filteredClinics && filteredClinics.length > 0
         ? filteredClinics[0].latitude
-        : defaultRegion.latitude;
+        : 0;
 
     const centerLng = userLocation
       ? userLocation.coords.longitude
       : filteredClinics && filteredClinics.length > 0
         ? filteredClinics[0].longitude
-        : defaultRegion.longitude;
+        : 0;
 
     const tileUrl =
       "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png";
@@ -386,9 +378,15 @@ export default function ClinicFinderScreen() {
           </Typography>
         )}
 
-        {!isLoading && filteredClinics.length === 0 && (
-          <Typography variant="body" className="text-center text-gray-500 mt-4">
-            No clinics found matching your search.
+        {!clinicQuery && !isLocating && (
+          <Typography variant="body" className="text-center text-gray-500 mt-4 leading-6">
+            Turn on location or search your city to find nearby care.
+          </Typography>
+        )}
+
+        {clinicQuery && !isLoading && filteredClinics.length === 0 && (
+          <Typography variant="body" className="text-center text-gray-500 mt-4 leading-6">
+            No clinics found here. Try refreshing your location or searching a nearby city.
           </Typography>
         )}
 

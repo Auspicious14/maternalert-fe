@@ -9,7 +9,6 @@ import {
     TouchableOpacity,
     View,
 } from "react-native";
-import { TokenStorage } from "../api/storage";
 import { Button } from "../components/shared/Button";
 import { Screen } from "../components/shared/Screen";
 import { Typography } from "../components/shared/Typography";
@@ -22,6 +21,25 @@ import * as Notifications from "expo-notifications";
 import { useTrends } from "../hooks/useTrends";
 import { getTier, getTierInfo, Tier } from "../services/escalation";
 import { notificationService } from "../services/notifications";
+
+function getBPValidationError(systolic: string, diastolic: string): string | null {
+  const sys = Number(systolic);
+  const dia = Number(diastolic);
+
+  if (!systolic || !diastolic || Number.isNaN(sys) || Number.isNaN(dia)) {
+    return "Enter both BP numbers from your monitor.";
+  }
+  if (sys < 60 || sys > 260) {
+    return "Top number should be between 60 and 260.";
+  }
+  if (dia < 40 || dia > 160) {
+    return "Bottom number should be between 40 and 160.";
+  }
+  if (dia >= sys) {
+    return "The top number should be higher than the bottom number.";
+  }
+  return null;
+}
 
 export default function BPEntryScreen() {
   const router = useRouter();
@@ -37,6 +55,7 @@ export default function BPEntryScreen() {
 
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [currentTier, setCurrentTier] = useState<Tier | null>(null);
+  const validationError = getBPValidationError(systolic, diastolic);
 
   useEffect(() => {
     // Update time every minute
@@ -55,30 +74,24 @@ export default function BPEntryScreen() {
 
   const handleSave = async () => {
     try {
-      const sys = parseInt(systolic);
-      const dia = parseInt(diastolic);
+      if (validationError) {
+        showToast({ type: "error", message: validationError });
+        return;
+      }
+
+      const sys = parseInt(systolic, 10);
+      const dia = parseInt(diastolic, 10);
       const tier = getTier(sys, dia);
       setCurrentTier(tier);
 
-      await addBP({
+      const savedReading = await addBP({
         systolic: sys,
         diastolic: dia,
       });
 
-      // Reschedule daily reminder for tomorrow if they logged today
-      const reminderTime = (await TokenStorage.getReminderTime()) || "09:00";
-      const [hour, minute] = reminderTime.split(":").map(Number);
-      await notificationService.scheduleDailyBPReminder(hour, minute);
-
-      // Cancel any existing follow-up notifications
-      const scheduled = await Notifications.getAllScheduledNotificationsAsync();
-      for (const notification of scheduled) {
-        if (notification.content.data?.type === "FOLLOW_UP") {
-          await Notifications.cancelScheduledNotificationAsync(
-            notification.identifier,
-          );
-        }
-      }
+      await notificationService.handleBPLogged(
+        savedReading?.reading?.recordedAt || savedReading?.recordedAt,
+      );
 
       // Analyze trends after saving
       const trendAlerts = await analyzeLatestTrends();
@@ -221,7 +234,29 @@ export default function BPEntryScreen() {
         <ScrollView
           contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 40 }}
           showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
+          nestedScrollEnabled
         >
+          <View
+            className={
+              isDark
+                ? "bg-[#13251F] rounded-[24px] p-5 mb-4 border border-primary/30"
+                : "bg-[#F0FDF4] rounded-[24px] p-5 mb-4 border border-[#BBF7D0]"
+            }
+          >
+            <View className="flex-row items-start">
+              <Ionicons name="information-circle" size={22} color={Theme.colors.primary} />
+              <View className="flex-1 ml-3">
+                <Typography variant="h3" weight="bold" className={isDark ? "text-white mb-1" : "text-[#14532D] mb-1"}>
+                  Use a real BP monitor
+                </Typography>
+                <Typography variant="body" className={isDark ? "text-gray-200 leading-5" : "text-[#166534] leading-5"}>
+                  Please enter readings from a BP machine. Guessed numbers can make alerts less accurate.
+                </Typography>
+              </View>
+            </View>
+          </View>
           {/* Systolic Card */}
           <View
             className={
@@ -256,7 +291,7 @@ export default function BPEntryScreen() {
               <TextInput
                 className={`flex-1 text-[22px] font-bold text-[#2DE474]`}
                 value={systolic}
-                onChangeText={setSystolic}
+                onChangeText={(value) => setSystolic(value.replace(/[^0-9]/g, ""))}
                 keyboardType="numeric"
                 placeholderTextColor="#A0AEC0"
                 style={{ fontFamily: "Lexend-Bold" }}
@@ -311,7 +346,7 @@ export default function BPEntryScreen() {
               <TextInput
                 className={`flex-1 text-[22px] font-bold text-[#2DE474]`}
                 value={diastolic}
-                onChangeText={setDiastolic}
+                onChangeText={(value) => setDiastolic(value.replace(/[^0-9]/g, ""))}
                 keyboardType="numeric"
                 placeholderTextColor="#A0AEC0"
                 style={{ fontFamily: "Lexend-Bold" }}
@@ -336,10 +371,16 @@ export default function BPEntryScreen() {
             </Typography>
           </View>
 
+          {validationError ? (
+            <Typography variant="caption" className="text-red-500 text-center mb-3">
+              {validationError}
+            </Typography>
+          ) : null}
+
           <TouchableOpacity
-            className="w-full bg-primary h-14 rounded-[30px] items-center justify-center mt-4 shadow-lg shadow-primary/30"
+            className={`w-full bg-primary h-14 rounded-[30px] items-center justify-center mt-4 shadow-lg shadow-primary/30 ${validationError ? "opacity-60" : ""}`}
             onPress={handleSave}
-            disabled={isAddingBP}
+            disabled={isAddingBP || Boolean(validationError)}
           >
             <Typography variant="h2" weight="bold" className="text-white">
               {isAddingBP ? "Saving..." : "Save Reading"}

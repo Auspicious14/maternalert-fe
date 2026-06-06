@@ -11,6 +11,7 @@ export interface BloodPressure {
 export interface Symptom {
   id: string;
   symptomType: string;
+  customSymptom?: string | null;
   createdAt: string;
   recordedAt: string;
 }
@@ -58,8 +59,9 @@ export const useHealthData = () => {
   });
 
   const addSymptomMutation = useMutation({
-    mutationFn: async (symptomType: string) => {
-      const response = await apiClient.post("/symptoms", { symptomType });
+    mutationFn: async (symptom: string | { symptomType: string; customSymptom?: string }) => {
+      const payload = typeof symptom === "string" ? { symptomType: symptom } : symptom;
+      const response = await apiClient.post("/symptoms", payload);
       return response.data;
     },
     onSuccess: () => {

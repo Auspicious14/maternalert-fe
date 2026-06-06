@@ -21,6 +21,7 @@ import {
 } from "../../hooks/useMonitoringData";
 import { useNotifications } from "../../hooks/useNotifications";
 import { useUserProfile } from "../../hooks/useUserProfile";
+import { getPersonalizedGuidance } from "../../services/personalization";
 
 // Optimized Status Card Component
 const StatusCard = memo(
@@ -208,7 +209,9 @@ const ActivityItem = memo(
           variant="h3"
           className={`${isDark ? "text-white" : "text-text"} text-[15px]`}
         >
-          {symptom.symptomType.replace(/_/g, " ")}
+          {symptom.symptomType === "OTHER" && symptom.customSymptom
+            ? symptom.customSymptom
+            : symptom.symptomType.replace(/_/g, " ")}
         </Typography>
         <Typography
           variant="caption"
@@ -284,6 +287,11 @@ export default function HomeScreen() {
   const nextActionMessage = useMemo(() => {
     return monitoringState?.nextAction || "Continue routine monitoring.";
   }, [monitoringState?.nextAction]);
+
+  const personalizedGuidance = useMemo(
+    () => getPersonalizedGuidance(recentSymptoms || []),
+    [recentSymptoms],
+  );
 
   return (
     <Screen
@@ -462,6 +470,30 @@ export default function HomeScreen() {
             </Typography>
           </TouchableOpacity>
         </View>
+
+        <TouchableOpacity
+          className={`${isDark ? "bg-card-dark border-white/10" : "bg-white border-gray-100"} p-4 rounded-[24px] flex-row items-center mb-6 border shadow-lexend-medium`}
+          onPress={() => router.push(personalizedGuidance.route as any)}
+        >
+          <View className={`w-11 h-11 rounded-full justify-center items-center mr-4 ${personalizedGuidance.tone === "urgent" ? "bg-emergency" : "bg-primary-light"}`}>
+            <Ionicons
+              name={personalizedGuidance.tone === "urgent" ? "alert-circle" : "heart"}
+              size={20}
+              color={personalizedGuidance.tone === "urgent" ? "white" : Theme.colors.primary}
+            />
+          </View>
+          <View className="flex-1">
+            <Typography variant="h3" weight="bold" className={`${isDark ? "text-white" : "text-text"} text-base`}>
+              {personalizedGuidance.title}
+            </Typography>
+            <Typography variant="caption" className={`${isDark ? "text-white/50" : "text-gray-500"} leading-5`}>
+              {personalizedGuidance.message}
+            </Typography>
+          </View>
+          <Typography variant="caption" weight="bold" className="text-primary ml-3">
+            {personalizedGuidance.actionLabel}
+          </Typography>
+        </TouchableOpacity>
 
         {/* Unwell Banner */}
         <TouchableOpacity

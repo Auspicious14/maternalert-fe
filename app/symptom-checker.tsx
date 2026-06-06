@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { SafeAreaView, ScrollView, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView, ScrollView, TextInput, TouchableOpacity, View } from 'react-native';
 import { Screen } from '../components/shared/Screen';
 import { Typography } from '../components/shared/Typography';
 import Theme from '../constants/theme';
@@ -13,6 +13,7 @@ const SYMPTOMS = [
   { id: 'BLURRED_VISION', title: 'Blurred Vision', icon: 'grid' },
   { id: 'SWELLING', title: 'Swelling', subtitle: 'Hands or face', icon: 'hand-left' },
   { id: 'UPPER_ABDOMINAL_PAIN', title: 'Stomach Pain', icon: 'sad' },
+  { id: 'OTHER', title: 'Something else', subtitle: 'Type what you feel', icon: 'create' },
 ];
 
 import { useHealthData } from '../hooks/useHealthData';
@@ -25,6 +26,7 @@ export default function SymptomCheckerScreen() {
   const { showToast } = useToast();
 
   const [selected, setSelected] = useState<string[]>([]);
+  const [otherSymptom, setOtherSymptom] = useState("");
 
   const toggleSymptom = (id: string) => {
     if (selected.includes(id)) {
@@ -37,10 +39,23 @@ export default function SymptomCheckerScreen() {
   const handleSubmit = async () => {
     if (selected.length === 0) return;
 
+    const cleanedOtherSymptom = otherSymptom.trim().replace(/\s+/g, " ");
+    if (selected.includes("OTHER") && !cleanedOtherSymptom) {
+      showToast({
+        type: "error",
+        message: "Please type the other symptom you feel.",
+      });
+      return;
+    }
+
     try {
       // Record all selected symptoms
       for (const symptomId of selected) {
-        await addSymptom(symptomId);
+        if (symptomId === "OTHER") {
+          await addSymptom({ symptomType: "OTHER", customSymptom: cleanedOtherSymptom });
+        } else {
+          await addSymptom(symptomId);
+        }
       }
 
       // Check for emergency symptom combinations:
@@ -117,6 +132,23 @@ export default function SymptomCheckerScreen() {
                 </View>
               </TouchableOpacity>
             ))}
+            {selected.includes("OTHER") && (
+              <View className={isDark ? "bg-[#020617] border-white/10 rounded-[28px] p-5 border" : "bg-white border-[#F1F5F9] rounded-[28px] p-5 border"}>
+                <Typography variant="h3" weight="bold" className="mb-2">
+                  Tell us what you feel
+                </Typography>
+                <TextInput
+                  value={otherSymptom}
+                  onChangeText={setOtherSymptom}
+                  placeholder="Type symptom here"
+                  placeholderTextColor="#94A3B8"
+                  className={isDark ? "text-white text-base" : "text-[#1A212E] text-base"}
+                  style={{ fontFamily: "Lexend-Regular", minHeight: 48 }}
+                  multiline
+                  maxLength={80}
+                />
+              </View>
+            )}
           </View>
         </ScrollView>
 
@@ -125,7 +157,7 @@ export default function SymptomCheckerScreen() {
             className={`bg-primary w-full h-[70px] rounded-[35px] flex-row items-center justify-center gap-3 mb-4 shadow-md ${isAddingSymptom || selected.length === 0 ? 'opacity-70' : ''}`}
             activeOpacity={0.8}
             onPress={handleSubmit}
-            disabled={isAddingSymptom || selected.length === 0}
+            disabled={isAddingSymptom || selected.length === 0 || (selected.includes('OTHER') && !otherSymptom.trim())}
           >
             <Typography variant="h2" weight="bold" className="text-[22px] text-[#1A212E]">
               {isAddingSymptom ? 'Reporting...' : 'Submit Report'}

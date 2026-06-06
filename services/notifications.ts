@@ -10,23 +10,21 @@ Notifications.setNotificationHandler({
   handleNotification: async (notification) => {
     const data = notification.request.content.data || {};
 
-    if (data.type === AppNotificationType.BP_REMINDER) {
+    if (
+      data.type === AppNotificationType.BP_REMINDER ||
+      data.type === AppNotificationType.INACTIVITY_REMINDER ||
+      data.type === AppNotificationType.URGENT_INACTIVITY_REMINDER
+    ) {
       try {
-        const response = await apiClient.get("/blood-pressure/latest");
-        const latestReading = response.data;
-        if (latestReading) {
-          const today = new Date().toDateString();
-          const lastLogDate = new Date(latestReading.recordedAt).toDateString();
-          if (today === lastLogDate) {
-            console.log("BP already logged today, silencing reminder.");
-            return {
-              shouldShowAlert: false,
-              shouldPlaySound: false,
-              shouldSetBadge: false,
-              shouldShowBanner: false,
-              shouldShowList: false,
-            };
-          }
+        if (await notificationService.shouldSilenceStaleBPNotification(data)) {
+          console.log("BP already logged, silencing stale reminder.");
+          return {
+            shouldShowAlert: false,
+            shouldPlaySound: false,
+            shouldSetBadge: false,
+            shouldShowBanner: false,
+            shouldShowList: false,
+          };
         }
       } catch (error) {
         console.error("Error in quiet reminder check:", error);
@@ -90,6 +88,14 @@ const INACTIVITY_MESSAGES = {
   ],
 };
 
+function isSameLocalDay(a: Date, b: Date): boolean {
+  return (
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
+  );
+}
+
 function getDaysSinceLastReading(lastReadingDate: string): number {
   const last = new Date(lastReadingDate);
   const now = new Date();
@@ -142,6 +148,7 @@ async function scheduleIfNotExists(
   title: string,
   body: string,
   trigger: Notifications.NotificationTriggerInput,
+  data: Record<string, any> = {},
 ): Promise<string | null> {
   try {
     const scheduled = await Notifications.getAllScheduledNotificationsAsync();
@@ -153,7 +160,7 @@ async function scheduleIfNotExists(
     }
 
     return await Notifications.scheduleNotificationAsync({
-      content: { title, body, data: { type } },
+      content: { title, body, data: { type, ...data } },
       trigger,
     });
   } catch (error) {
@@ -164,6 +171,65 @@ async function scheduleIfNotExists(
 
 class NotificationService {
   private router: any = null;
+
+  private async getLatestBPLoggedAt(): Promise<string | null> {
+    try {
+      const response = await apiClient.get("/blood-pressure/latest");
+      return response.data?.recordedAt || null;
+    } catch (error) {
+      return TokenStorage.getLastBPLoggedAt();
+    }
+  }
+
+  async shouldSilenceStaleBPNotification(data: any): Promise<boolean> {
+    const latestLoggedAt = await this.getLatestBPLoggedAt();
+    if (!latestLoggedAt) return false;
+
+    const latestDate = new Date(latestLoggedAt);
+    if (data?.type === AppNotificationType.BP_REMINDER) {
+      return isSameLocalDay(latestDate, new Date());
+    }
+
+    if (
+      data?.type === AppNotificationType.INACTIVITY_REMINDER ||
+      data?.type === AppNotificationType.URGENT_INACTIVITY_REMINDER
+    ) {
+      const scheduledAt = data?.scheduledAt ? new Date(data.scheduledAt) : null;
+      const lastReadingAt = data?.lastReadingAt ? new Date(data.lastReadingAt) : null;
+      return Boolean(
+        (scheduledAt && latestDate >= scheduledAt) ||
+          (lastReadingAt && latestDate > lastReadingAt) ||
+          getDaysSinceLastReading(latestLoggedAt) < 3,
+      );
+    }
+
+    return false;
+  }
+
+  private async cancelOutdatedBPNotifications() {
+    const staleTypes = new Set([
+      AppNotificationType.INACTIVITY_REMINDER,
+      AppNotificationType.URGENT_INACTIVITY_REMINDER,
+      AppNotificationType.FOLLOW_UP_RECHECK,
+      AppNotificationType.FOLLOW_UP_MISSED,
+      "FOLLOW_UP",
+    ]);
+    const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+    for (const n of scheduled) {
+      if (staleTypes.has(n.content.data?.type as any)) {
+        await Notifications.cancelScheduledNotificationAsync(n.identifier);
+      }
+    }
+  }
+
+  async handleBPLogged(recordedAt: string = new Date().toISOString()) {
+    await TokenStorage.saveLastBPLoggedAt(recordedAt);
+    await this.cancelOutdatedBPNotifications();
+
+    const reminderTime = (await TokenStorage.getReminderTime()) || "09:00";
+    const [hour, minute] = reminderTime.split(":").map(Number);
+    await this.scheduleDailyBPReminder(hour, minute);
+  }
 
   setRouter(router: any) {
     this.router = router;
@@ -343,10 +409,19 @@ class NotificationService {
       }
     }
 
-    await scheduleIfNotExists(type, title, body, {
-      type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
-      seconds: 5,
-    });
+    await scheduleIfNotExists(
+      type,
+      title,
+      body,
+      {
+        type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+        seconds: 5,
+      },
+      {
+        lastReadingAt: lastReadingDate,
+        scheduledAt: new Date().toISOString(),
+      },
+    );
   }
 
   // ── Follow-up after elevated reading ──
@@ -371,6 +446,7 @@ class NotificationService {
         type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
         seconds: delaySeconds,
       },
+      { scheduledAt: new Date().toISOString() },
     );
   }
 

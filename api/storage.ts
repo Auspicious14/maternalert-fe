@@ -6,6 +6,7 @@ const HAS_LAUNCHED_KEY = "maternalert_has_launched";
 const LAST_LOCATION_KEY = "maternalert_last_location";
 const PUSH_TOKEN_KEY = "maternalert_push_token";
 const REMINDER_TIME_KEY = "maternalert_reminder_time";
+const LAST_BP_LOGGED_AT_KEY = "maternalert_last_bp_logged_at";
 
 export const TokenStorage = {
   async savePushToken(token: string) {
@@ -39,6 +40,23 @@ export const TokenStorage = {
     } catch (error) {
       console.error("Error getting reminder time", error);
       return "09:00"; // Default 9:00 AM
+    }
+  },
+
+  async saveLastBPLoggedAt(recordedAt: string) {
+    try {
+      await SecureStore.setItemAsync(LAST_BP_LOGGED_AT_KEY, recordedAt);
+    } catch (error) {
+      console.error("Error saving latest BP log timestamp", error);
+    }
+  },
+
+  async getLastBPLoggedAt() {
+    try {
+      return await SecureStore.getItemAsync(LAST_BP_LOGGED_AT_KEY);
+    } catch (error) {
+      console.error("Error getting latest BP log timestamp", error);
+      return null;
     }
   },
   async saveToken(token: string) {
