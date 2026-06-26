@@ -99,30 +99,30 @@ function RootNavigation() {
     <ThemeProvider value={navigationTheme}>
       <NotificationBanner />
       <View style={{ flex: 1 }} onTouchStart={resetActivity}>
-          <Stack screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="index" />
-            <Stack.Screen name="onboarding" />
-            <Stack.Screen name="login" />
-            <Stack.Screen name="register" />
-            <Stack.Screen name="forgot-password" />
-            <Stack.Screen name="reset-password" />
-            <Stack.Screen name="disclaimer" />
-            <Stack.Screen name="profile-setup" />
-            <Stack.Screen name="(tabs)" />
-            <Stack.Screen
-              name="emergency"
-              options={{ presentation: "modal" }}
-            />
-            <Stack.Screen name="symptom-checker" />
-            <Stack.Screen name="symptom-results" />
-            <Stack.Screen
-              name="nurse-summary"
-              options={{ presentation: "fullScreenModal" }}
-            />
-            <Stack.Screen name="bp-entry" options={{ presentation: "modal" }} />
-            <Stack.Screen name="clinic-finder" />
-            <Stack.Screen name="+not-found" />
-          </Stack>
+        <Stack screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="index" />
+          <Stack.Screen name="onboarding" />
+          <Stack.Screen name="login" />
+          <Stack.Screen name="register" />
+          <Stack.Screen name="forgot-password" />
+          <Stack.Screen name="reset-password" />
+          <Stack.Screen name="disclaimer" />
+          <Stack.Screen name="profile-setup" />
+          <Stack.Screen name="(tabs)" />
+          <Stack.Screen name="emergency" options={{ presentation: "modal" }} />
+          <Stack.Screen name="symptom-checker" />
+          <Stack.Screen name="symptom-results" />
+          <Stack.Screen
+            name="nurse-summary"
+            options={{ presentation: "fullScreenModal" }}
+          />
+          <Stack.Screen name="bp-entry" options={{ presentation: "modal" }} />
+          <Stack.Screen name="clinic-finder" />
+          <Stack.Screen name="appointments" />
+          <Stack.Screen name="appointment-create" />
+          <Stack.Screen name="facility-linking" />
+          <Stack.Screen name="+not-found" />
+        </Stack>
       </View>
       <StatusBar style={statusBarStyle} />
     </ThemeProvider>

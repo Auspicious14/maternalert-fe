@@ -1,22 +1,51 @@
-import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
-import { SafeAreaView, ScrollView, TextInput, TouchableOpacity, View } from 'react-native';
-import { Screen } from '../components/shared/Screen';
-import { Typography } from '../components/shared/Typography';
-import Theme from '../constants/theme';
-import { useColorScheme } from '../hooks/use-color-scheme';
+import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
+import React, { useState } from "react";
+import {
+  SafeAreaView,
+  ScrollView,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { Screen } from "../components/shared/Screen";
+import { Typography } from "../components/shared/Typography";
 import { useToast } from "../components/ui/ToastProvider";
+import Theme from "../constants/theme";
+import { useColorScheme } from "../hooks/use-color-scheme";
 
 const SYMPTOMS = [
-  { id: 'HEADACHE', title: 'Severe Headache', icon: 'flash' },
-  { id: 'BLURRED_VISION', title: 'Blurred Vision', icon: 'grid' },
-  { id: 'SWELLING', title: 'Swelling', subtitle: 'Hands or face', icon: 'hand-left' },
-  { id: 'UPPER_ABDOMINAL_PAIN', title: 'Stomach Pain', icon: 'sad' },
-  { id: 'OTHER', title: 'Something else', subtitle: 'Type what you feel', icon: 'create' },
+  { id: "HEADACHE", title: "Severe Headache", icon: "flash" },
+  { id: "BLURRED_VISION", title: "Blurred Vision", icon: "eye-off" },
+  {
+    id: "SWELLING",
+    title: "Swelling",
+    subtitle: "Hands or face",
+    icon: "hand-left",
+  },
+  { id: "VAGINAL_BLEEDING", title: "Vaginal Bleeding", icon: "water" },
+  { id: "FEVER", title: "Fever", icon: "thermometer" },
+  {
+    id: "REDUCED_FETAL_MOVEMENT",
+    title: "Reduced Fetal Movement",
+    icon: "heart",
+  },
+  { id: "DIFFICULTY_BREATHING", title: "Difficulty Breathing", icon: "walk" },
+  { id: "CONVULSIONS", title: "Convulsions", icon: "pulse" },
+  {
+    id: "UPPER_ABDOMINAL_PAIN",
+    title: "Severe Abdominal Pain",
+    icon: "alert-circle",
+  },
+  {
+    id: "OTHER",
+    title: "Something else",
+    subtitle: "Type what you feel",
+    icon: "create",
+  },
 ];
 
-import { useHealthData } from '../hooks/useHealthData';
+import { useHealthData } from "../hooks/useHealthData";
 
 export default function SymptomCheckerScreen() {
   const router = useRouter();
@@ -30,7 +59,7 @@ export default function SymptomCheckerScreen() {
 
   const toggleSymptom = (id: string) => {
     if (selected.includes(id)) {
-      setSelected(selected.filter(s => s !== id));
+      setSelected(selected.filter((s) => s !== id));
     } else {
       setSelected([...selected, id]);
     }
@@ -52,19 +81,25 @@ export default function SymptomCheckerScreen() {
       // Record all selected symptoms
       for (const symptomId of selected) {
         if (symptomId === "OTHER") {
-          await addSymptom({ symptomType: "OTHER", customSymptom: cleanedOtherSymptom });
+          await addSymptom({
+            symptomType: "OTHER",
+            customSymptom: cleanedOtherSymptom,
+          });
         } else {
           await addSymptom(symptomId);
         }
       }
 
       // Check for emergency symptom combinations:
-      // HEADACHE + BLURRED_VISION is an emergency
-      // UPPER_ABDOMINAL_PAIN is an emergency
       const symptomSet = new Set(selected);
       const isEmergency =
         (symptomSet.has("HEADACHE") && symptomSet.has("BLURRED_VISION")) ||
-        symptomSet.has("UPPER_ABDOMINAL_PAIN");
+        symptomSet.has("UPPER_ABDOMINAL_PAIN") ||
+        symptomSet.has("CONVULSIONS") ||
+        symptomSet.has("VAGINAL_BLEEDING") ||
+        symptomSet.has("DIFFICULTY_BREATHING") ||
+        symptomSet.has("REDUCED_FETAL_MOVEMENT") ||
+        symptomSet.has("FEVER");
 
       if (isEmergency) {
         router.push("/nurse-summary");
@@ -72,7 +107,7 @@ export default function SymptomCheckerScreen() {
         router.push("/symptom-results");
       }
     } catch (error) {
-      console.error('Failed to submit symptoms', error);
+      console.error("Failed to submit symptoms", error);
       showToast({
         type: "error",
         message: "Failed to submit symptoms. Please try again.",
@@ -87,53 +122,88 @@ export default function SymptomCheckerScreen() {
     >
       <Screen backgroundColor={isDark ? Theme.colors.darkBg : "#F9FAFB"}>
         <View className="flex-row items-center justify-between px-6 pt-4 mb-10">
-          <TouchableOpacity onPress={() => router.back()} className="w-11 h-11 justify-center items-center">
+          <TouchableOpacity
+            onPress={() => router.back()}
+            className="w-11 h-11 justify-center items-center"
+          >
             <Ionicons
               name="arrow-back"
               size={28}
               color={isDark ? Theme.colors.white : "#1A212E"}
             />
           </TouchableOpacity>
-          <Typography variant="h2" weight="bold" className="text-[22px]">Check Symptoms</Typography>
+          <Typography variant="h2" weight="bold" className="text-[22px]">
+            Check Symptoms
+          </Typography>
           <View className="w-7" />
         </View>
 
-        <ScrollView contentContainerStyle={{ paddingHorizontal: 40, paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
-          <Typography variant="h1" className="text-[36px] font-black leading-[44px] mb-3 shadow-lexend-bold">How are you feeling today?</Typography>
+        <ScrollView
+          contentContainerStyle={{ paddingHorizontal: 40, paddingBottom: 40 }}
+          showsVerticalScrollIndicator={false}
+        >
+          <Typography
+            variant="h1"
+            className="text-[36px] font-black leading-[44px] mb-3 shadow-lexend-bold"
+          >
+            How are you feeling today?
+          </Typography>
           <Typography
             variant="body"
-            className={isDark ? "text-gray-300 text-lg leading-6 mb-10" : "text-gray-500 text-lg leading-6 mb-10"}
+            className={
+              isDark
+                ? "text-gray-300 text-lg leading-6 mb-10"
+                : "text-gray-500 text-lg leading-6 mb-10"
+            }
           >
             Select any symptoms you are experiencing right now.
           </Typography>
 
           <View className="gap-4">
             {SYMPTOMS.map((symptom) => (
-              <TouchableOpacity 
+              <TouchableOpacity
                 key={symptom.id}
-                className={`${isDark ? 'bg-[#020617] border-white/10' : 'bg-white'} rounded-[40px] py-6 px-[30px] flex-row items-center border shadow-sm ${selected.includes(symptom.id) ? 'border-primary' : 'border-[#F1F5F9]'}`}
+                className={`${isDark ? "bg-[#020617] border-white/10" : "bg-white"} rounded-[40px] py-6 px-[30px] flex-row items-center border shadow-sm ${selected.includes(symptom.id) ? "border-primary" : "border-[#F1F5F9]"}`}
                 onPress={() => toggleSymptom(symptom.id)}
                 activeOpacity={0.7}
               >
                 <View className="w-11 h-11 rounded-full bg-primary-light justify-center items-center mr-4">
-                  <Ionicons name={symptom.icon as any} size={24} color={Theme.colors.primary} />
+                  <Ionicons
+                    name={symptom.icon as any}
+                    size={24}
+                    color={Theme.colors.primary}
+                  />
                 </View>
                 <View className="flex-1">
-                  <Typography variant="h3" weight="bold" className="text-lg">{symptom.title}</Typography>
+                  <Typography variant="h3" weight="bold" className="text-lg">
+                    {symptom.title}
+                  </Typography>
                   {symptom.subtitle && (
                     <Typography
                       variant="caption"
                       className={isDark ? "text-gray-400" : "text-gray-400"}
-                    >{symptom.subtitle}</Typography>
+                    >
+                      {symptom.subtitle}
+                    </Typography>
                   )}
                 </View>
-                <View className={`w-7 h-7 rounded-full border-2 justify-center items-center ${selected.includes(symptom.id) ? 'border-gray-300' : 'border-gray-300'}`}>
-                  {selected.includes(symptom.id) && <View className="w-4 h-4 rounded-full bg-gray-300" />}
+                <View
+                  className={`w-7 h-7 rounded-full border-2 justify-center items-center ${selected.includes(symptom.id) ? "border-gray-300" : "border-gray-300"}`}
+                >
+                  {selected.includes(symptom.id) && (
+                    <View className="w-4 h-4 rounded-full bg-gray-300" />
+                  )}
                 </View>
               </TouchableOpacity>
             ))}
             {selected.includes("OTHER") && (
-              <View className={isDark ? "bg-[#020617] border-white/10 rounded-[28px] p-5 border" : "bg-white border-[#F1F5F9] rounded-[28px] p-5 border"}>
+              <View
+                className={
+                  isDark
+                    ? "bg-[#020617] border-white/10 rounded-[28px] p-5 border"
+                    : "bg-white border-[#F1F5F9] rounded-[28px] p-5 border"
+                }
+              >
                 <Typography variant="h3" weight="bold" className="mb-2">
                   Tell us what you feel
                 </Typography>
@@ -142,7 +212,9 @@ export default function SymptomCheckerScreen() {
                   onChangeText={setOtherSymptom}
                   placeholder="Type symptom here"
                   placeholderTextColor="#94A3B8"
-                  className={isDark ? "text-white text-base" : "text-[#1A212E] text-base"}
+                  className={
+                    isDark ? "text-white text-base" : "text-[#1A212E] text-base"
+                  }
                   style={{ fontFamily: "Lexend-Regular", minHeight: 48 }}
                   multiline
                   maxLength={80}
@@ -153,36 +225,79 @@ export default function SymptomCheckerScreen() {
         </ScrollView>
 
         <View className="px-10 pb-[100px] items-center">
-          <TouchableOpacity 
-            className={`bg-primary w-full h-[70px] rounded-[35px] flex-row items-center justify-center gap-3 mb-4 shadow-md ${isAddingSymptom || selected.length === 0 ? 'opacity-70' : ''}`}
+          <TouchableOpacity
+            className={`bg-primary w-full h-[70px] rounded-[35px] flex-row items-center justify-center gap-3 mb-4 shadow-md ${isAddingSymptom || selected.length === 0 ? "opacity-70" : ""}`}
             activeOpacity={0.8}
             onPress={handleSubmit}
-            disabled={isAddingSymptom || selected.length === 0 || (selected.includes('OTHER') && !otherSymptom.trim())}
+            disabled={
+              isAddingSymptom ||
+              selected.length === 0 ||
+              (selected.includes("OTHER") && !otherSymptom.trim())
+            }
           >
-            <Typography variant="h2" weight="bold" className="text-[22px] text-[#1A212E]">
-              {isAddingSymptom ? 'Reporting...' : 'Submit Report'}
+            <Typography
+              variant="h2"
+              weight="bold"
+              className="text-[22px] text-[#1A212E]"
+            >
+              {isAddingSymptom ? "Reporting..." : "Submit Report"}
             </Typography>
-            {!isAddingSymptom && <Ionicons name="arrow-forward" size={24} color="#1A212E" />}
+            {!isAddingSymptom && (
+              <Ionicons name="arrow-forward" size={24} color="#1A212E" />
+            )}
           </TouchableOpacity>
-          <Typography variant="caption" className="text-gray-500">All data is kept private and secure.</Typography>
+          <Typography variant="caption" className="text-gray-500">
+            All data is kept private and secure.
+          </Typography>
         </View>
 
         {/* Tab Mockup for fidelity - Now Functional */}
-        <View className={isDark ? "absolute bottom-0 w-full h-20 bg-[#020617] flex-row border-t border-white/10 px-10 pt-2.5 justify-between" : "absolute bottom-0 w-full h-20 bg-white flex-row border-t border-[#F1F5F9] px-10 pt-2.5 justify-between"}>
-           <TouchableOpacity className="items-center gap-1" onPress={() => router.push('/(tabs)')}>
-              <Ionicons name="home" size={24} color={Theme.colors.textLight} />
-              <Typography variant="caption" className="text-gray-500">Home</Typography>
-           </TouchableOpacity>
-           <TouchableOpacity className="items-center gap-1" onPress={() => router.push('/(tabs)/tracking')}>
-              <View className={isDark ? "bg-[#022C22] px-5 py-1 rounded-[20px]" : "bg-[#E8FCF1] px-5 py-1 rounded-[20px]"}>
-                <Ionicons name="medical" size={24} color={Theme.colors.primary} />
-              </View>
-              <Typography variant="caption" weight="bold" className="text-primary">Checkup</Typography>
-           </TouchableOpacity>
-           <TouchableOpacity className="items-center gap-1" onPress={() => router.push('/(tabs)/profile')}>
-              <Ionicons name="person" size={24} color={Theme.colors.textLight} />
-              <Typography variant="caption" className="text-gray-500">Profile</Typography>
-           </TouchableOpacity>
+        <View
+          className={
+            isDark
+              ? "absolute bottom-0 w-full h-20 bg-[#020617] flex-row border-t border-white/10 px-10 pt-2.5 justify-between"
+              : "absolute bottom-0 w-full h-20 bg-white flex-row border-t border-[#F1F5F9] px-10 pt-2.5 justify-between"
+          }
+        >
+          <TouchableOpacity
+            className="items-center gap-1"
+            onPress={() => router.push("/(tabs)")}
+          >
+            <Ionicons name="home" size={24} color={Theme.colors.textLight} />
+            <Typography variant="caption" className="text-gray-500">
+              Home
+            </Typography>
+          </TouchableOpacity>
+          <TouchableOpacity
+            className="items-center gap-1"
+            onPress={() => router.push("/(tabs)/tracking")}
+          >
+            <View
+              className={
+                isDark
+                  ? "bg-[#022C22] px-5 py-1 rounded-[20px]"
+                  : "bg-[#E8FCF1] px-5 py-1 rounded-[20px]"
+              }
+            >
+              <Ionicons name="medical" size={24} color={Theme.colors.primary} />
+            </View>
+            <Typography
+              variant="caption"
+              weight="bold"
+              className="text-primary"
+            >
+              Checkup
+            </Typography>
+          </TouchableOpacity>
+          <TouchableOpacity
+            className="items-center gap-1"
+            onPress={() => router.push("/(tabs)/profile")}
+          >
+            <Ionicons name="person" size={24} color={Theme.colors.textLight} />
+            <Typography variant="caption" className="text-gray-500">
+              Profile
+            </Typography>
+          </TouchableOpacity>
         </View>
       </Screen>
     </SafeAreaView>

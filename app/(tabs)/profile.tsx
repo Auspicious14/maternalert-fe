@@ -642,14 +642,11 @@ export default function ProfileScreen() {
         <Typography variant="h2">My Clinic Info</Typography>
         <TouchableOpacity
           onPress={() => {
-            setClinicName(profile?.clinicName ?? "");
-            setClinicAddress(profile?.clinicAddress ?? "");
-            setClinicPhone(profile?.clinicPhone ?? "");
-            setIsEditingClinic(true);
+            router.push("/facility-linking");
           }}
         >
           <Typography variant="body" style={styles.actionLinkText}>
-            {profile?.clinicName ? "Edit" : "Add Info"}
+            {profile?.clinicName ? "Edit" : "Link Facility"}
           </Typography>
         </TouchableOpacity>
       </View>

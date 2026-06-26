@@ -251,7 +251,7 @@ export default function HomeScreen() {
     isLoadingLatestBP,
     isLoadingRecentSymptoms,
   } = useHealthData();
-  const { profile } = useUserProfile();
+  const { profile, calculatedPregnancyWeeks } = useUserProfile();
   const { unreadCount } = useNotifications();
 
   const statusColors = useMemo(() => {
@@ -300,12 +300,22 @@ export default function HomeScreen() {
       backgroundColor={isDark ? Theme.colors.darkBg : Theme.colors.background}
     >
       <View className="flex-row items-center justify-between px-6 mb-6">
-        <Typography
-          variant="h2"
-          className={`${isDark ? "text-white" : "text-text"} text-xl`}
-        >
-          Priority Dashboard
-        </Typography>
+        <View>
+          <Typography
+            variant="h2"
+            className={`${isDark ? "text-white" : "text-text"} text-xl`}
+          >
+            Priority Dashboard
+          </Typography>
+          {calculatedPregnancyWeeks && (
+            <Typography
+              variant="body"
+              className={`${isDark ? "text-white/70" : "text-gray-500"} mt-1`}
+            >
+              Week {calculatedPregnancyWeeks} of pregnancy
+            </Typography>
+          )}
+        </View>
         <View className="flex-row items-center gap-4">
           <TouchableOpacity
             className={`relative w-11 h-11 rounded-full ${isDark ? "bg-white/10" : "bg-gray-100"} justify-center items-center`}
@@ -318,7 +328,7 @@ export default function HomeScreen() {
             />
             {unreadCount > 0 && (
               <View
-                className={`absolute top-3 right-3 w-2 h-2 rounded-full bg-accent border-2 ${isDark ? "border-[#1A1512]" : "border-white"}`}
+                className={`absolute top-3 right-3 w-2 h-2 rounded-full bg-accent border-2 ${isDark ? "border-[#020617]" : "border-white"}`}
               />
             )}
           </TouchableOpacity>
@@ -451,11 +461,15 @@ export default function HomeScreen() {
 
             <TouchableOpacity
               className={`flex-1 border ${isDark ? "border-white/10" : "border-gray-200"} bg-transparent h-12 rounded-full flex-row items-center justify-center gap-2`}
-              onPress={() => router.push("/clinic-finder")}
+              onPress={() => router.push("/appointments")}
             >
-              <Ionicons name="map" size={18} color={Theme.colors.accent} />
+              <Ionicons
+                name="calendar-outline"
+                size={18}
+                color={Theme.colors.accent}
+              />
               <Typography variant="h3" weight="bold" className="text-accent">
-                Find Clinic
+                Appointments
               </Typography>
             </TouchableOpacity>
           </View>
@@ -475,22 +489,43 @@ export default function HomeScreen() {
           className={`${isDark ? "bg-card-dark border-white/10" : "bg-white border-gray-100"} p-4 rounded-[24px] flex-row items-center mb-6 border shadow-lexend-medium`}
           onPress={() => router.push(personalizedGuidance.route as any)}
         >
-          <View className={`w-11 h-11 rounded-full justify-center items-center mr-4 ${personalizedGuidance.tone === "urgent" ? "bg-emergency" : "bg-primary-light"}`}>
+          <View
+            className={`w-11 h-11 rounded-full justify-center items-center mr-4 ${personalizedGuidance.tone === "urgent" ? "bg-emergency" : "bg-primary-light"}`}
+          >
             <Ionicons
-              name={personalizedGuidance.tone === "urgent" ? "alert-circle" : "heart"}
+              name={
+                personalizedGuidance.tone === "urgent"
+                  ? "alert-circle"
+                  : "heart"
+              }
               size={20}
-              color={personalizedGuidance.tone === "urgent" ? "white" : Theme.colors.primary}
+              color={
+                personalizedGuidance.tone === "urgent"
+                  ? "white"
+                  : Theme.colors.primary
+              }
             />
           </View>
           <View className="flex-1">
-            <Typography variant="h3" weight="bold" className={`${isDark ? "text-white" : "text-text"} text-base`}>
+            <Typography
+              variant="h3"
+              weight="bold"
+              className={`${isDark ? "text-white" : "text-text"} text-base`}
+            >
               {personalizedGuidance.title}
             </Typography>
-            <Typography variant="caption" className={`${isDark ? "text-white/50" : "text-gray-500"} leading-5`}>
+            <Typography
+              variant="caption"
+              className={`${isDark ? "text-white/50" : "text-gray-500"} leading-5`}
+            >
               {personalizedGuidance.message}
             </Typography>
           </View>
-          <Typography variant="caption" weight="bold" className="text-primary ml-3">
+          <Typography
+            variant="caption"
+            weight="bold"
+            className="text-primary ml-3"
+          >
             {personalizedGuidance.actionLabel}
           </Typography>
         </TouchableOpacity>
