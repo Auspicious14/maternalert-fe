@@ -1,203 +1,200 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import * as WebBrowser from "expo-web-browser";
-import React, { memo, useCallback } from "react";
+import React, { memo } from "react";
 import { SafeAreaView, FlatList, TouchableOpacity, View } from "react-native";
-import { Card } from "../../components/shared/Card";
 import { Screen } from "../../components/shared/Screen";
 import { Typography } from "../../components/shared/Typography";
-import { Skeleton } from "../../components/ui/Skeleton";
 import Theme from "../../constants/theme";
 import { useColorScheme } from "../../hooks/use-color-scheme";
-import { useEducation, EducationArticle } from "../../hooks/useEducation";
-
-// Optimized Article Card Component
-const ArticleCard = memo(({ article, isDark, onPress }: { article: EducationArticle; isDark: boolean; onPress: () => void }) => (
-  <TouchableOpacity
-    activeOpacity={0.8}
-    onPress={onPress}
-  >
-    <Card
-      className={
-        isDark
-          ? "mb-4 rounded-[32px] p-6 border shadow-sm bg-[#020617] border-white/10"
-          : "mb-4 rounded-[32px] p-6 border shadow-sm bg-white border-[#F1F5F9]"
-      }
-    >
-      <Typography variant="h3" weight="bold" className="mb-1">
-        {article.title}
-      </Typography>
-      <Typography
-        variant="caption"
-        className={
-          isDark ? "text-gray-400 mb-2" : "text-gray-500 mb-2"
-        }
+import { getSortedArticles, EducationArticle } from "../../constants/education";
+ 
+const CATEGORY_COLORS: Record<string, { bg: string; text: string }> = {
+  WARNING_SIGNS: { bg: "#FEE2E2", text: "#DC2626" },
+  HYPERTENSION:  { bg: "#FEF3C7", text: "#D97706" },
+  NUTRITION:     { bg: "#D1FAE5", text: "#059669" },
+  POSTPARTUM:    { bg: "#EDE9FE", text: "#7C3AED" },
+  ANTENATAL:     { bg: "#DBEAFE", text: "#2563EB" },
+};
+ 
+const ArticleCard = memo(
+  ({
+    article,
+    isDark,
+    onPress,
+  }: {
+    article: EducationArticle;
+    isDark: boolean;
+    onPress: () => void;
+  }) => {
+    const colors =
+      CATEGORY_COLORS[article.category] ?? { bg: "#F3F4F6", text: "#6B7280" };
+ 
+    return (
+      <TouchableOpacity
+        activeOpacity={0.85}
+        onPress={onPress}
+        style={{ marginBottom: 12 }}
       >
-        {article.readTimeMinutes} mins • {article.category}
-      </Typography>
-      <Typography
-        variant="body"
-        className={isDark ? "text-gray-300" : "text-gray-600"}
-      >
-        {article.summary}
-      </Typography>
-    </Card>
-  </TouchableOpacity>
-));
-
+        <View
+          style={{
+            backgroundColor: isDark ? "#0F172A" : "#FFFFFF",
+            borderRadius: 20,
+            padding: 18,
+            borderWidth: 1,
+            borderColor: article.urgent
+              ? "#FCA5A5"
+              : isDark
+              ? "rgba(255,255,255,0.08)"
+              : "#F1F5F9",
+          }}
+        >
+          {/* Category badge + read time */}
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
+              marginBottom: 8,
+            }}
+          >
+            <View
+              style={{
+                backgroundColor: colors.bg,
+                borderRadius: 20,
+                paddingHorizontal: 10,
+                paddingVertical: 3,
+              }}
+            >
+              <Typography
+                variant="caption"
+                weight="bold"
+                style={{ color: colors.text, fontSize: 10 }}
+              >
+                {article.categoryLabel.toUpperCase()}
+              </Typography>
+            </View>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+              <Ionicons
+                name="time-outline"
+                size={12}
+                color={isDark ? "#94A3B8" : "#9CA3AF"}
+              />
+              <Typography
+                variant="caption"
+                style={{ color: isDark ? "#94A3B8" : "#9CA3AF", fontSize: 11 }}
+              >
+                {article.readTimeMinutes} min read
+              </Typography>
+            </View>
+          </View>
+ 
+          {/* Title */}
+          <Typography
+            variant="h3"
+            weight="bold"
+            style={{
+              color: isDark ? "#FFFFFF" : "#1A212E",
+              marginBottom: 6,
+              lineHeight: 22,
+            }}
+          >
+            {article.urgent ? "🚨 " : ""}{article.title}
+          </Typography>
+ 
+          {/* Summary */}
+          <Typography
+            variant="body"
+            style={{
+              color: isDark ? "#94A3B8" : "#64748B",
+              fontSize: 13,
+              lineHeight: 19,
+            }}
+          >
+            {article.summary}
+          </Typography>
+ 
+          {/* Read arrow */}
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              marginTop: 12,
+              gap: 4,
+            }}
+          >
+            <Typography
+              variant="caption"
+              weight="bold"
+              style={{ color: article.urgent ? "#DC2626" : Theme.colors.primary, fontSize: 12 }}
+            >
+              Read article
+            </Typography>
+            <Ionicons
+              name="arrow-forward"
+              size={12}
+              color={article.urgent ? "#DC2626" : Theme.colors.primary}
+            />
+          </View>
+        </View>
+      </TouchableOpacity>
+    );
+  },
+);
+ 
 export default function EducationScreen() {
   const router = useRouter();
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
-
-  const { data: articles, isLoading } = useEducation();
-  const featured = articles?.[0];
-  const others = articles?.slice(1) ?? [];
-
-  const openLink = useCallback(async (url?: string) => {
-    if (!url) return;
-    try {
-      await WebBrowser.openBrowserAsync(url, {
-        presentationStyle: WebBrowser.WebBrowserPresentationStyle.FULL_SCREEN,
-        controlsColor: "#1A212E",
-        toolbarColor: "#FFFFFF",
-      });
-    } catch (e) {
-      console.error("Failed to open link", e);
-    }
-  }, []);
-
-  const renderHeader = () => (
-    <>
-      <View className="mt-5 mb-8">
-        <Typography
-          variant="h1"
-          className="text-[32px] font-black mb-2 shadow-lexend-bold"
-        >
-          Education Hub
-        </Typography>
-        <Typography
-          variant="body"
-          className={
-            isDark ? "text-gray-300 text-lg" : "text-gray-500 text-lg"
-          }
-        >
-          Verified pregnancy advice and care tips.
-        </Typography>
-      </View>
-
-      {isLoading ? (
-        <>
-          {/* Featured Card Skeleton */}
-          <Skeleton
-            height={240}
-            borderRadius={40}
-            variant={isDark ? "dark" : "light"}
-            style={{ marginBottom: 40 }}
-          />
-
-          <View className="mb-5">
-            <Skeleton
-              width={100}
-              height={30}
-              variant={isDark ? "dark" : "light"}
-            />
-          </View>
-        </>
-      ) : (
-        <>
-          {/* Featured Card */}
-          {featured && (
-            <TouchableOpacity
-              activeOpacity={0.9}
-              onPress={() =>
-                openLink(featured.videoUrl || featured.sourceUrl)
-              }
-            >
-              <Card className="h-[240px] rounded-[40px] overflow-hidden mb-10 bg-[#1A212E] p-0">
-                <View className="w-full h-full bg-[#111827]" />
-                <View className="absolute inset-0 p-[30px] justify-between">
-                  <View className="w-14 h-14 rounded-full bg-white/20 border border-white/40 justify-center items-center">
-                    <Ionicons name="play" size={24} color="#FFFFFF" />
-                  </View>
-                  <View>
-                    <Typography
-                      variant="h2"
-                      weight="bold"
-                      className="text-white text-2xl"
-                    >
-                      {featured.title}
-                    </Typography>
-                    <Typography variant="caption" className="text-white/70">
-                      {featured.readTimeMinutes} mins • {featured.category}
-                    </Typography>
-                  </View>
-                </View>
-              </Card>
-            </TouchableOpacity>
-          )}
-
-          <View className="mb-5">
-            <Typography variant="h2" weight="bold" className="text-[22px]">
-              Articles
-            </Typography>
-          </View>
-        </>
-      )}
-    </>
-  );
-
-  const renderFooter = () => {
-    if (!isLoading) return null;
-    return (
-      <>
-        {/* List Skeletons */}
-        <Skeleton
-          height={120}
-          borderRadius={32}
-          variant={isDark ? "dark" : "light"}
-          style={{ marginBottom: 16 }}
-        />
-        <Skeleton
-          height={120}
-          borderRadius={32}
-          variant={isDark ? "dark" : "light"}
-          style={{ marginBottom: 16 }}
-        />
-        <Skeleton
-          height={120}
-          borderRadius={32}
-          variant={isDark ? "dark" : "light"}
-        />
-      </>
-    );
-  };
-
+  const articles = getSortedArticles(); // sorted: urgent first, all offline
+ 
   return (
     <SafeAreaView
-      className="flex-1"
-      style={{ backgroundColor: isDark ? Theme.colors.darkBg : "#F9FAFB" }}
+      style={{
+        flex: 1,
+        backgroundColor: isDark ? Theme.colors.darkBg : "#F9FAFB",
+      }}
     >
       <Screen backgroundColor={isDark ? Theme.colors.darkBg : "#F9FAFB"}>
         <FlatList
-          data={isLoading ? [] : others}
+          data={articles}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
-            <ArticleCard 
-              article={item} 
-              isDark={isDark} 
-              onPress={() => openLink(item.sourceUrl || item.videoUrl)} 
+            <ArticleCard
+              article={item}
+              isDark={isDark}
+              onPress={() => router.push(`/education/${item.id}`)}
             />
           )}
-          ListHeaderComponent={renderHeader}
-          ListFooterComponent={renderFooter}
-          contentContainerStyle={{ paddingHorizontal: 40, paddingBottom: 40 }}
+          ListHeaderComponent={() => (
+            <View style={{ paddingTop: 20, paddingBottom: 20 }}>
+              <Typography
+                variant="h1"
+                weight="bold"
+                style={{
+                  fontSize: 28,
+                  color: isDark ? "#FFFFFF" : "#1A212E",
+                  marginBottom: 6,
+                }}
+              >
+                Health Education
+              </Typography>
+              <Typography
+                variant="body"
+                style={{ color: isDark ? "#94A3B8" : "#64748B", fontSize: 15 }}
+              >
+                Trusted information for a safe pregnancy — available offline.
+              </Typography>
+            </View>
+          )}
+          contentContainerStyle={{
+            paddingHorizontal: 24,
+            paddingBottom: 40,
+          }}
           showsVerticalScrollIndicator={false}
-          initialNumToRender={5}
-          maxToRenderPerBatch={5}
-          windowSize={10}
         />
       </Screen>
     </SafeAreaView>
   );
 }
+ 
+ 
