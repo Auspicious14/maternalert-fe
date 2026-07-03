@@ -755,13 +755,74 @@ export default function ProfileScreen() {
           </Typography>
         </Card>
       )}
-      <TouchableOpacity onPress={() => router.push("/fetal-development")}>
-        Baby Development
-      </TouchableOpacity>
+      <View style={styles.sectionHeader}>
+        <Typography variant="h2">My Pregnancy Journey</Typography>
+      </View>
 
-      <TouchableOpacity onPress={() => router.push("/my-health-records")}>
-        My Health Records
-      </TouchableOpacity>
+      <View style={styles.quickActionsContainer}>
+        <TouchableOpacity
+          style={[styles.quickActionCard, isDark && styles.quickActionCardDark]}
+          activeOpacity={0.8}
+          onPress={() => router.push("/fetal-development")}
+        >
+          <View
+            style={[styles.quickActionIcon, { backgroundColor: "#E8F5E9" }]}
+          >
+            <Ionicons name="heart-outline" size={28} color="#34E875" />
+          </View>
+
+          <View style={{ flex: 1 }}>
+            <Typography variant="h3">Baby Development</Typography>
+
+            <Typography variant="caption">
+              Week {calculatedPregnancyWeeks || profile?.pregnancyWeeks}
+            </Typography>
+
+            <Typography variant="caption" color={Theme.colors.textLight}>
+              Track your baby's growth and see what is happening this week.
+            </Typography>
+          </View>
+
+          <Ionicons
+            name="chevron-forward"
+            size={22}
+            color={Theme.colors.textLight}
+          />
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.quickActionCard, isDark && styles.quickActionCardDark]}
+          activeOpacity={0.8}
+          onPress={() => router.push("/my-health-records")}
+        >
+          <View
+            style={[styles.quickActionIcon, { backgroundColor: "#FFF3E0" }]}
+          >
+            <Ionicons name="document-text-outline" size={28} color="#FF9800" />
+          </View>
+
+          <View style={{ flex: 1 }}>
+            <Typography variant="h3">My Health Records</Typography>
+
+            <Typography variant="caption">
+              {priorityData?.priority === "EMERGENCY"
+                ? "1 urgent recommendation"
+                : "Your records are up to date"}
+            </Typography>
+
+            <Typography variant="caption" color={Theme.colors.textLight}>
+              View your blood pressure readings, symptoms, ANC visits and
+              pregnancy history.
+            </Typography>
+          </View>
+
+          <Ionicons
+            name="chevron-forward"
+            size={22}
+            color={Theme.colors.textLight}
+          />
+        </TouchableOpacity>
+      </View>
       <View style={styles.sectionHeader}>
         <Typography variant="h2">Reminders</Typography>
       </View>
@@ -1144,5 +1205,33 @@ const styles = StyleSheet.create({
   },
   inputGroup: {
     marginBottom: 8,
+  },
+  quickActionsContainer: {
+    marginBottom: Theme.spacing.xl,
+    gap: 14,
+  },
+
+  quickActionCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 18,
+    borderRadius: 20,
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+  },
+
+  quickActionCardDark: {
+    backgroundColor: "#26211E",
+    borderColor: "#3A3430",
+  },
+
+  quickActionIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 16,
   },
 });
