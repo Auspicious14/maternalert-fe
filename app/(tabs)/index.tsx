@@ -29,8 +29,10 @@ import {
 import { useNotifications } from "../../hooks/useNotifications";
 import { useUserProfile } from "../../hooks/useUserProfile";
 import { getPersonalizedGuidance } from "../../services/personalization";
+import axios from "axios";
+import apiClient from "@/api/client";
 
-const API = process.env.EXPO_PUBLIC_API_URL ?? "";
+// const API = process.env.EXPO_PUBLIC_API_URL ?? "";
 
 // ─── FLOATING EMERGENCY BUTTON ────────────────────────────────────────────────
 // Rendered outside <Screen> so it stays fixed above the tab bar while the
@@ -44,13 +46,9 @@ function FloatingEmergencyButton() {
   async function handleConfirm() {
     setTriggering(true);
     try {
-      const res = await fetch(`${API}/emergency/trigger`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-      });
+      const res = await apiClient.post("/emergency/trigger");
 
-      if (!res.ok) throw new Error("Server error");
+      if (res.status !== 200) throw new Error("Server error");
       setTriggered(true);
     } catch {
       Alert.alert(

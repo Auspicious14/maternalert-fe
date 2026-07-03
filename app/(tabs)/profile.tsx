@@ -755,7 +755,13 @@ export default function ProfileScreen() {
           </Typography>
         </Card>
       )}
+      <TouchableOpacity onPress={() => router.push("/fetal-development")}>
+        Baby Development
+      </TouchableOpacity>
 
+      <TouchableOpacity onPress={() => router.push("/my-health-records")}>
+        My Health Records
+      </TouchableOpacity>
       <View style={styles.sectionHeader}>
         <Typography variant="h2">Reminders</Typography>
       </View>
