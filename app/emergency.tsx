@@ -38,28 +38,25 @@ export default function EmergencyScreen() {
   const subTextColor = isDark ? "text-white/50" : "text-gray-500";
 
   // ── SEND ALERT (WhatsApp + SMS to contact & facility) ───────────────────
-  async function handleSendAlert() {
-    setAlertState("sending");
-    try {
-      const res = await apiClient.post(`${API}/emergency/trigger`);
-
-      if (res.status !== 200) throw new Error("Server error");
-      setAlertState("sent");
-    } catch {
-      setAlertState("failed");
-      Alert.alert(
-        "Alert failed to send",
-        "Could not reach the server. Please call your emergency contact directly.",
-        [
-          {
-            text: "Call Now",
-            onPress: handleDirectCall,
-          },
-          { text: "Try Again", onPress: () => setAlertState("idle") },
-        ],
-      );
-    }
+ async function handleSendAlert() {
+  setAlertState("sending");
+  try {
+    const res = await apiClient.post("/emergency/trigger");
+    if (res.status !== 200 && res.status !== 201) throw new Error("Server error");
+    setAlertState("sent");
+  } catch (error: any) {
+    console.log("Emergency trigger error:", error?.response?.status, error?.response?.data, error?.message);
+    setAlertState("failed");
+    Alert.alert(
+      "Alert failed to send",
+      "Could not reach the server. Please call your emergency contact directly.",
+      [
+        { text: "Call Now", onPress: handleDirectCall },
+        { text: "Try Again", onPress: () => setAlertState("idle") },
+      ],
+    );
   }
+}
 
   // ── DIRECT PHONE CALL (fallback) ─────────────────────────────────────────
   function handleDirectCall() {

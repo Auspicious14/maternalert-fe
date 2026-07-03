@@ -11,6 +11,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Typography } from "../components/shared/Typography";
 import { useColorScheme } from "../hooks/use-color-scheme";
 import Theme from "../constants/theme";
+import apiClient from "@/api/client";
  
 const API = process.env.EXPO_PUBLIC_API_URL ?? "";
  
@@ -29,13 +30,9 @@ export function EmergencyButton({ floating = false }: EmergencyButtonProps) {
   async function confirmAndTrigger() {
     setTriggering(true);
     try {
-      const res = await fetch(`${API}/emergency/trigger`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-      });
+      const res = await apiClient.post(`/emergency/trigger`);
  
-      if (!res.ok) throw new Error("Failed to trigger emergency");
+      if (res.status !== 200 && res.status !== 201) throw new Error("Failed to trigger emergency");
  
       setTriggered(true);
     } catch {
