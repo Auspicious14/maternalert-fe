@@ -5,7 +5,13 @@ import apiClient from "../api/client";
 export interface Notification {
   id: string;
   userId: string;
-  type: "CARE_PRIORITY" | "BP_ALERT" | "SYMPTOM_ALERT" | "REMINDER";
+  type:
+    | "CARE_PRIORITY"
+    | "BP_ALERT"
+    | "SYMPTOM_ALERT"
+    | "REMINDER"
+    | "ANC_REMINDER"
+    | "EDUCATIONAL";
   title: string;
   message: string;
   read: boolean;
@@ -30,9 +36,10 @@ export const useNotifications = () => {
     refetchInterval: 30000,
   });
 
-  const unreadCount = React.useMemo(() => 
-    notifications.filter((n) => !n.read).length, 
-  [notifications]);
+  const unreadCount = React.useMemo(
+    () => notifications.filter((n) => !n.read).length,
+    [notifications],
+  );
 
   const markAsReadMutation = useMutation({
     mutationFn: async (id: string) => {

@@ -24,6 +24,8 @@ export default function NotificationsScreen() {
       router.push("/symptom-results");
     } else if (item.type === "BP_ALERT") {
       router.push("/(tabs)/tracking");
+    } else if (item.type === "ANC_REMINDER" || item.type === "REMINDER") {
+      router.push("/appointments");
     }
   };
 
@@ -47,6 +49,7 @@ export default function NotificationsScreen() {
           color: "#EAB308",
           bg: isDark ? "rgba(234, 179, 8, 0.2)" : "bg-yellow-100",
         };
+      case "ANC_REMINDER":
       case "REMINDER":
       default:
         return {
