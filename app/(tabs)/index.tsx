@@ -48,7 +48,7 @@ function FloatingEmergencyButton() {
     try {
       const res = await apiClient.post("/emergency/trigger");
 
-      if (res.status !== 200) throw new Error("Server error");
+      if (res.status !== 201) throw new Error("Server error");
       setTriggered(true);
     } catch {
       Alert.alert(
@@ -76,7 +76,7 @@ function FloatingEmergencyButton() {
         activeOpacity={0.85}
         style={{
           position: "absolute",
-          bottom: 96,       // above tab bar (~56px) + breathing room
+          bottom: 96, // above tab bar (~56px) + breathing room
           right: 20,
           width: 58,
           height: 58,
@@ -495,7 +495,7 @@ export default function HomeScreen() {
   const { unreadCount } = useNotifications();
 
   const statusColors = useMemo(() => {
-    switch (monitoringState?.state) {
+    switch (monitoringState?.currentState) {
       case "EMERGENCY":
         return Theme.colors.redGradient;
       case "URGENT":
@@ -505,10 +505,10 @@ export default function HomeScreen() {
       default:
         return Theme.colors.greenGradient;
     }
-  }, [monitoringState?.state]);
+  }, [monitoringState?.currentState]);
 
   const statusLabel = useMemo(() => {
-    switch (monitoringState?.state) {
+    switch (monitoringState?.currentState) {
       case "EMERGENCY":
         return "EMERGENCY";
       case "URGENT":
@@ -518,7 +518,7 @@ export default function HomeScreen() {
       default:
         return "NORMAL";
     }
-  }, [monitoringState?.state]);
+  }, [monitoringState?.currentState]);
 
   const statusMessage = useMemo(
     () => monitoringState?.reason || "All readings are within normal range.",
@@ -594,7 +594,7 @@ export default function HomeScreen() {
           {/* ── Status Card ── */}
           <StatusCard
             priorityData={{
-              priority: monitoringState?.state,
+              priority: monitoringState?.currentState,
               message: statusMessage,
               nextAction: nextActionMessage,
             }}
@@ -603,9 +603,9 @@ export default function HomeScreen() {
             isLoading={isLoadingMonitoringState}
             isDark={isDark}
             onPress={() => {
-              if (monitoringState?.state === "EMERGENCY") {
+              if (monitoringState?.currentState === "EMERGENCY") {
                 router.push("/emergency");
-              } else if (monitoringState?.state === "URGENT") {
+              } else if (monitoringState?.currentState === "URGENT") {
                 router.push("/symptom-results");
               } else if (
                 followUpTasks &&
@@ -717,11 +717,7 @@ export default function HomeScreen() {
                   size={18}
                   color={Theme.colors.accent}
                 />
-                <Typography
-                  variant="h3"
-                  weight="bold"
-                  className="text-accent"
-                >
+                <Typography variant="h3" weight="bold" className="text-accent">
                   Appointments
                 </Typography>
               </TouchableOpacity>

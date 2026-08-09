@@ -2,7 +2,7 @@ import useSWR from "swr";
 import { fetcher } from "../api/client";
 
 export interface MonitoringStateResponse {
-  state: "NORMAL" | "MONITOR" | "URGENT" | "EMERGENCY";
+  currentState: "NORMAL" | "MONITOR" | "URGENT" | "EMERGENCY";
   reason: string | null;
   lastUpdatedAt: string;
   nextAction: string | null;
