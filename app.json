@@ -4,7 +4,7 @@
     "slug": "maternalert-fe",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/matern-logo.png",
+    "icon": "./assets/images/maternalert-logo.png",
     "scheme": "maternalertfe",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -15,7 +15,7 @@
     "android": {
       "package": "com.products.maternalert",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/matern-logo.png",
+        "foregroundImage": "./assets/images/maternalert-logo.png",
         "backgroundColor": "#ffffff"
       },
       "permissions": [
@@ -29,7 +29,7 @@
     },
     "web": {
       "output": "static",
-      "favicon": "./assets/images/matern-logo.png"
+      "favicon": "./assets/images/maternalert-logo.png"
     },
     "plugins": [
       "expo-router",
@@ -44,7 +44,7 @@
       [
         "expo-notifications",
         {
-          "icon": "./assets/images/matern-logo.png",
+          "icon": "./assets/images/maternalert-logo.png",
           "color": "#2DE474"
         }
       ]

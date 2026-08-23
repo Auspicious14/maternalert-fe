@@ -39,7 +39,7 @@ export default function OnboardingScreen() {
 
         <View className="items-center mb-6">
           <Image
-            source={require("../assets/images/matern-logo.png")}
+            source={require("../assets/images/maternalert-logo.png")}
             className="w-24 h-24"
             resizeMode="contain"
           />

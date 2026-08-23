@@ -14,16 +14,62 @@ import { useToast } from "../components/ui/ToastProvider";
 import Theme from "../constants/theme";
 import { useColorScheme } from "../hooks/use-color-scheme";
 
+// ──────────────────────────────────────────────────────────────────────────────
+// Symptom definitions
+// Each symptom may have:
+//   - subOptions: contextual follow-up choices (presented when the symptom is selected)
+//   - note: a contextual informational note
+//   - hasOtherInput: if the sub-option includes a free-text pain location field
+// ──────────────────────────────────────────────────────────────────────────────
+
 const SYMPTOMS = [
-  { id: "HEADACHE", title: "Severe Headache", icon: "flash" },
+  {
+    id: "HEADACHE",
+    title: "Headache",
+    icon: "flash",
+    subOptions: [
+      { id: "FEVER", label: "With fever" },
+      { id: "CHILLS_AND_RIGORS", label: "With chills and rigors" },
+      { id: "VOMITING", label: "With vomiting" },
+      { id: "NAUSEA", label: "With nausea" },
+    ],
+    subOptionsPrompt: "Is the headache associated with any of the following?",
+  },
   { id: "BLURRED_VISION", title: "Blurred Vision", icon: "eye-off" },
   {
-    id: "SWELLING",
-    title: "Swelling",
-    subtitle: "Hands or face",
+    id: "LEG_SWELLING",
+    title: "Leg Swelling",
+    subtitle: "Swelling of one or both legs",
     icon: "hand-left",
+    subOptions: [
+      { id: "PAINFUL", label: "Painful leg swelling" },
+      { id: "NON_PAINFUL", label: "Non-painful leg swelling" },
+      { id: "FROTHY_URINE", label: "Also have frothy urine" },
+    ],
+    subOptionsPrompt: "Is the leg swelling painful or non-painful?",
   },
-  { id: "VAGINAL_BLEEDING", title: "Vaginal Bleeding", icon: "water" },
+  {
+    id: "FROTHY_URINE",
+    title: "Frothy Urine",
+    subtitle: "Urine forming foam",
+    icon: "water",
+  },
+  {
+    id: "VAGINAL_BLEEDING",
+    title: "Vaginal Bleeding",
+    icon: "medical",
+    note: "Any vaginal bleeding requires medical attention, regardless of volume. This symptom most commonly occurs after the first trimester.",
+    subOptions: [
+      { id: "ASSOCIATED_WITH_ABDOMINAL_PAIN", label: "With abdominal pain" },
+    ],
+    subOptionsPrompt: "Is the bleeding associated with abdominal pain?",
+  },
+  {
+    id: "VAGINAL_DISCHARGE",
+    title: "Vaginal Discharge",
+    subtitle: "Unusual discharge",
+    icon: "water-outline",
+  },
   { id: "FEVER", title: "Fever", icon: "thermometer" },
   {
     id: "REDUCED_FETAL_MOVEMENT",
@@ -31,19 +77,36 @@ const SYMPTOMS = [
     icon: "heart",
   },
   { id: "DIFFICULTY_BREATHING", title: "Difficulty Breathing", icon: "walk" },
-  { id: "CONVULSIONS", title: "Convulsions", icon: "pulse" },
   {
-    id: "UPPER_ABDOMINAL_PAIN",
-    title: "Severe Abdominal Pain",
-    icon: "alert-circle",
+    id: "ABNORMAL_BODY_MOVEMENT",
+    title: "Abnormal Body Movement",
+    subtitle: "Fits or convulsions",
+    icon: "pulse",
   },
+  {
+    id: "ABDOMINAL_PAIN",
+    title: "Abdominal Pain",
+    icon: "alert-circle",
+    subOptions: [
+      { id: "LOWER_ABDOMEN", label: "Lower abdomen" },
+      { id: "UPPER_ABDOMEN", label: "Upper abdomen" },
+      { id: "BELOW_RIBS", label: "Just below the ribs" },
+      { id: "OTHER", label: "Describe the pain" },
+    ],
+    subOptionsPrompt: "Where is the abdominal pain located?",
+    hasLocationInput: true,
+  },
+  { id: "PAINFUL_URINATION", title: "Painful Urination", icon: "alert" },
+  { id: "FREQUENT_URINATION", title: "Frequent Urination", icon: "refresh" },
   {
     id: "OTHER",
     title: "Something else",
     subtitle: "Type what you feel",
     icon: "create",
   },
-];
+] as const;
+
+type SymptomId = (typeof SYMPTOMS)[number]["id"];
 
 import { useHealthData } from "../hooks/useHealthData";
 
@@ -54,15 +117,41 @@ export default function SymptomCheckerScreen() {
   const isDark = colorScheme === "dark";
   const { showToast } = useToast();
 
-  const [selected, setSelected] = useState<string[]>([]);
+  const [selected, setSelected] = useState<SymptomId[]>([]);
   const [otherSymptom, setOtherSymptom] = useState("");
+  // sub-options: { [symptomId]: string[] }
+  const [subOptions, setSubOptions] = useState<Record<string, string[]>>({});
+  // pain location for abdominal pain
+  const [painLocation, setPainLocation] = useState("");
 
-  const toggleSymptom = (id: string) => {
+  const textColor = isDark ? "#FFFFFF" : "#1A212E";
+  const subTextColor = isDark ? "#94A3B8" : "#6B7280";
+  const cardBg = isDark ? "#020617" : "#FFFFFF";
+  const borderColor = isDark ? "rgba(255,255,255,0.1)" : "#F1F5F9";
+  const subCardBg = isDark ? "#0F172A" : "#F8FAFC";
+
+  const toggleSymptom = (id: SymptomId) => {
     if (selected.includes(id)) {
       setSelected(selected.filter((s) => s !== id));
+      // clear sub-options when deselected
+      setSubOptions((prev) => {
+        const next = { ...prev };
+        delete next[id];
+        return next;
+      });
     } else {
       setSelected([...selected, id]);
     }
+  };
+
+  const toggleSubOption = (symptomId: string, optionId: string) => {
+    setSubOptions((prev) => {
+      const current = prev[symptomId] ?? [];
+      if (current.includes(optionId)) {
+        return { ...prev, [symptomId]: current.filter((o) => o !== optionId) };
+      }
+      return { ...prev, [symptomId]: [...current, optionId] };
+    });
   };
 
   const handleSubmit = async () => {
@@ -78,7 +167,6 @@ export default function SymptomCheckerScreen() {
     }
 
     try {
-      // Record all selected symptoms
       for (const symptomId of selected) {
         if (symptomId === "OTHER") {
           await addSymptom({
@@ -86,16 +174,26 @@ export default function SymptomCheckerScreen() {
             customSymptom: cleanedOtherSymptom,
           });
         } else {
-          await addSymptom(symptomId);
+          const symptomSubOptions = subOptions[symptomId] ?? [];
+          const locationValue =
+            symptomId === "ABDOMINAL_PAIN" && painLocation.trim()
+              ? painLocation.trim()
+              : undefined;
+
+          await addSymptom({
+            symptomType: symptomId,
+            subOptions:
+              symptomSubOptions.length > 0 ? symptomSubOptions : undefined,
+            painLocation: locationValue,
+          } as any);
         }
       }
 
-      // Check for emergency symptom combinations:
       const symptomSet = new Set(selected);
       const isEmergency =
         (symptomSet.has("HEADACHE") && symptomSet.has("BLURRED_VISION")) ||
-        symptomSet.has("UPPER_ABDOMINAL_PAIN") ||
-        symptomSet.has("CONVULSIONS") ||
+        symptomSet.has("ABDOMINAL_PAIN") ||
+        symptomSet.has("ABNORMAL_BODY_MOVEMENT") ||
         symptomSet.has("VAGINAL_BLEEDING") ||
         symptomSet.has("DIFFICULTY_BREATHING") ||
         symptomSet.has("REDUCED_FETAL_MOVEMENT") ||
@@ -113,6 +211,129 @@ export default function SymptomCheckerScreen() {
         message: "Failed to submit symptoms. Please try again.",
       });
     }
+  };
+
+  const renderSubOptions = (symptom: (typeof SYMPTOMS)[number]) => {
+    if (!selected.includes(symptom.id as SymptomId)) return null;
+    if (!("subOptions" in symptom) || !symptom.subOptions) return null;
+
+    const selectedSubs = subOptions[symptom.id] ?? [];
+    const showLocationInput =
+      "hasLocationInput" in symptom &&
+      symptom.hasLocationInput &&
+      selectedSubs.includes("OTHER");
+
+    return (
+      <View
+        style={{ backgroundColor: subCardBg, borderColor: borderColor }}
+        className="rounded-[24px] p-4 border mt-1 ml-4"
+      >
+        {"note" in symptom && symptom.note && (
+          <View className="mb-3 flex-row items-start gap-2">
+            <Ionicons
+              name="information-circle-outline"
+              size={16}
+              color={Theme.colors.primary}
+            />
+            <Typography
+              variant="caption"
+              style={{
+                color: subTextColor,
+                flex: 1,
+                fontSize: 12,
+                lineHeight: 18,
+              }}
+            >
+              {symptom.note}
+            </Typography>
+          </View>
+        )}
+        <Typography
+          variant="caption"
+          weight="bold"
+          style={{ color: textColor, marginBottom: 8 }}
+        >
+          {"subOptionsPrompt" in symptom
+            ? symptom.subOptionsPrompt
+            : "Select all that apply:"}
+        </Typography>
+        <View className="gap-2">
+          {symptom.subOptions.map((opt) => {
+            const isSubSelected = selectedSubs.includes(opt.id);
+            return (
+              <TouchableOpacity
+                key={opt.id}
+                onPress={() => toggleSubOption(symptom.id, opt.id)}
+                style={{
+                  backgroundColor: isSubSelected
+                    ? isDark
+                      ? "#1B3A26"
+                      : "#F0FDF4"
+                    : isDark
+                      ? "#020617"
+                      : "#FFFFFF",
+                  borderColor: isSubSelected
+                    ? Theme.colors.primary
+                    : borderColor,
+                }}
+                className="flex-row items-center gap-3 rounded-2xl px-4 py-3 border"
+              >
+                <View
+                  style={{
+                    borderColor: isSubSelected
+                      ? Theme.colors.primary
+                      : isDark
+                        ? "#4B5563"
+                        : "#D1D5DB",
+                    backgroundColor: isSubSelected
+                      ? Theme.colors.primary
+                      : "transparent",
+                  }}
+                  className="w-5 h-5 rounded border-2 justify-center items-center"
+                >
+                  {isSubSelected && (
+                    <Ionicons name="checkmark" size={12} color="#FFFFFF" />
+                  )}
+                </View>
+                <Typography
+                  variant="caption"
+                  style={{ color: textColor, fontSize: 14 }}
+                >
+                  {opt.label}
+                </Typography>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+        {showLocationInput && (
+          <View className="mt-3">
+            <Typography
+              variant="caption"
+              weight="bold"
+              style={{ color: textColor, marginBottom: 4 }}
+            >
+              Describe the pain location:
+            </Typography>
+            <TextInput
+              value={painLocation}
+              onChangeText={setPainLocation}
+              placeholder="e.g. lower left abdomen"
+              placeholderTextColor="#94A3B8"
+              className={
+                isDark ? "text-white text-base" : "text-[#1A212E] text-base"
+              }
+              style={{
+                fontFamily: "Lexend-Regular",
+                minHeight: 40,
+                borderBottomWidth: 1,
+                borderBottomColor: borderColor,
+              }}
+              maxLength={80}
+            />
+          </View>
+        )}
+      </View>
+    );
   };
 
   return (
@@ -159,43 +380,70 @@ export default function SymptomCheckerScreen() {
             Select any symptoms you are experiencing right now.
           </Typography>
 
-          <View className="gap-4">
-            {SYMPTOMS.map((symptom) => (
-              <TouchableOpacity
-                key={symptom.id}
-                className={`${isDark ? "bg-[#020617] border-white/10" : "bg-white"} rounded-[40px] py-6 px-[30px] flex-row items-center border shadow-sm ${selected.includes(symptom.id) ? "border-primary" : "border-[#F1F5F9]"}`}
-                onPress={() => toggleSymptom(symptom.id)}
-                activeOpacity={0.7}
-              >
-                <View className="w-11 h-11 rounded-full bg-primary-light justify-center items-center mr-4">
-                  <Ionicons
-                    name={symptom.icon as any}
-                    size={24}
-                    color={Theme.colors.primary}
-                  />
-                </View>
-                <View className="flex-1">
-                  <Typography variant="h3" weight="bold" className="text-lg">
-                    {symptom.title}
-                  </Typography>
-                  {symptom.subtitle && (
-                    <Typography
-                      variant="caption"
-                      className={isDark ? "text-gray-400" : "text-gray-400"}
+          <View className="gap-3">
+            {SYMPTOMS.map((symptom) => {
+              const isSelected = selected.includes(symptom.id as SymptomId);
+              const hasSubOpts =
+                "subOptions" in symptom &&
+                symptom.subOptions &&
+                symptom.subOptions.length > 0;
+
+              return (
+                <View key={symptom.id}>
+                  <TouchableOpacity
+                    className={`${isDark ? "bg-[#020617] border-white/10" : "bg-white"} rounded-[40px] py-6 px-[30px] flex-row items-center border shadow-sm ${isSelected ? "border-primary" : "border-[#F1F5F9]"}`}
+                    onPress={() => toggleSymptom(symptom.id as SymptomId)}
+                    activeOpacity={0.7}
+                  >
+                    <View className="w-11 h-11 rounded-full bg-primary-light justify-center items-center mr-4">
+                      <Ionicons
+                        name={symptom.icon as any}
+                        size={24}
+                        color={Theme.colors.primary}
+                      />
+                    </View>
+                    <View className="flex-1">
+                      <Typography
+                        variant="h3"
+                        weight="bold"
+                        className="text-lg"
+                      >
+                        {symptom.title}
+                      </Typography>
+                      {"subtitle" in symptom && symptom.subtitle && (
+                        <Typography
+                          variant="caption"
+                          className={isDark ? "text-gray-400" : "text-gray-400"}
+                        >
+                          {symptom.subtitle}
+                        </Typography>
+                      )}
+                      {hasSubOpts && isSelected && (
+                        <Typography
+                          variant="caption"
+                          style={{
+                            color: Theme.colors.primary,
+                            fontSize: 11,
+                            marginTop: 2,
+                          }}
+                        >
+                          Tap below to add details
+                        </Typography>
+                      )}
+                    </View>
+                    <View
+                      className={`w-7 h-7 rounded-full border-2 justify-center items-center ${isSelected ? "border-gray-300" : "border-gray-300"}`}
                     >
-                      {symptom.subtitle}
-                    </Typography>
-                  )}
+                      {isSelected && (
+                        <View className="w-4 h-4 rounded-full bg-gray-300" />
+                      )}
+                    </View>
+                  </TouchableOpacity>
+                  {renderSubOptions(symptom as any)}
                 </View>
-                <View
-                  className={`w-7 h-7 rounded-full border-2 justify-center items-center ${selected.includes(symptom.id) ? "border-gray-300" : "border-gray-300"}`}
-                >
-                  {selected.includes(symptom.id) && (
-                    <View className="w-4 h-4 rounded-full bg-gray-300" />
-                  )}
-                </View>
-              </TouchableOpacity>
-            ))}
+              );
+            })}
+
             {selected.includes("OTHER") && (
               <View
                 className={

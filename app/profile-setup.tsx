@@ -38,7 +38,7 @@ export default function ProfileSetupScreen() {
   const [weeks, setWeeks] = useState(24);
   const [conditions, setConditions] = useState<string[]>([]);
   const [isFirstPregnancy, setIsFirstPregnancy] = useState<boolean | null>(
-    null
+    null,
   );
 
   const toggleCondition = (id: string) => {
@@ -59,11 +59,13 @@ export default function ProfileSetupScreen() {
             case "hbp":
               return "CHRONIC_HYPERTENSION";
             case "diabetes":
-              return "GESTATIONAL_DIABETES";
+              return "DIABETES";
             case "twins":
               return "MULTIPLE_PREGNANCY";
             case "kidney":
               return "KIDNEY_DISEASE";
+            case "frothy_urine":
+              return "FROTHY_URINE_CONDITION";
             default:
               return "NONE";
           }
@@ -79,7 +81,7 @@ export default function ProfileSetupScreen() {
 
         // Crucial: Update auth state before redirecting
         await checkSession();
-        
+
         router.replace("/(tabs)");
       } catch (error) {
         console.error("Failed to create profile", error);
@@ -162,7 +164,11 @@ export default function ProfileSetupScreen() {
               >
                 {weeks}
               </Typography>
-              <Typography variant="h3" style={{ color: subTextColor }} className="text-2xl">
+              <Typography
+                variant="h3"
+                style={{ color: subTextColor }}
+                className="text-2xl"
+              >
                 Weeks
               </Typography>
             </View>
@@ -181,7 +187,10 @@ export default function ProfileSetupScreen() {
               </TouchableOpacity>
 
               <View className="flex-1 h-10 justify-center relative">
-                <View style={{ backgroundColor: isDark ? "#3A3430" : "#EDF2F7" }} className="h-2 rounded-full w-full" />
+                <View
+                  style={{ backgroundColor: isDark ? "#3A3430" : "#EDF2F7" }}
+                  className="h-2 rounded-full w-full"
+                />
                 <View
                   className="h-2 bg-primary rounded-full absolute"
                   style={{ width: `${(weeks / 42) * 100}%` }}
@@ -241,8 +250,8 @@ export default function ProfileSetupScreen() {
               />
               <ConditionItem
                 id="twins"
-                title="Twins or more"
-                subtitle="Multiples like triplets"
+                title="Twins, triplets, or more"
+                subtitle="Twin or higher-order multiple gestation"
                 selected={conditions.includes("twins")}
                 onPress={() => toggleCondition("twins")}
                 isDark={isDark}
@@ -255,9 +264,20 @@ export default function ProfileSetupScreen() {
                 onPress={() => toggleCondition("kidney")}
                 isDark={isDark}
               />
+              <ConditionItem
+                id="frothy_urine"
+                title="Frothy Urine"
+                subtitle="Urine forming foam or bubbles"
+                selected={conditions.includes("frothy_urine")}
+                onPress={() => toggleCondition("frothy_urine")}
+                isDark={isDark}
+              />
             </View>
 
-            <TouchableOpacity className="items-center mt-2"   onPress={() => setConditions([])}>
+            <TouchableOpacity
+              className="items-center mt-2"
+              onPress={() => setConditions([])}
+            >
               <Typography
                 variant="h3"
                 weight="bold"
@@ -282,18 +302,32 @@ export default function ProfileSetupScreen() {
 
             <View className="flex-row justify-between mt-10 mb-10 gap-4">
               <TouchableOpacity
-                style={{ backgroundColor: cardBg, borderColor: isFirstPregnancy === true ? Theme.colors.primary : borderColor }}
+                style={{
+                  backgroundColor: cardBg,
+                  borderColor:
+                    isFirstPregnancy === true
+                      ? Theme.colors.primary
+                      : borderColor,
+                }}
                 className="flex-1 rounded-[40px] p-[30px] items-center border-2 shadow-sm relative"
                 onPress={() => setIsFirstPregnancy(true)}
               >
-                <View style={{ backgroundColor: isDark ? "#1B3A26" : "#E0FAEB" }} className="w-20 h-20 rounded-full justify-center items-center mb-5">
+                <View
+                  style={{ backgroundColor: isDark ? "#1B3A26" : "#E0FAEB" }}
+                  className="w-20 h-20 rounded-full justify-center items-center mb-5"
+                >
                   <Ionicons
                     name="happy-outline"
                     size={40}
                     color={Theme.colors.primary}
                   />
                 </View>
-                <Typography variant="h2" weight="bold" style={{ color: textColor }} className="text-[22px]">
+                <Typography
+                  variant="h2"
+                  weight="bold"
+                  style={{ color: textColor }}
+                  className="text-[22px]"
+                >
                   Yes
                 </Typography>
                 {isFirstPregnancy === true && (
@@ -304,14 +338,32 @@ export default function ProfileSetupScreen() {
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={{ backgroundColor: cardBg, borderColor: isFirstPregnancy === false ? Theme.colors.primary : borderColor }}
+                style={{
+                  backgroundColor: cardBg,
+                  borderColor:
+                    isFirstPregnancy === false
+                      ? Theme.colors.primary
+                      : borderColor,
+                }}
                 className="flex-1 rounded-[40px] p-[30px] items-center border-2 shadow-sm relative"
                 onPress={() => setIsFirstPregnancy(false)}
               >
-                <View style={{ backgroundColor: isDark ? "#3A3430" : "#F3F4F6" }} className="w-20 h-20 rounded-full justify-center items-center mb-5">
-                  <Ionicons name="people-outline" size={40} color={subTextColor} />
+                <View
+                  style={{ backgroundColor: isDark ? "#3A3430" : "#F3F4F6" }}
+                  className="w-20 h-20 rounded-full justify-center items-center mb-5"
+                >
+                  <Ionicons
+                    name="people-outline"
+                    size={40}
+                    color={subTextColor}
+                  />
                 </View>
-                <Typography variant="h2" weight="bold" style={{ color: textColor }} className="text-[22px]">
+                <Typography
+                  variant="h2"
+                  weight="bold"
+                  style={{ color: textColor }}
+                  className="text-[22px]"
+                >
                   No
                 </Typography>
                 {isFirstPregnancy === false && (
@@ -347,7 +399,12 @@ export default function ProfileSetupScreen() {
           >
             <Ionicons name="arrow-back" size={28} color={textColor} />
           </TouchableOpacity>
-          <Typography variant="h2" weight="bold" style={{ color: textColor }} className="text-[22px]">
+          <Typography
+            variant="h2"
+            weight="bold"
+            style={{ color: textColor }}
+            className="text-[22px]"
+          >
             Profile Setup
           </Typography>
           <View className="w-7" />
@@ -370,7 +427,10 @@ export default function ProfileSetupScreen() {
               {step} of {totalSteps}
             </Typography>
           </View>
-          <View style={{ backgroundColor: isDark ? "#3A3430" : "#E2E8F0" }} className="h-[6px] rounded-full overflow-hidden">
+          <View
+            style={{ backgroundColor: isDark ? "#3A3430" : "#E2E8F0" }}
+            className="h-[6px] rounded-full overflow-hidden"
+          >
             <View
               className="h-full bg-primary rounded-full shadow-sm"
               style={{ width: `${(step / totalSteps) * 100}%` }}
@@ -425,24 +485,44 @@ function ConditionItem({ title, subtitle, selected, onPress, isDark }: any) {
 
   return (
     <TouchableOpacity
-      style={{ 
+      style={{
         backgroundColor: selected ? (isDark ? "#1B3A26" : "#F7FFF9") : cardBg,
-        borderColor: selected ? Theme.colors.primary : borderColor
+        borderColor: selected ? Theme.colors.primary : borderColor,
       }}
       className="rounded-[35px] py-5 px-6 flex-row items-center justify-between border shadow-sm"
       onPress={onPress}
       activeOpacity={0.7}
     >
       <View className="flex-1">
-        <Typography variant="h3" weight="bold" style={{ color: textColor }} className="text-lg mb-0.5">
+        <Typography
+          variant="h3"
+          weight="bold"
+          style={{ color: textColor }}
+          className="text-lg mb-0.5"
+        >
           {title}
         </Typography>
-        <Typography variant="caption" style={{ color: subTextColor }} className="text-sm">
+        <Typography
+          variant="caption"
+          style={{ color: subTextColor }}
+          className="text-sm"
+        >
           {subtitle}
         </Typography>
       </View>
       <View
-        style={{ borderColor: selected ? Theme.colors.primary : (isDark ? "#4B5563" : "#D1D5DB"), backgroundColor: selected ? (isDark ? "#FFFFFF" : "white") : "transparent" }}
+        style={{
+          borderColor: selected
+            ? Theme.colors.primary
+            : isDark
+              ? "#4B5563"
+              : "#D1D5DB",
+          backgroundColor: selected
+            ? isDark
+              ? "#FFFFFF"
+              : "white"
+            : "transparent",
+        }}
         className="w-7 h-7 border rounded-full justify-center items-center"
       >
         {selected && (

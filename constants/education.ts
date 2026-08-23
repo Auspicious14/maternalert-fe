@@ -4,11 +4,16 @@
 // Validated against WHO, ACOG, Preeclampsia Foundation guidelines
 // Your co-founder (nurse) should review all clinical content before launch
 // ═══════════════════════════════════════════════════════════════════════════
- 
+
 export interface EducationArticle {
   id: string;
   title: string;
-  category: "HYPERTENSION" | "NUTRITION" | "WARNING_SIGNS" | "POSTPARTUM" | "ANTENATAL";
+  category:
+    | "HYPERTENSION"
+    | "NUTRITION"
+    | "WARNING_SIGNS"
+    | "POSTPARTUM"
+    | "ANTENATAL";
   categoryLabel: string;
   summary: string;
   content: string;
@@ -17,7 +22,7 @@ export interface EducationArticle {
   sourceUrl?: string;
   urgent?: boolean; // true = show at top, red accent
 }
- 
+
 export const EDUCATION_CONTENT: EducationArticle[] = [
   // ── WARNING SIGNS (urgent — show first) ──────────────────────────────────
   {
@@ -30,38 +35,42 @@ export const EDUCATION_CONTENT: EducationArticle[] = [
       "These symptoms mean you should go to a health facility right away — do not wait.",
     content: `If you experience any of the following, go to a health facility immediately. Do not wait to see if it gets better on its own.
  
-SEVERE HEADACHE
-A headache that is very strong, does not go away, or keeps coming back is a warning sign. This is different from an ordinary headache. It may feel like pressure at the front or back of your head.
+HEADACHE
+Any persistent or worsening headache is a warning sign — especially if it is associated with fever, chills and rigors, vomiting, or nausea. It may feel like pressure at the front or back of your head.
  
 CHANGES IN YOUR VISION
 If your vision becomes blurred, you see flashing lights, dark spots, or you feel like something is wrong with your eyes, this needs urgent attention.
  
-SWELLING OF THE FACE OR HANDS
-Some swelling of the feet is normal in pregnancy. But if your face or hands suddenly swell, especially around the eyes or fingers, go to a facility.
+BILATERAL LEG SWELLING
+Swelling of both legs is a warning sign. Note whether the swelling is painful or non-painful — both types require evaluation. Bilateral leg swelling is common in people diagnosed with pre-eclampsia. Sudden or worsening swelling should not be ignored.
  
-PAIN IN THE UPPER ABDOMEN
-Pain or tenderness under your right ribs or in the upper part of your belly can be a sign that your liver is under stress.
+FROTHY URINE
+If your urine is foamy or forms bubbles, this can be a sign of protein in the urine, which is associated with pre-eclampsia. Report this to your health worker.
+ 
+ABDOMINAL PAIN
+Any abdominal pain during pregnancy warrants attention — the risk is not limited to the upper abdomen. Pain may occur in the lower abdomen, upper abdomen, just below the ribs, or elsewhere.
+ 
+VAGINAL BLEEDING
+Any vaginal bleeding during pregnancy requires immediate medical attention, regardless of how much blood is present. This symptom most commonly occurs after the first trimester.
  
 DIFFICULTY BREATHING
 If you find it hard to breathe, feel short of breath while resting, or feel tightness in your chest, seek care immediately.
  
-CONVULSIONS OR FITS
-If you have a seizure, this is a medical emergency. Someone near you must get you to a hospital as quickly as possible.
+ABNORMAL BODY MOVEMENT
+Any abnormal body movement — including fits, shaking, or tremors — is a medical emergency. Someone near you must get you to a hospital as quickly as possible.
  
 REDUCED FETAL MOVEMENT
 If you notice your baby is moving much less than usual after 28 weeks, contact your health worker or go to a facility.
- 
-HEAVY VAGINAL BLEEDING
-Any heavy bleeding during pregnancy requires immediate attention.
  
 FEVER
 A high temperature during pregnancy can harm you and your baby. If you feel very hot or are shivering, seek care.
  
 Remember: it is always better to go and be told everything is fine than to stay home and wait. No question is too small to ask your health worker.`,
-    readTimeMinutes: 5,
-    source: "Preeclampsia Foundation and WHO guidelines on warning signs in pregnancy",
+    readTimeMinutes: 6,
+    source:
+      "Preeclampsia Foundation and WHO guidelines on warning signs in pregnancy",
   },
- 
+
   // ── HYPERTENSION ─────────────────────────────────────────────────────────
   {
     id: "preeclampsia-eclampsia",
@@ -120,7 +129,7 @@ The most important thing you can do is attend all your antenatal appointments an
     readTimeMinutes: 8,
     source: "World Health Organization (WHO) and Preeclampsia Foundation",
   },
- 
+
   {
     id: "understanding-bp",
     title: "Understanding Blood Pressure in Pregnancy",
@@ -157,9 +166,10 @@ WHAT CAN YOU DO?
 - Follow any advice your health worker gives about rest, diet, or medication
 - Do not stop taking any prescribed medication without talking to your health worker first`,
     readTimeMinutes: 4,
-    source: "World Health Organization (WHO) patient information on hypertension in pregnancy",
+    source:
+      "World Health Organization (WHO) patient information on hypertension in pregnancy",
   },
- 
+
   // ── WARNING SIGNS (supporting) ────────────────────────────────────────────
   {
     id: "when-to-seek-care",
@@ -172,10 +182,10 @@ WHAT CAN YOU DO?
  
 GO IMMEDIATELY — DO NOT WAIT
 Go to a health facility right away if you have any of these:
-- Convulsions or fits
-- Heavy vaginal bleeding
+- Abnormal body movement (fits, shaking, or convulsions)
+- Vaginal bleeding — any amount, at any stage after the first trimester
 - Severe difficulty breathing
-- Severe headache that does not respond to paracetamol
+- A headache that will not go away, especially with fever, chills, vomiting, or nausea
 - Blurred vision or seeing flashing lights
 - Your baby has stopped moving and does not respond when you push your belly
 - You feel something is very wrong
@@ -183,15 +193,17 @@ Go to a health facility right away if you have any of these:
 GO TODAY — SAME DAY
 Contact your health worker or go to a facility today if you have:
 - A headache that has lasted more than two hours
-- Swelling of your face or hands that appeared suddenly
-- Pain under your right ribs
-- Fever with chills
-- Burning or pain when you urinate
-- Any bleeding, even if light
+- Bilateral leg swelling (both legs swollen) — note whether it is painful or non-painful
+- Frothy urine (urine forming foam or bubbles)
+- Abdominal pain — in any location (lower abdomen, upper abdomen, or below the ribs)
+- Fever with chills or rigors
+- Burning or painful urination
+- Frequent urination that is new or unusual
+- Any vaginal discharge that is unusual in colour or smell
  
 MENTION AT YOUR NEXT VISIT
 Tell your health worker at your next visit if you have:
-- Swelling of your feet or ankles that is getting worse
+- Mild swelling of your feet or ankles that is not getting worse
 - Heartburn that is not getting better
 - Difficulty sleeping or unusual tiredness
 - Reduced fetal movement compared to before (if before 28 weeks)
@@ -203,7 +215,7 @@ Never feel embarrassed to seek care. Your health and your baby's health come fir
     readTimeMinutes: 4,
     source: "WHO guidelines on essential antenatal care",
   },
- 
+
   // ── ANTENATAL CARE ────────────────────────────────────────────────────────
   {
     id: "importance-of-anc",
@@ -248,9 +260,10 @@ WHAT TO BRING TO YOUR VISIT
 WHAT IF YOU MISS A VISIT?
 Do not feel ashamed if you miss a visit. Return as soon as you can. One missed visit does not mean your pregnancy care has failed. What matters is that you return.`,
     readTimeMinutes: 5,
-    source: "World Health Organization — Recommendations on Antenatal Care for a Positive Pregnancy Experience (2016)",
+    source:
+      "World Health Organization — Recommendations on Antenatal Care for a Positive Pregnancy Experience (2016)",
   },
- 
+
   // ── NUTRITION ─────────────────────────────────────────────────────────────
   {
     id: "nutrition-pregnancy",
@@ -298,9 +311,10 @@ Your health worker may prescribe iron tablets. Take them as directed even if the
  
 If you are struggling to afford food or are losing weight during pregnancy, please tell your health worker. There may be programmes in your area that can help.`,
     readTimeMinutes: 6,
-    source: "WHO recommendations on nutrition during pregnancy and ACOG nutrition guidelines",
+    source:
+      "WHO recommendations on nutrition during pregnancy and ACOG nutrition guidelines",
   },
- 
+
   // ── POSTPARTUM ─────────────────────────────────────────────────────────────
   {
     id: "postpartum-care",
@@ -345,9 +359,10 @@ Return to the health facility or contact your health worker at any time if somet
  
 Your recovery matters. A healthy mother is the foundation of a healthy family.`,
     readTimeMinutes: 6,
-    source: "WHO recommendations on postnatal care for mothers and newborns (2013)",
+    source:
+      "WHO recommendations on postnatal care for mothers and newborns (2013)",
   },
- 
+
   {
     id: "breastfeeding",
     title: "Breastfeeding: Getting Started",
@@ -388,14 +403,14 @@ Ask your health worker or a midwife for support with breastfeeding. It is a skil
     source: "WHO and UNICEF guidelines on breastfeeding (2023)",
   },
 ];
- 
+
 // Helper: get articles by category
 export function getArticlesByCategory(
   category: EducationArticle["category"],
 ): EducationArticle[] {
   return EDUCATION_CONTENT.filter((a) => a.category === category);
 }
- 
+
 // Helper: get urgent articles first
 export function getSortedArticles(): EducationArticle[] {
   return [...EDUCATION_CONTENT].sort((a, b) => {
@@ -404,7 +419,7 @@ export function getSortedArticles(): EducationArticle[] {
     return 0;
   });
 }
- 
+
 // Helper: get article by id
 export function getArticleById(id: string): EducationArticle | undefined {
   return EDUCATION_CONTENT.find((a) => a.id === id);

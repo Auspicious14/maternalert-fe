@@ -66,7 +66,7 @@ export default function RegisterScreen() {
       <View className="px-10 pt-5">
         <View className="items-center">
           <Image
-            source={require("../assets/images/matern-logo.png")}
+            source={require("../assets/images/maternalert-logo.png")}
             className="w-32 h-32"
             resizeMode="cover"
           />

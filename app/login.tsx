@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React from "react";
 import { Controller, useForm } from "react-hook-form";
-import { Image, TouchableOpacity, View } from "react-native";
+import { Image, TouchableOpacity, View,  } from "react-native";
 import { Button } from "../components/shared/Button";
 import { Input } from "../components/shared/Input";
 import { Screen } from "../components/shared/Screen";
@@ -62,7 +62,7 @@ export default function LoginScreen() {
       <View className="px-10 pt-5">
         <View className="items-center">
           <Image
-            source={require("../assets/images/matern-logo.png")}
+            source={require("../assets/images/maternalert-logo.png")}
             className="w-32 h-32"
             resizeMode="cover"
           />
@@ -134,7 +134,7 @@ export default function LoginScreen() {
             </Typography>
           </TouchableOpacity>
 
-          {loginError && (
+          {loginError as string && (
             <View
               style={{
                 backgroundColor: isDark
