@@ -1,11 +1,26 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo } from "react";
 import apiClient from "../api/client";
+import {
+  buildPregnancyTimeline,
+  calculateCurrentWeek,
+} from "../services/pregnancyTimeline";
+import type { PregnancyTimeline } from "../services/pregnancyTimeline";
 
 export interface UserProfile {
   id: string;
   ageRange: "UNDER_18" | "AGE_18_34" | "AGE_35_PLUS";
+  /** Gestational week stored at the time pregnancyReferenceDate was recorded. */
   pregnancyWeeks: number;
+  /**
+   * The date/time at which pregnancyWeeks was accurate.
+   * Used as the calculation anchor for week progression.
+   * Set by the backend when the profile is created or pregnancyWeeks is updated.
+   *
+   * DO NOT use createdAt for week progression calculations.
+   * createdAt is the DB row creation timestamp and is not a clinical reference date.
+   */
+  pregnancyReferenceDate: string;
   firstPregnancy: boolean;
   knownConditions: string[];
   emergencyContactRelationship?:
@@ -45,14 +60,33 @@ export const useUserProfile = () => {
     retry: 2,
   });
 
+  /**
+   * Current gestational week — derived from pregnancyReferenceDate (not createdAt).
+   *
+   * FIX: The previous implementation used `createdAt` as the reference and compared
+   * UTC timestamps directly. This caused the displayed week to be 1 higher than the
+   * API value whenever the user's local timezone pushed the reference into the "next"
+   * UTC day — e.g. a user registering at 29 weeks at 23:55 WAT (= 22:55 UTC) would
+   * see 30 weeks immediately because UTC already considered it the next day.
+   *
+   * The fix: use `pregnancyReferenceDate` (the correct clinical anchor) and compare
+   * local calendar days rather than UTC milliseconds.
+   */
   const calculatedPregnancyWeeks = useMemo(() => {
     if (!profile.data) return null;
-    const startWeeks = profile.data.pregnancyWeeks;
-    const createdAt = new Date(profile.data.createdAt);
-    const now = new Date();
-    const diffInMs = now.getTime() - createdAt.getTime();
-    const diffInWeeks = Math.floor(diffInMs / (1000 * 60 * 60 * 24 * 7));
-    return startWeeks + diffInWeeks;
+    return calculateCurrentWeek(
+      profile.data.pregnancyWeeks,
+      profile.data.pregnancyReferenceDate,
+    );
+  }, [profile.data]);
+
+  /** Full pregnancy timeline — use this instead of manual week calculations in screens. */
+  const pregnancyTimeline = useMemo((): PregnancyTimeline | null => {
+    if (!profile.data) return null;
+    return buildPregnancyTimeline(
+      profile.data.pregnancyWeeks,
+      profile.data.pregnancyReferenceDate,
+    );
   }, [profile.data]);
 
   const createProfileMutation = useMutation({
@@ -80,6 +114,7 @@ export const useUserProfile = () => {
   return {
     profile: profile.data,
     calculatedPregnancyWeeks,
+    pregnancyTimeline,
     isLoadingProfile: profile.isLoading,
     isErrorProfile: profile.isError,
     errorProfile: profile.error,

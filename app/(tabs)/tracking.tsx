@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import React, { memo, useMemo } from "react";
+import React, { memo, useEffect, useMemo } from "react";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
 import { Card } from "../../components/shared/Card";
 import { Screen } from "../../components/shared/Screen";
@@ -10,11 +10,22 @@ import { useColorScheme } from "../../hooks/use-color-scheme";
 import { useHealthData } from "../../hooks/useHealthData";
 import { useTrends } from "../../hooks/useTrends";
 import { useUserProfile } from "../../hooks/useUserProfile";
+import {
+  getActivitySuggestion,
+  getNutritionReminder,
+  getPregnancyMilestone,
+} from "../../services/pregnancyContent";
+import { notificationService } from "../../services/notifications";
 
-// Optimized Summary Card Component
+// ─── Summary Card ─────────────────────────────────────────────────────────────
+
 const SummaryCard = memo(
   ({
     currentWeeks,
+    trimesterLabel,
+    progressLabel,
+    weeksRemaining,
+    edd,
     firstPregnancy,
     isDark,
     cardBg,
@@ -34,14 +45,39 @@ const SummaryCard = memo(
             variant="h3"
             style={[styles.summaryTitle, { color: textColor }]}
           >
-            {currentWeeks} Weeks Pregnant
+            {progressLabel || `${currentWeeks} Weeks Pregnant`}
           </Typography>
           <Typography
             variant="caption"
-            style={[styles.summarySubtitle, { color: subTextColor }]}
+            style={[styles.summarySubtitle, { color: Theme.colors.primary }]}
           >
-            {firstPregnancy ? "First Pregnancy" : "Healthy Progress"}
+            {trimesterLabel}
           </Typography>
+          {weeksRemaining !== undefined && weeksRemaining > 0 && (
+            <Typography
+              variant="caption"
+              style={[styles.summarySubtitle, { color: subTextColor }]}
+            >
+              {weeksRemaining} week{weeksRemaining !== 1 ? "s" : ""} to
+              estimated due date
+            </Typography>
+          )}
+          {edd && (
+            <Typography
+              variant="caption"
+              style={[
+                styles.summarySubtitle,
+                { color: subTextColor, marginTop: 2 },
+              ]}
+            >
+              EDD:{" "}
+              {new Date(edd).toLocaleDateString(undefined, {
+                day: "numeric",
+                month: "long",
+                year: "numeric",
+              })}
+            </Typography>
+          )}
         </View>
         <View style={styles.babyIconBg}>
           <Ionicons name="fitness" size={24} color={Theme.colors.primary} />
@@ -62,7 +98,7 @@ const SummaryCard = memo(
             style={[
               styles.progressFill,
               {
-                width: `${(currentWeeks / 40) * 100}%`,
+                width: `${Math.min(100, (currentWeeks / 40) * 100)}%`,
               },
             ]}
           />
@@ -71,14 +107,15 @@ const SummaryCard = memo(
           variant="caption"
           style={[styles.progressText, { color: subTextColor }]}
         >
-          {Math.round((currentWeeks / 40) * 100)}% complete
+          {Math.round(Math.min(100, (currentWeeks / 40) * 100))}% of 40 weeks
         </Typography>
       </View>
     </Card>
   ),
 );
 
-// Optimized Calendar Day Component
+// ─── Calendar Day ─────────────────────────────────────────────────────────────
+
 const CalendarDay = memo(({ item, isDark }: any) => (
   <View style={styles.dayItem}>
     <Typography
@@ -117,7 +154,8 @@ const CalendarDay = memo(({ item, isDark }: any) => (
   </View>
 ));
 
-// Optimized Vitals Card Component
+// ─── Vitals Card ──────────────────────────────────────────────────────────────
+
 const VitalsCard = memo(
   ({ avgBP, cardBg, borderColor, textColor, subTextColor }: any) => (
     <Card
@@ -150,22 +188,119 @@ const VitalsCard = memo(
   ),
 );
 
+// ─── Pregnancy Content Card ───────────────────────────────────────────────────
+
+const PregnancyContentCard = memo(
+  ({
+    icon,
+    iconBg,
+    iconColor,
+    title,
+    items,
+    cardBg,
+    borderColor,
+    textColor,
+    subTextColor,
+  }: any) => (
+    <Card
+      style={[
+        styles.contentCard,
+        { backgroundColor: cardBg, borderColor: borderColor },
+      ]}
+    >
+      <View style={styles.contentCardHeader}>
+        <View style={[styles.contentCardIcon, { backgroundColor: iconBg }]}>
+          <Ionicons name={icon} size={20} color={iconColor} />
+        </View>
+        <Typography
+          variant="h3"
+          style={[styles.contentCardTitle, { color: textColor }]}
+        >
+          {title}
+        </Typography>
+      </View>
+      {items.map((item: string, index: number) => (
+        <View key={index} style={styles.contentBullet}>
+          <View style={[styles.bulletDot, { backgroundColor: iconColor }]} />
+          <Typography
+            variant="caption"
+            style={[styles.bulletText, { color: subTextColor }]}
+          >
+            {item}
+          </Typography>
+        </View>
+      ))}
+    </Card>
+  ),
+);
+
+// ─── Tracking Screen ──────────────────────────────────────────────────────────
+
 export default function TrackingScreen() {
   const router = useRouter();
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
   const { bpHistory, recentSymptoms } = useHealthData();
-  const { profile, calculatedPregnancyWeeks } = useUserProfile();
+  const { profile, pregnancyTimeline } = useUserProfile();
   const { trendAlerts } = useTrends();
 
   const currentWeeks =
-    calculatedPregnancyWeeks || profile?.pregnancyWeeks || 24;
+    pregnancyTimeline?.currentWeek ?? profile?.pregnancyWeeks ?? 24;
+  const trimesterLabel =
+    pregnancyTimeline?.trimesterLabel ?? "Second Trimester";
+  const progressLabel =
+    pregnancyTimeline?.progressLabel ?? `${currentWeeks} weeks pregnant`;
+  const trimester = pregnancyTimeline?.trimester ?? 2;
 
   const textColor = isDark ? "#FFFFFF" : "#1A212E";
   const subTextColor = isDark ? "rgba(255,255,255,0.6)" : "#64748B";
   const bgColor = isDark ? Theme.colors.darkBg : Theme.colors.background;
   const cardBg = isDark ? Theme.colors.cardDark : "#FFFFFF";
   const borderColor = isDark ? Theme.colors.borderDark : "#E2E8F0";
+
+  // Pregnancy content for this week
+  const nutrition = useMemo(
+    () => getNutritionReminder(currentWeeks, trimester),
+    [currentWeeks, trimester],
+  );
+
+  const activitySuggestion = useMemo(
+    () => getActivitySuggestion(currentWeeks, trimester),
+    [currentWeeks, trimester],
+  );
+
+  const milestone = useMemo(
+    () => getPregnancyMilestone(currentWeeks),
+    [currentWeeks],
+  );
+
+  // Schedule pregnancy notifications when screen mounts / week changes
+  useEffect(() => {
+    if (!pregnancyTimeline?.isValid || !profile) return;
+
+    const [reminderHour, reminderMinute] = (profile.reminderTime || "09:00")
+      .split(":")
+      .map(Number);
+
+    const topActivity = activitySuggestion.activities[0];
+
+    notificationService
+      .schedulePregnancyNotifications({
+        currentWeek: currentWeeks,
+        trimester,
+        milestoneTitle: milestone.title,
+        milestoneMsg: milestone.message,
+        nutritionTitle: nutrition.title,
+        nutritionTip: nutrition.tips[0] || "",
+        activityName: topActivity?.name || "Gentle walk",
+        activityDesc:
+          topActivity?.description || "A short walk to stay active.",
+        reminderHour: isNaN(reminderHour) ? 9 : reminderHour,
+        reminderMinute: isNaN(reminderMinute) ? 0 : reminderMinute,
+        notifyReminders: profile.notifyReminders !== false,
+      })
+      .catch(console.error);
+  }, [currentWeeks]);
 
   // Calculate average BP
   const avgBP = useMemo(() => {
@@ -183,20 +318,20 @@ export default function TrackingScreen() {
     const days = [];
     const today = new Date();
     const currentDay = today.getDay(); // 0 is Sunday
-    const mondayOffset = currentDay === 0 ? -6 : 1 - currentDay; // Calculate offset to get to Monday
+    const mondayOffset = currentDay === 0 ? -6 : 1 - currentDay;
 
     for (let i = 0; i < 7; i++) {
       const date = new Date(today);
       date.setDate(today.getDate() + mondayOffset + i);
 
       const isToday = date.toDateString() === today.toDateString();
-      const dayName = date.toLocaleDateString("en-US", { weekday: "narrow" }); // M, T, W...
+      const dayName = date.toLocaleDateString("en-US", { weekday: "narrow" });
 
       days.push({
         day: dayName,
         date: date.getDate().toString(),
         current: isToday,
-        status: isToday ? "stable" : "none", // Simple logic for now
+        status: isToday ? "stable" : "none",
       });
     }
     return days;
@@ -207,7 +342,6 @@ export default function TrackingScreen() {
       style={styles.container}
       backgroundColor={bgColor}
       scrollable={true}
-      // safe={false}
     >
       {/* Header */}
       <View style={styles.header}>
@@ -233,8 +367,13 @@ export default function TrackingScreen() {
       </View>
 
       <View style={styles.scrollContent}>
+        {/* Pregnancy Summary */}
         <SummaryCard
           currentWeeks={currentWeeks}
+          trimesterLabel={trimesterLabel}
+          progressLabel={progressLabel}
+          weeksRemaining={pregnancyTimeline?.weeksRemaining}
+          edd={pregnancyTimeline?.estimatedDueDate}
           firstPregnancy={profile?.firstPregnancy}
           isDark={isDark}
           cardBg={cardBg}
@@ -243,12 +382,43 @@ export default function TrackingScreen() {
           textColor={textColor}
         />
 
-        {/* Calendar Strip */}
+        {/* Weekly Calendar Strip */}
         <View style={styles.calendarStrip}>
           {weekDays.map((item, index) => (
             <CalendarDay key={index} item={item} isDark={isDark} />
           ))}
         </View>
+
+        {/* Milestone Banner */}
+        <Card
+          style={[
+            styles.milestoneCard,
+            {
+              backgroundColor: isDark ? "rgba(45,228,116,0.08)" : "#F0FFF6",
+              borderColor: Theme.colors.primary,
+            },
+          ]}
+        >
+          <View style={styles.milestoneRow}>
+            <Typography style={styles.milestoneEmoji}>
+              {milestone.emoji}
+            </Typography>
+            <View style={{ flex: 1 }}>
+              <Typography
+                variant="h3"
+                style={[styles.milestoneTitle, { color: textColor }]}
+              >
+                {milestone.title}
+              </Typography>
+              <Typography
+                variant="caption"
+                style={{ color: subTextColor, lineHeight: 18 }}
+              >
+                {milestone.message}
+              </Typography>
+            </View>
+          </View>
+        </Card>
 
         {/* Vitals Section */}
         <View style={styles.sectionHeader}>
@@ -270,7 +440,118 @@ export default function TrackingScreen() {
           />
         </View>
 
-        {/* Logs */}
+        {/* Nutrition Reminder */}
+        <View style={styles.sectionHeader}>
+          <Typography
+            variant="h2"
+            style={[styles.sectionTitle, { color: textColor }]}
+          >
+            Nutrition This Week
+          </Typography>
+        </View>
+
+        <PregnancyContentCard
+          icon="nutrition"
+          iconBg={isDark ? "rgba(45,228,116,0.12)" : "#F0FFF6"}
+          iconColor={Theme.colors.primary}
+          title={nutrition.title}
+          items={nutrition.tips}
+          cardBg={cardBg}
+          borderColor={borderColor}
+          textColor={textColor}
+          subTextColor={subTextColor}
+        />
+
+        <Typography
+          variant="caption"
+          style={[
+            styles.safetyNote,
+            { color: isDark ? "rgba(255,255,255,0.35)" : "#94A3B8" },
+          ]}
+        >
+          Food guidance is general advice. Follow your health worker's
+          recommendations.
+        </Typography>
+
+        {/* Daily Activity */}
+        <View style={styles.sectionHeader}>
+          <Typography
+            variant="h2"
+            style={[styles.sectionTitle, { color: textColor }]}
+          >
+            Today's Activity
+          </Typography>
+        </View>
+
+        <Card
+          style={[
+            styles.activityCard,
+            { backgroundColor: cardBg, borderColor },
+          ]}
+        >
+          <View style={styles.activityHeader}>
+            <View
+              style={[
+                styles.activityIcon,
+                {
+                  backgroundColor: isDark ? "rgba(99,102,241,0.15)" : "#EEF2FF",
+                },
+              ]}
+            >
+              <Ionicons name="walk" size={20} color="#6366F1" />
+            </View>
+            <Typography
+              variant="h3"
+              style={[styles.activityTitle, { color: textColor }]}
+            >
+              {activitySuggestion.title}
+            </Typography>
+          </View>
+          <Typography
+            variant="caption"
+            style={[{ color: subTextColor, marginBottom: 12, lineHeight: 18 }]}
+          >
+            {activitySuggestion.message}
+          </Typography>
+          {activitySuggestion.activities.slice(0, 3).map((act, i) => (
+            <View key={i} style={styles.activityItem}>
+              <Typography style={styles.activityEmoji}>{act.emoji}</Typography>
+              <View style={{ flex: 1 }}>
+                <Typography
+                  variant="body"
+                  style={{ color: textColor, fontWeight: "600" }}
+                >
+                  {act.name}
+                  <Typography variant="caption" style={{ color: subTextColor }}>
+                    {" "}
+                    · {act.duration}
+                  </Typography>
+                </Typography>
+                <Typography
+                  variant="caption"
+                  style={{ color: subTextColor, lineHeight: 18 }}
+                >
+                  {act.description}
+                </Typography>
+              </View>
+            </View>
+          ))}
+          <View style={styles.safetyNoteBox}>
+            <Ionicons
+              name="shield-checkmark-outline"
+              size={14}
+              color={Theme.colors.primary}
+            />
+            <Typography
+              variant="caption"
+              style={[styles.safetyNoteText, { color: subTextColor }]}
+            >
+              {activitySuggestion.safetyNote}
+            </Typography>
+          </View>
+        </Card>
+
+        {/* Daily Logs */}
         <View style={styles.sectionHeader}>
           <Typography
             variant="h2"
@@ -310,7 +591,7 @@ export default function TrackingScreen() {
           />
         </Card>
 
-        {/* Trends Log */}
+        {/* Trends */}
         {trendAlerts.length > 0 && (
           <View style={styles.sectionHeader}>
             <Typography
@@ -364,7 +645,7 @@ export default function TrackingScreen() {
         ))}
       </View>
 
-      {/* FAB Refined */}
+      {/* FAB */}
       <TouchableOpacity
         style={styles.fab}
         activeOpacity={0.9}
@@ -411,16 +692,17 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     padding: 24,
     borderRadius: 32,
-    marginBottom: 40,
+    marginBottom: 24,
   },
   summaryHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 20,
+    alignItems: "flex-start",
+    marginBottom: 16,
   },
   summaryInfo: {
     flex: 1,
+    gap: 2,
   },
   summaryTitle: {
     fontSize: 20,
@@ -452,10 +734,30 @@ const styles = StyleSheet.create({
   progressText: {
     textAlign: "right",
   },
+  milestoneCard: {
+    borderWidth: 1,
+    padding: 16,
+    borderRadius: 20,
+    marginBottom: 24,
+  },
+  milestoneRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 12,
+  },
+  milestoneEmoji: {
+    fontSize: 28,
+    lineHeight: 34,
+  },
+  milestoneTitle: {
+    fontSize: 15,
+    fontWeight: "700",
+    marginBottom: 2,
+  },
   calendarStrip: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 40,
+    marginBottom: 24,
   },
   dayItem: {
     alignItems: "center",
@@ -497,7 +799,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   sectionHeader: {
-    marginBottom: 20,
+    marginBottom: 14,
   },
   sectionTitle: {
     fontSize: 20,
@@ -505,7 +807,7 @@ const styles = StyleSheet.create({
   vitalsRow: {
     flexDirection: "row",
     gap: 16,
-    marginBottom: 32,
+    marginBottom: 28,
   },
   vitalCard: {
     flex: 1,
@@ -528,13 +830,107 @@ const styles = StyleSheet.create({
   vitalLabel: {
     fontSize: 12,
   },
+  contentCard: {
+    borderWidth: 1,
+    padding: 16,
+    borderRadius: 24,
+    marginBottom: 8,
+  },
+  contentCardHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    marginBottom: 12,
+  },
+  contentCardIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  contentCardTitle: {
+    fontSize: 15,
+    fontWeight: "700",
+    flex: 1,
+  },
+  contentBullet: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 10,
+    marginBottom: 8,
+  },
+  bulletDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    marginTop: 6,
+  },
+  bulletText: {
+    flex: 1,
+    lineHeight: 18,
+  },
+  safetyNote: {
+    fontSize: 11,
+    marginBottom: 28,
+    fontStyle: "italic",
+  },
+  activityCard: {
+    borderWidth: 1,
+    padding: 16,
+    borderRadius: 24,
+    marginBottom: 8,
+  },
+  activityHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    marginBottom: 8,
+  },
+  activityIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  activityTitle: {
+    fontSize: 15,
+    fontWeight: "700",
+    flex: 1,
+  },
+  activityItem: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 10,
+    marginBottom: 12,
+  },
+  activityEmoji: {
+    fontSize: 22,
+    lineHeight: 28,
+  },
+  safetyNoteBox: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 6,
+    marginTop: 4,
+    padding: 10,
+    backgroundColor: "rgba(45, 228, 116, 0.06)",
+    borderRadius: 12,
+  },
+  safetyNoteText: {
+    flex: 1,
+    fontSize: 11,
+    lineHeight: 16,
+    fontStyle: "italic",
+  },
   logItem: {
     flexDirection: "row",
     alignItems: "center",
     borderWidth: 1,
     padding: 16,
     borderRadius: 24,
-    marginBottom: 12,
+    marginBottom: 28,
   },
   logIcon: {
     width: 48,

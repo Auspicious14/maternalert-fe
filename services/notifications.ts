@@ -195,11 +195,13 @@ class NotificationService {
       data?.type === AppNotificationType.URGENT_INACTIVITY_REMINDER
     ) {
       const scheduledAt = data?.scheduledAt ? new Date(data.scheduledAt) : null;
-      const lastReadingAt = data?.lastReadingAt ? new Date(data.lastReadingAt) : null;
+      const lastReadingAt = data?.lastReadingAt
+        ? new Date(data.lastReadingAt)
+        : null;
       return Boolean(
         (scheduledAt && latestDate >= scheduledAt) ||
-          (lastReadingAt && latestDate > lastReadingAt) ||
-          getDaysSinceLastReading(latestLoggedAt) < 3,
+        (lastReadingAt && latestDate > lastReadingAt) ||
+        getDaysSinceLastReading(latestLoggedAt) < 3,
       );
     }
 
@@ -459,6 +461,172 @@ class NotificationService {
       ) {
         await Notifications.cancelScheduledNotificationAsync(n.identifier);
       }
+    }
+  }
+
+  // ── Pregnancy-aware notifications ──────────────────────────────────────────
+
+  /**
+   * Cancel all previously scheduled pregnancy progression notifications.
+   * Called before rescheduling to prevent duplicates.
+   */
+  private async cancelPregnancyNotifications() {
+    const pregTypes = new Set([
+      AppNotificationType.PREGNANCY_MILESTONE,
+      AppNotificationType.TRIMESTER_TRANSITION,
+      AppNotificationType.NUTRITION_REMINDER,
+      AppNotificationType.ACTIVITY_REMINDER,
+    ]);
+    const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+    for (const n of scheduled) {
+      if (pregTypes.has(n.content.data?.type as any)) {
+        await Notifications.cancelScheduledNotificationAsync(n.identifier);
+      }
+    }
+  }
+
+  /**
+   * Schedule pregnancy progression notifications based on current week.
+   *
+   * DEDUPLICATION: Uses notification type as a key so the same type is never
+   * scheduled twice. Clears stale pregnancy notifications first.
+   *
+   * SCHEDULING APPROACH:
+   * - Milestone / trimester: scheduled once, fires soon (TIME_INTERVAL)
+   *   so the user sees the update immediately on app open.
+   * - Nutrition: fires the next morning at the user's preferred reminder time.
+   * - Activity: fires the next morning at 07:30 or preferred time.
+   *
+   * @param currentWeek     Current gestational week.
+   * @param trimester       Current trimester (1 | 2 | 3).
+   * @param milestoneTitle  Short milestone title for this week.
+   * @param milestoneMsg    Milestone message for this week.
+   * @param nutritionTitle  Nutrition reminder title.
+   * @param nutritionTip    One concise nutrition tip for this week.
+   * @param activityName    Name of the suggested activity.
+   * @param activityDesc    Short description of the activity.
+   * @param reminderHour    User's preferred reminder hour (default 9).
+   * @param reminderMinute  User's preferred reminder minute (default 0).
+   * @param notifyReminders Whether the user has enabled pregnancy reminders.
+   */
+  async schedulePregnancyNotifications({
+    currentWeek,
+    trimester,
+    milestoneTitle,
+    milestoneMsg,
+    nutritionTitle,
+    nutritionTip,
+    activityName,
+    activityDesc,
+    reminderHour = 9,
+    reminderMinute = 0,
+    notifyReminders = true,
+  }: {
+    currentWeek: number;
+    trimester: 1 | 2 | 3;
+    milestoneTitle: string;
+    milestoneMsg: string;
+    nutritionTitle: string;
+    nutritionTip: string;
+    activityName: string;
+    activityDesc: string;
+    reminderHour?: number;
+    reminderMinute?: number;
+    notifyReminders?: boolean;
+  }) {
+    if (!notifyReminders) {
+      console.log("[NOTIF] Pregnancy reminders disabled, skipping");
+      return;
+    }
+
+    try {
+      // Clear stale pregnancy notifications before rescheduling
+      await this.cancelPregnancyNotifications();
+
+      // ── Trimester transition ──────────────────────────────────────────────
+      const trimesterTransitionWeeks: Record<number, number> = {
+        1: 1,
+        2: 13,
+        3: 28,
+      };
+      const isTransitionWeek =
+        trimesterTransitionWeeks[trimester] === currentWeek;
+
+      if (isTransitionWeek) {
+        await scheduleIfNotExists(
+          AppNotificationType.TRIMESTER_TRANSITION,
+          trimester === 2
+            ? "Welcome to your second trimester 🌟"
+            : trimester === 3
+              ? "Welcome to your third trimester 🌙"
+              : "Your pregnancy journey begins",
+          trimester === 2
+            ? "You have reached 13 weeks. Many women start to feel much better now. Keep attending your antenatal visits."
+            : trimester === 3
+              ? "You have reached 28 weeks. Your baby is gaining weight rapidly. Attend all remaining antenatal visits."
+              : "Your pregnancy is just beginning. Start attending antenatal care.",
+          {
+            type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+            seconds: 10,
+          },
+          { week: currentWeek, trimester },
+        );
+      }
+
+      // ── Weekly milestone ──────────────────────────────────────────────────
+      await scheduleIfNotExists(
+        AppNotificationType.PREGNANCY_MILESTONE,
+        `Week ${currentWeek} 🌟`,
+        `${milestoneTitle} — ${milestoneMsg}`,
+        {
+          type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+          seconds: 30,
+        },
+        { week: currentWeek },
+      );
+
+      // ── Daily nutrition reminder (DAILY trigger at preferred time) ────────
+      await Notifications.scheduleNotificationAsync({
+        content: {
+          title: `Nutrition tip 🥗`,
+          body: `${nutritionTitle}: ${nutritionTip}`,
+          data: {
+            type: AppNotificationType.NUTRITION_REMINDER,
+            week: currentWeek,
+          },
+        },
+        trigger: {
+          type: Notifications.SchedulableTriggerInputTypes.DAILY,
+          hour: reminderHour,
+          minute: reminderMinute,
+        },
+      });
+
+      // ── Daily activity reminder (DAILY trigger 30 min earlier) ───────────
+      const activityMinute = Math.max(0, reminderMinute - 30);
+      const activityHour =
+        reminderMinute < 30 ? Math.max(0, reminderHour - 1) : reminderHour;
+      await Notifications.scheduleNotificationAsync({
+        content: {
+          title: `Today's gentle activity 🚶‍♀️`,
+          body: `${activityName}: ${activityDesc}`,
+          data: {
+            type: AppNotificationType.ACTIVITY_REMINDER,
+            week: currentWeek,
+          },
+        },
+        trigger: {
+          type: Notifications.SchedulableTriggerInputTypes.DAILY,
+          hour: activityHour,
+          minute: activityMinute,
+        },
+      });
+
+      console.log(
+        `[NOTIF] Pregnancy notifications scheduled for week ${currentWeek}`,
+      );
+    } catch (error) {
+      console.error("Error scheduling pregnancy notifications:", error);
     }
   }
 }

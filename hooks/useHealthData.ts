@@ -59,8 +59,11 @@ export const useHealthData = () => {
   });
 
   const addSymptomMutation = useMutation({
-    mutationFn: async (symptom: string | { symptomType: string; customSymptom?: string }) => {
-      const payload = typeof symptom === "string" ? { symptomType: symptom } : symptom;
+    mutationFn: async (
+      symptom: string | { symptomType: string; customSymptom?: string },
+    ) => {
+      const payload =
+        typeof symptom === "string" ? { symptomType: symptom } : symptom;
       const response = await apiClient.post("/symptoms", payload);
       return response.data;
     },
@@ -69,6 +72,9 @@ export const useHealthData = () => {
       queryClient.invalidateQueries({ queryKey: ["symptoms", "recent"] });
       queryClient.invalidateQueries({ queryKey: ["care-priority"] });
       queryClient.invalidateQueries({ queryKey: ["notifications"] });
+      // Invalidate monitoring state so the home dashboard reflects the new
+      // monitoring state produced by symptom submission.
+      queryClient.invalidateQueries({ queryKey: ["monitoring-engine"] });
     },
   });
 

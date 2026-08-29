@@ -109,10 +109,12 @@ const SYMPTOMS = [
 type SymptomId = (typeof SYMPTOMS)[number]["id"];
 
 import { useHealthData } from "../hooks/useHealthData";
+import { useMonitoringData } from "../hooks/useMonitoringData";
 
 export default function SymptomCheckerScreen() {
   const router = useRouter();
   const { addSymptom, isAddingSymptom } = useHealthData();
+  const { revalidateMonitoring } = useMonitoringData();
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
   const { showToast } = useToast();
@@ -188,6 +190,11 @@ export default function SymptomCheckerScreen() {
           } as any);
         }
       }
+
+      // Revalidate monitoring state immediately after submission.
+      // The backend fires evaluate() fire-and-forget, so we give it a brief
+      // moment before refreshing the SWR cache.
+      setTimeout(() => revalidateMonitoring(), 1500);
 
       const symptomSet = new Set(selected);
       const isEmergency =
