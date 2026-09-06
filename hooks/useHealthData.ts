@@ -12,6 +12,16 @@ export interface Symptom {
   id: string;
   symptomType: string;
   customSymptom?: string | null;
+  subOptions?: string[];
+  painLocation?: string | null;
+  severity?: number | null;
+  durationLabel?: string | null;
+  trend?: string | null;
+  hadBefore?: boolean | null;
+  medicationTaken?: boolean | null;
+  medicationName?: string | null;
+  assessmentResult?: string | null;
+  patientMessage?: string | null;
   createdAt: string;
   recordedAt: string;
 }
@@ -19,7 +29,6 @@ export interface Symptom {
 export const useHealthData = () => {
   const queryClient = useQueryClient();
 
-  // Queries
   const bpHistory = useQuery<BloodPressure[]>({
     queryKey: ["blood-pressure"],
     queryFn: async () => {
@@ -44,7 +53,6 @@ export const useHealthData = () => {
     },
   });
 
-  // Mutations
   const addBPMutation = useMutation({
     mutationFn: async (reading: { systolic: number; diastolic: number }) => {
       const response = await apiClient.post("/blood-pressure", reading);
@@ -60,10 +68,8 @@ export const useHealthData = () => {
 
   const addSymptomMutation = useMutation({
     mutationFn: async (
-      symptom: string | { symptomType: string; customSymptom?: string },
+      payload: any,
     ) => {
-      const payload =
-        typeof symptom === "string" ? { symptomType: symptom } : symptom;
       const response = await apiClient.post("/symptoms", payload);
       return response.data;
     },
@@ -72,8 +78,6 @@ export const useHealthData = () => {
       queryClient.invalidateQueries({ queryKey: ["symptoms", "recent"] });
       queryClient.invalidateQueries({ queryKey: ["care-priority"] });
       queryClient.invalidateQueries({ queryKey: ["notifications"] });
-      // Invalidate monitoring state so the home dashboard reflects the new
-      // monitoring state produced by symptom submission.
       queryClient.invalidateQueries({ queryKey: ["monitoring-engine"] });
     },
   });

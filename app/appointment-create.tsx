@@ -15,7 +15,7 @@ import Theme from "../constants/theme";
 import { useColorScheme } from "../hooks/use-color-scheme";
 import { useAppointments } from "../hooks/useAppointments";
 
-type AppointmentType = "ANC" | "LAB" | "SCAN";
+type AppointmentType = "ANC" | "LAB" | "SCAN" | "GENERAL";
 
 export default function AppointmentCreateScreen() {
   const router = useRouter();
@@ -31,6 +31,8 @@ export default function AppointmentCreateScreen() {
   );
   const [location, setLocation] = useState("");
   const [notes, setNotes] = useState("");
+  const [providerName, setProviderName] = useState("");
+  const [facilityName, setFacilityName] = useState("");
 
   const handleCreate = async () => {
     if (!title.trim()) {
@@ -45,6 +47,8 @@ export default function AppointmentCreateScreen() {
         dateTime,
         location: location.trim() || undefined,
         notes: notes.trim() || undefined,
+        providerName: providerName.trim() || undefined,
+        facilityName: facilityName.trim() || undefined,
       });
       showToast({ type: "success", message: "Appointment scheduled!" });
       router.back();
@@ -59,6 +63,7 @@ export default function AppointmentCreateScreen() {
       { type: "ANC", label: "ANC Visit", icon: "medical" },
       { type: "LAB", label: "Lab Test", icon: "flask-outline" },
       { type: "SCAN", label: "Scan", icon: "scan-outline" },
+      { type: "GENERAL", label: "General", icon: "calendar-outline" },
     ];
 
   return (

@@ -3,12 +3,15 @@ import apiClient from "../api/client";
 
 export interface Appointment {
   id: string;
-  type: "ANC" | "LAB" | "SCAN";
+  type: "ANC" | "LAB" | "SCAN" | "GENERAL";
   title: string;
   dateTime: string;
   location?: string;
   notes?: string;
-  status: "SCHEDULED" | "COMPLETED" | "MISSED";
+  status: "SCHEDULED" | "COMPLETED" | "MISSED" | "CANCELLED";
+  appointmentSource: "FACILITY" | "PATIENT";
+  providerName?: string;
+  facilityName?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -28,13 +31,16 @@ export const useAppointments = () => {
 
   const createAppointmentMutation = useMutation({
     mutationFn: async (appointmentData: {
-      type: "ANC" | "LAB" | "SCAN";
+      type: "ANC" | "LAB" | "SCAN" | "GENERAL";
       title: string;
       dateTime: string;
       location?: string;
       notes?: string;
+      providerName?: string;
+      facilityName?: string;
     }) => {
-      const response = await apiClient.post("/appointments", appointmentData);
+      // Patients always create personal appointments
+      const response = await apiClient.post("/appointments/personal", appointmentData);
       return response.data;
     },
     onSuccess: () => {
@@ -58,6 +64,16 @@ export const useAppointments = () => {
     },
   });
 
+  const cancelAppointmentMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const response = await apiClient.patch(`/appointments/${id}/cancel`);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["appointments"] });
+    },
+  });
+
   const deleteAppointmentMutation = useMutation({
     mutationFn: async (id: string) => {
       await apiClient.delete(`/appointments/${id}`);
@@ -74,6 +90,8 @@ export const useAppointments = () => {
     isCreatingAppointment: createAppointmentMutation.isPending,
     updateAppointment: updateAppointmentMutation.mutateAsync,
     isUpdatingAppointment: updateAppointmentMutation.isPending,
+    cancelAppointment: cancelAppointmentMutation.mutateAsync,
+    isCancelingAppointment: cancelAppointmentMutation.isPending,
     deleteAppointment: deleteAppointmentMutation.mutateAsync,
     isDeletingAppointment: deleteAppointmentMutation.isPending,
   };

@@ -1,7 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React from "react";
-import { FlatList, SafeAreaView, TouchableOpacity, View } from "react-native";
+import { FlatList, SafeAreaView, TouchableOpacity, View, Alert } from "react-native";
+
 import { Card } from "../components/shared/Card";
 import { Screen } from "../components/shared/Screen";
 import { Typography } from "../components/shared/Typography";
@@ -14,7 +15,8 @@ export default function AppointmentsScreen() {
   const router = useRouter();
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
-  const { appointments, isLoadingAppointments } = useAppointments();
+  const { appointments, isLoadingAppointments, cancelAppointment } = useAppointments();
+  ;
 
   const getAppointmentIcon = (type: string) => {
     switch (type) {
@@ -59,6 +61,18 @@ export default function AppointmentsScreen() {
     }
   };
 
+  
+  const handleCancel = (id: string) => {
+    Alert.alert(
+      "Cancel Appointment",
+      "Are you sure you want to cancel this appointment?",
+      [
+        { text: "No", style: "cancel" },
+        { text: "Yes", onPress: () => cancelAppointment(id), style: "destructive" }
+      ]
+    );
+  };
+
   const renderItem = ({ item }: { item: Appointment }) => (
     <Card
       className={`mb-4 rounded-[24px] ${isDark ? "bg-[#020617] border-white/10" : "bg-white border-[#F1F5F9]"} p-5`}
@@ -91,6 +105,19 @@ export default function AppointmentsScreen() {
                 {item.status}
               </Typography>
             </View>
+            <View
+              className="px-3 py-1 rounded-full ml-2"
+              style={{ backgroundColor: item.appointmentSource === 'FACILITY' ? '#E0E7FF' : '#F3E8FF' }}
+            >
+              <Typography
+                variant="caption"
+                weight="bold"
+                style={{ color: item.appointmentSource === 'FACILITY' ? '#4338CA' : '#7E22CE' }}
+              >
+                {item.appointmentSource}
+              </Typography>
+            </View>
+
           </View>
 
           <View className="flex-row items-center gap-2 mt-2">
@@ -139,6 +166,14 @@ export default function AppointmentsScreen() {
               </Typography>
             </View>
           )}
+        
+          {item.appointmentSource === 'PATIENT' && item.status === 'SCHEDULED' && (
+            <TouchableOpacity onPress={() => handleCancel(item.id)} className="mt-4 p-2 bg-red-100 rounded-xl flex-row items-center justify-center gap-2 border border-red-200">
+                <Ionicons name="close-circle-outline" size={18} color="#EF4444" />
+                <Typography variant="body" weight="bold" style={{ color: '#EF4444' }}>Cancel Appointment</Typography>
+            </TouchableOpacity>
+          )}
+
         </View>
       </View>
     </Card>
@@ -206,15 +241,49 @@ export default function AppointmentsScreen() {
             >
               Schedule your first ANC, lab, or scan appointment!
             </Typography>
+            
+            <TouchableOpacity 
+              onPress={() => router.push("/appointment-create")}
+              className="mt-6 bg-primary px-6 py-3 rounded-full flex-row items-center gap-2 shadow-sm"
+            >
+              <Ionicons name="add" size={20} color="white" />
+              <Typography variant="body" weight="bold" className="text-white">
+                Add Appointment
+              </Typography>
+            </TouchableOpacity>
           </View>
         ) : (
           <FlatList
             data={appointments}
             keyExtractor={(item) => item.id}
             renderItem={renderItem}
-            contentContainerStyle={{ paddingHorizontal: 40, paddingBottom: 40 }}
+            contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 100 }}
             showsVerticalScrollIndicator={false}
           />
+        )}
+        {/* Floating Action Button */}
+        {appointments && appointments.length > 0 && (
+          <TouchableOpacity
+            onPress={() => router.push("/appointment-create")}
+            style={{
+              position: "absolute",
+              bottom: 24,
+              right: 24,
+              width: 56,
+              height: 56,
+              borderRadius: 28,
+              backgroundColor: Theme.colors.primary,
+              justifyContent: "center",
+              alignItems: "center",
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.3,
+              shadowRadius: 4,
+              elevation: 5,
+            }}
+          >
+            <Ionicons name="add" size={32} color="white" />
+          </TouchableOpacity>
         )}
       </Screen>
     </SafeAreaView>

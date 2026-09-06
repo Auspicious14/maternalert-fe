@@ -98,6 +98,12 @@ const SYMPTOMS = [
   },
   { id: "PAINFUL_URINATION", title: "Painful Urination", icon: "alert" },
   { id: "FREQUENT_URINATION", title: "Frequent Urination", icon: "refresh" },
+  { id: "CHEST_PAIN", title: "Chest Pain", icon: "heart-dislike" },
+  { id: "PALPITATIONS", title: "Palpitations", subtitle: "Fast or irregular heartbeat", icon: "pulse-outline" },
+  { id: "FAINTING", title: "Fainting", subtitle: "Loss of consciousness", icon: "bed" },
+  { id: "CONFUSION", title: "Confusion", icon: "help-circle" },
+  { id: "PERSISTENT_ITCHING", title: "Persistent Itching", subtitle: "Severe itching (especially hands/feet)", icon: "hand-right" },
+
   {
     id: "OTHER",
     title: "Something else",
@@ -169,9 +175,14 @@ export default function SymptomCheckerScreen() {
     }
 
     try {
+      let hasEmergency = false;
+      let hasUrgent = false;
+      let msg = "";
+
       for (const symptomId of selected) {
+        let res;
         if (symptomId === "OTHER") {
-          await addSymptom({
+          res = await addSymptom({
             symptomType: "OTHER",
             customSymptom: cleanedOtherSymptom,
           });
@@ -182,34 +193,32 @@ export default function SymptomCheckerScreen() {
               ? painLocation.trim()
               : undefined;
 
-          await addSymptom({
+          res = await addSymptom({
             symptomType: symptomId,
-            subOptions:
-              symptomSubOptions.length > 0 ? symptomSubOptions : undefined,
+            subOptions: symptomSubOptions.length > 0 ? symptomSubOptions : undefined,
             painLocation: locationValue,
           } as any);
         }
+        
+        if (res && res.assessmentResult === "EMERGENCY") {
+           hasEmergency = true;
+           msg = res.patientMessage || msg;
+        } else if (res && res.assessmentResult === "CLINICAL_REVIEW") {
+           hasUrgent = true;
+           if (!hasEmergency) msg = res.patientMessage || msg;
+        } else if (res && res.patientMessage) {
+           if (!hasEmergency && !hasUrgent) msg = res.patientMessage;
+        }
       }
 
-      // Revalidate monitoring state immediately after submission.
-      // The backend fires evaluate() fire-and-forget, so we give it a brief
-      // moment before refreshing the SWR cache.
       setTimeout(() => revalidateMonitoring(), 1500);
 
-      const symptomSet = new Set(selected);
-      const isEmergency =
-        (symptomSet.has("HEADACHE") && symptomSet.has("BLURRED_VISION")) ||
-        symptomSet.has("ABDOMINAL_PAIN") ||
-        symptomSet.has("ABNORMAL_BODY_MOVEMENT") ||
-        symptomSet.has("VAGINAL_BLEEDING") ||
-        symptomSet.has("DIFFICULTY_BREATHING") ||
-        symptomSet.has("REDUCED_FETAL_MOVEMENT") ||
-        symptomSet.has("FEVER");
-
-      if (isEmergency) {
-        router.push("/nurse-summary");
+      if (hasEmergency) {
+        router.push({ pathname: "/nurse-summary", params: { msg } });
+      } else if (hasUrgent) {
+        router.push({ pathname: "/nurse-summary", params: { msg } });
       } else {
-        router.push("/symptom-results");
+        router.push({ pathname: "/symptom-results", params: { msg } });
       }
     } catch (error) {
       console.error("Failed to submit symptoms", error);
