@@ -33,6 +33,31 @@ apiClient.interceptors.request.use(
   (error) => Promise.reject(error),
 );
 
+/**
+ * Single shared refresh. The backend rotates the refresh token and rejects the
+ * old one, so when several requests got 401 at the same time each refreshed
+ * with the same token: the first won, the rest failed, and the user was logged
+ * out. Now concurrent 401s wait for one refresh.
+ */
+let refreshInFlight: Promise<string> | null = null;
+
+function refreshAccessToken(refreshToken: string): Promise<string> {
+  if (!refreshInFlight) {
+    refreshInFlight = axios
+      .post(`${BASE_URL}/auth/refresh`, { refreshToken }, { withCredentials: true })
+      .then(async (refreshResponse) => {
+        const { accessToken, refreshToken: newRefreshToken } = refreshResponse.data;
+        await TokenStorage.saveToken(accessToken);
+        await TokenStorage.saveRefreshToken(newRefreshToken);
+        return accessToken as string;
+      })
+      .finally(() => {
+        refreshInFlight = null;
+      });
+  }
+  return refreshInFlight;
+}
+
 apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
@@ -49,16 +74,7 @@ apiClient.interceptors.response.use(
 
       if (refreshToken) {
         try {
-          const refreshResponse = await axios.post(`${BASE_URL}/auth/refresh`, {
-            refreshToken,
-          });
-
-          const { accessToken, refreshToken: newRefreshToken } =
-            refreshResponse.data;
-
-          await TokenStorage.saveToken(accessToken);
-          await TokenStorage.saveRefreshToken(newRefreshToken);
-
+          const accessToken = await refreshAccessToken(refreshToken);
           originalRequest.headers.Authorization = `Bearer ${accessToken}`;
           return apiClient(originalRequest);
         } catch (refreshError) {
