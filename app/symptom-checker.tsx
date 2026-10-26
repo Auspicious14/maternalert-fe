@@ -287,16 +287,29 @@ const LOCAL_RED_FLAGS: readonly string[] = [
   "CONFUSION",
   "REDUCED_FETAL_MOVEMENT",
   "FEVER",
+  "SUDDEN_SWELLING", // sudden face/hand swelling: pre-eclampsia sign
 ];
+
+// Detail options that are danger signs on their own, keyed by symptom.
+const LOCAL_RED_FLAG_DETAILS: Record<string, string[]> = {
+  HEADACHE: ["SEVERE_SUDDEN", "BLURRED_VISION", "SEEING_SPOTS"],
+  ABDOMINAL_PAIN: ["UPPER_ABDOMEN"],
+  VAGINAL_BLEEDING: ["HEAVY_BLEEDING", "MODERATE_BLEEDING"],
+  NAUSEA_VOMITING: ["BLOOD_IN_VOMIT", "UNABLE_TO_KEEP_FLUIDS"],
+  REDUCED_FETAL_MOVEMENT: ["NO_MOVEMENT", "SIGNIFICANTLY_REDUCED"],
+  FEVER: ["HIGH_FEVER"],
+};
 
 function hasLocalRedFlag(
   selected: readonly string[],
   subOptions: Record<string, string[]>,
 ): boolean {
   if (selected.some((id) => LOCAL_RED_FLAGS.includes(id))) return true;
-  // Upper-abdominal / below-the-ribs pain can signal severe pre-eclampsia.
-  const pain = subOptions["ABDOMINAL_PAIN"] ?? [];
-  return pain.includes("UPPER_ABDOMEN") || pain.includes("BELOW_RIBS");
+  return Object.entries(LOCAL_RED_FLAG_DETAILS).some(
+    ([symptomId, dangerous]) =>
+      selected.includes(symptomId) &&
+      (subOptions[symptomId] ?? []).some((opt) => dangerous.includes(opt)),
+  );
 }
 
 const OFFLINE_DANGER_MESSAGE =
@@ -369,11 +382,22 @@ export default function SymptomCheckerScreen() {
 
       for (const symptomId of selected) {
         let res;
+        // The backend validates strictly and rejects the WHOLE submission on
+        // any unexpected value, so map UI values to what it accepts:
+        // - trend enum is IMPROVING / WORSENING / UNCHANGED
+        // - onsetAt must be an ISO date; free text like "yesterday" goes in
+        //   structuredDetail instead.
+        const TREND_TO_API: Record<string, string> = {
+          BETTER: "IMPROVING",
+          WORSE: "WORSENING",
+          UNCHANGED: "UNCHANGED",
+        };
+        const onsetText = onset.trim();
         const commonData = {
           severity: severity > 0 ? severity : undefined,
-          trend: trend || undefined,
-          durationLabel: duration || undefined,
-          onsetAt: onset || undefined,
+          trend: trend ? TREND_TO_API[trend] : undefined,
+          durationLabel: duration.trim() ? duration.trim().slice(0, 80) : undefined,
+          structuredDetail: onsetText ? { onsetText: onsetText.slice(0, 80) } : undefined,
           hadBefore: hadBefore ?? undefined,
           medicationTaken: medsTaken ?? undefined,
         };
