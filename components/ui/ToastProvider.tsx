@@ -71,7 +71,7 @@ export const ToastProvider = ({ children }: { children: React.ReactNode }) => {
       return { backgroundColor: "transparent", icon: "information-circle" as const };
     }
     if (toast.type === "success") {
-      return { backgroundColor: "rgba(45, 228, 116, 0.95)", icon: "checkmark-circle" as const };
+      return { backgroundColor: "rgba(14, 124, 90, 0.95)", icon: "checkmark-circle" as const };
     }
     if (toast.type === "error") {
       return { backgroundColor: "rgba(255, 75, 75, 0.95)", icon: "alert-circle" as const };

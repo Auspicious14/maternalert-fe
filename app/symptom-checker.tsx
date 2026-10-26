@@ -337,8 +337,8 @@ export default function SymptomCheckerScreen() {
   const [hadBefore, setHadBefore] = useState<boolean | null>(null);
   const [medsTaken, setMedsTaken] = useState<boolean | null>(null);
 
-  const textColor = isDark ? "#FFFFFF" : "#1A212E";
-  const subTextColor = isDark ? "#94A3B8" : "#6B7280";
+  const textColor = isDark ? "#FFFFFF" : "#0F241C";
+  const subTextColor = isDark ? "#94A3B8" : "#5B6B64";
   const cardBg = isDark ? "#020617" : "#FFFFFF";
   const borderColor = isDark ? "rgba(255,255,255,0.1)" : "#F1F5F9";
   const subCardBg = isDark ? "#0F172A" : "#F8FAFC";
@@ -495,8 +495,8 @@ export default function SymptomCheckerScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1" style={{ backgroundColor: isDark ? Theme.colors.darkBg : "#F9FAFB" }}>
-      <Screen backgroundColor={isDark ? Theme.colors.darkBg : "#F9FAFB"} scrollable>
+    <SafeAreaView className="flex-1" style={{ backgroundColor: isDark ? Theme.colors.darkBg : "#FBF7F2" }}>
+      <Screen backgroundColor={isDark ? Theme.colors.darkBg : "#FBF7F2"} scrollable>
         <View className="flex-row items-center justify-between px-6 pt-4 mb-4">
           <TouchableOpacity onPress={() => router.back()}>
             <Ionicons name="arrow-back" size={28} color={textColor} />

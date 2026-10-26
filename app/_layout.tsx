@@ -2,12 +2,6 @@ import "react-native-reanimated";
 import "../global.css";
 
 import {
-  Lexend_400Regular,
-  Lexend_500Medium,
-  Lexend_600SemiBold,
-  Lexend_700Bold,
-} from "@expo-google-fonts/lexend";
-import {
   DarkTheme,
   DefaultTheme,
   ThemeProvider,
@@ -135,10 +129,11 @@ function RootNavigation() {
 
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts({
-    "Lexend-Regular": Lexend_400Regular,
-    "Lexend-Medium": Lexend_500Medium,
-    "Lexend-SemiBold": Lexend_600SemiBold,
-    "Lexend-Bold": Lexend_700Bold,
+    // Brand typeface, bundled locally (same files as the web app's /public/fonts).
+    "Outfit-Regular": require("../assets/fonts/Outfit-Regular.ttf"),
+    "Outfit-Medium": require("../assets/fonts/Outfit-Medium.ttf"),
+    "Outfit-SemiBold": require("../assets/fonts/Outfit-SemiBold.ttf"),
+    "Outfit-Bold": require("../assets/fonts/Outfit-Bold.ttf"),
   });
 
   // ── Hide splash screen once fonts are loaded ──

@@ -88,7 +88,7 @@ export function EmergencyButton({ floating = false }: EmergencyButtonProps) {
     <SafeAreaView
       style={{
         flex: 1,
-        backgroundColor: isDark ? Theme.colors.darkBg : "#F9FAFB",
+        backgroundColor: isDark ? Theme.colors.darkBg : "#FBF7F2",
         alignItems: "center",
         justifyContent: "center",
         padding: 32,
@@ -359,7 +359,7 @@ function EmergencyModal({
             onPress={onClose}
             style={{
               borderWidth: 1,
-              borderColor: "#E2E8F0",
+              borderColor: "#E6E1D9",
               borderRadius: 16,
               paddingVertical: 14,
               alignItems: "center",

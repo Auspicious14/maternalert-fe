@@ -50,7 +50,7 @@ export default function RegisterScreen() {
   };
 
   const errorMessage = getErrorMessage();
-  const iconColor = isDark ? "#FFFFFF" : "#1A212E";
+  const iconColor = isDark ? "#FFFFFF" : "#0F241C";
 
   return (
     <Screen safe={true} scrollable={true}>

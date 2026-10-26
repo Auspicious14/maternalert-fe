@@ -156,7 +156,7 @@ const styles = StyleSheet.create({
     backgroundColor: Theme.colors.secondary,
   },
   activeIconContainerDark: {
-    backgroundColor: "rgba(45, 228, 116, 0.2)",
+    backgroundColor: "rgba(14, 124, 90, 0.2)",
     borderWidth: 1,
     borderColor: Theme.colors.primary,
   },

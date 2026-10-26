@@ -35,7 +35,7 @@ export const Typography: React.FC<TypographyProps> = React.memo(({
   const flattenedStyle = StyleSheet.flatten(style) || {};
   
   // Extract and clean up styles to avoid conflicts between fontFamily and fontWeight
-  // In React Native, using a specific fontFamily file (like Lexend-Bold) 
+  // In React Native, using a specific fontFamily file (like Outfit-Bold) 
   // usually means we shouldn't apply a separate fontWeight or it might fallback to system fonts.
   const { 
     fontWeight: styleFontWeight, 

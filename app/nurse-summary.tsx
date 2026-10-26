@@ -163,26 +163,26 @@ export default function NurseSummaryScreen() {
           {/* Action Buttons */}
           <View className="gap-4">
             <TouchableOpacity
-              className={`h-20 rounded-[40px] flex-row items-center px-[30px] gap-4 ${isDark ? "bg-white" : "bg-[#121915]"}`}
+              className={`h-20 rounded-[40px] flex-row items-center px-[30px] gap-4 ${isDark ? "bg-white" : "bg-[#0F241C]"}`}
               activeOpacity={0.8}
               onPress={handleCallEmergency}
             >
               <Ionicons
                 name="call"
                 size={24}
-                color={isDark ? "#121915" : "#FFFFFF"}
+                color={isDark ? "#0F241C" : "#FFFFFF"}
               />
               <View className="flex-1">
                 <Typography
                   variant="h3"
                   weight="bold"
-                  className={`text-lg ${isDark ? "text-[#121915]" : "text-white"}`}
+                  className={`text-lg ${isDark ? "text-[#0F241C]" : "text-white"}`}
                 >
                   Call Emergency
                 </Typography>
                 <Typography
                   variant="caption"
-                  className={`text-xs text-sh-lexend-medium ${isDark ? "text-[#121915]/60" : "text-white/60"}`}
+                  className={`text-xs text-sh-lexend-medium ${isDark ? "text-[#0F241C]/60" : "text-white/60"}`}
                 >
                   Contacting:{" "}
                   {profile?.emergencyContactRelationship ||

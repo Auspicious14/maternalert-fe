@@ -17,7 +17,7 @@ const AppThemeContext = createContext<AppThemeContextValue | undefined>(undefine
 const THEME_PREFERENCE_KEY = "maternalert_theme_preference";
 
 export function AppThemeProvider({ children }: { children: React.ReactNode }) {
-  const [preference, setPreferenceState] = useState<ThemePreference>("system");
+  const [preference, setPreferenceState] = useState<ThemePreference>("light"); // light by default; users can opt into dark/system
   const [systemScheme, setSystemScheme] = useState<ResolvedColorScheme>("light");
 
   useEffect(() => {

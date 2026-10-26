@@ -246,7 +246,7 @@ function FloatingEmergencyButton() {
                   disabled={triggering}
                   style={{
                     borderWidth: 1,
-                    borderColor: "#E2E8F0",
+                    borderColor: "#E6E1D9",
                     borderRadius: 14,
                     paddingVertical: 13,
                     width: "100%",
@@ -305,26 +305,26 @@ const StatusCard = memo(
                   : "checkmark-circle"
               }
               size={18}
-              color="#1A1512"
+              color="#0B1A14"
             />
             <Typography
               variant="caption"
               weight="bold"
-              className="text-[#1A1512] text-xs tracking-widest"
+              className="text-[#0B1A14] text-xs tracking-widest"
             >
               {statusLabel}
             </Typography>
           </View>
           <Typography
             variant="h1"
-            className="text-[#1A1512] leading-8 mb-2 font-black"
+            className="text-[#0B1A14] leading-8 mb-2 font-black"
           >
             {priorityData?.message || "Fetching your health status..."}
           </Typography>
           {priorityData?.reasons && priorityData.reasons.length > 0 && (
             <Typography
               variant="body"
-              className="text-[#1A1512CC] text-[15px] leading-[22px] mb-6"
+              className="text-[#0B1A14CC] text-[15px] leading-[22px] mb-6"
             >
               Based on: {priorityData.reasons.join(", ")}
             </Typography>
@@ -574,7 +574,7 @@ export default function HomeScreen() {
               <Ionicons
                 name="notifications"
                 size={24}
-                color={isDark ? "white" : "#1A212E"}
+                color={isDark ? "white" : "#0F241C"}
               />
               {unreadCount > 0 && (
                 <View
@@ -702,11 +702,11 @@ export default function HomeScreen() {
                 className="flex-1 bg-primary h-12 rounded-full flex-row items-center justify-center gap-2 shadow-sm"
                 onPress={() => router.push("/bp-entry")}
               >
-                <Ionicons name="add" size={20} color="#1A1512" />
+                <Ionicons name="add" size={20} color="#FFFFFF" />
                 <Typography
                   variant="h3"
                   weight="bold"
-                  className="text-[#1A1512]"
+                  className="text-white"
                 >
                   Add BP
                 </Typography>

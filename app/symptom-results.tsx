@@ -17,7 +17,7 @@ export default function SymptomResultsScreen() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
 
-  const iconColor = isDark ? "#FFFFFF" : "#1A212E";
+  const iconColor = isDark ? "#FFFFFF" : "#0F241C";
   const cardBg = isDark ? Theme.colors.cardDark : "#FFFFFF";
   const borderColor = isDark ? Theme.colors.borderDark : "#F1F5F9";
 
@@ -37,7 +37,7 @@ export default function SymptomResultsScreen() {
           label: "URGENT REVIEW",
           color: Theme.colors.accent,
           icon: "warning",
-          bgLight: isDark ? "#3D2B1E" : "#FFF4E8",
+          bgLight: isDark ? "#3D2B1E" : "#FDF0E1",
           bgInner: isDark ? "#5C402D" : "#FFE8D1",
           description: "Your symptoms require medical review within 24 hours.",
         };
@@ -46,7 +46,7 @@ export default function SymptomResultsScreen() {
           label: "INCREASED MONITORING",
           color: Theme.colors.primary,
           icon: "eye",
-          bgLight: isDark ? "#1A2D1F" : "#F0FDF4",
+          bgLight: isDark ? "#1A2D1F" : "#EEF6F2",
           bgInner: isDark ? "#26452D" : "#DCFCE7",
           description: "Monitor your symptoms closely and report any changes.",
         };
@@ -55,14 +55,14 @@ export default function SymptomResultsScreen() {
           label: "ROUTINE CARE",
           color: Theme.colors.primary,
           icon: "checkmark-circle",
-          bgLight: isDark ? "#1A2D1F" : "#F0FDF4",
+          bgLight: isDark ? "#1A2D1F" : "#EEF6F2",
           bgInner: isDark ? "#26452D" : "#DCFCE7",
           description: "Your health data is within normal range. Continue regular tracking.",
         };
     }
   }, [priorityData?.priority, isDark]);
 
-  const textColor = isDark ? "#FFFFFF" : "#1A212E";
+  const textColor = isDark ? "#FFFFFF" : "#0F241C";
   const subTextColor = isDark ? "#94A3B8" : "#64748B";
 
   return (
@@ -99,7 +99,7 @@ export default function SymptomResultsScreen() {
             >
               <View
                 style={{
-                  backgroundColor: isDark ? "#1A1512" : "white",
+                  backgroundColor: isDark ? "#0B1A14" : "white",
                   shadowColor: priorityInfo.color,
                   shadowOffset: { width: 0, height: 4 },
                   shadowOpacity: 0.2,
@@ -204,11 +204,11 @@ export default function SymptomResultsScreen() {
             className="bg-primary h-[64px] rounded-2xl flex-row items-center justify-center gap-3 shadow-md"
             onPress={() => router.push("/clinic-finder")}
           >
-            <Ionicons name="location" size={22} color="#1A212E" />
+            <Ionicons name="location" size={22} color="#FFFFFF" />
             <Typography
               variant="h2"
               weight="bold"
-              className="text-lg text-[#1A212E]"
+              className="text-lg text-white"
             >
               Find Nearest Clinic
             </Typography>
@@ -217,7 +217,7 @@ export default function SymptomResultsScreen() {
           <TouchableOpacity
             activeOpacity={0.8}
             style={{
-              backgroundColor: isDark ? "#2D2118" : "#FFF4E8",
+              backgroundColor: isDark ? "#2D2118" : "#FDF0E1",
             }}
             className="h-[64px] rounded-2xl flex-row items-center justify-center gap-3"
             onPress={() => router.push("/emergency")}

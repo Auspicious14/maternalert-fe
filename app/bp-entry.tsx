@@ -199,9 +199,9 @@ export default function BPEntryScreen() {
   return (
     <SafeAreaView
       className="flex-1"
-      style={{ backgroundColor: isDark ? Theme.colors.darkBg : "#F9FAFB" }}
+      style={{ backgroundColor: isDark ? Theme.colors.darkBg : "#FBF7F2" }}
     >
-      <Screen backgroundColor={isDark ? Theme.colors.darkBg : "#F9FAFB"}>
+      <Screen backgroundColor={isDark ? Theme.colors.darkBg : "#FBF7F2"}>
         <View className="flex-row items-center justify-between px-6 pt-4 mb-10">
           <TouchableOpacity
             onPress={() => router.back()}
@@ -210,7 +210,7 @@ export default function BPEntryScreen() {
             <Ionicons
               name="arrow-back"
               size={28}
-              color={isDark ? Theme.colors.white : "#1A212E"}
+              color={isDark ? Theme.colors.white : "#0F241C"}
             />
           </TouchableOpacity>
           <Typography variant="h2" weight="bold" className="text-[22px]">
@@ -232,7 +232,7 @@ export default function BPEntryScreen() {
               variant="h3"
               weight="bold"
               className={
-                isDark ? "text-base text-white" : "text-base text-[#121915]"
+                isDark ? "text-base text-white" : "text-base text-[#0F241C]"
               }
             >
               {formattedDate}
@@ -262,7 +262,7 @@ export default function BPEntryScreen() {
             className={
               isDark
                 ? "bg-[#13251F] rounded-[24px] p-5 mb-4 border border-primary/30"
-                : "bg-[#F0FDF4] rounded-[24px] p-5 mb-4 border border-[#BBF7D0]"
+                : "bg-[#EEF6F2] rounded-[24px] p-5 mb-4 border border-[#BBF7D0]"
             }
           >
             <View className="flex-row items-start">
@@ -305,21 +305,21 @@ export default function BPEntryScreen() {
               className={
                 isDark
                   ? "flex-row items-center bg-[#022C22] rounded-[30px] px-6 h-14 mb-3"
-                  : "flex-row items-center bg-[#E8FCF1] rounded-[30px] px-6 h-14 mb-3"
+                  : "flex-row items-center bg-[#E3F2EC] rounded-[30px] px-6 h-14 mb-3"
               }
             >
               <TextInput
-                className={`flex-1 text-[22px] font-bold text-[#2DE474]`}
+                className={`flex-1 text-[22px] font-bold text-[#0E7C5A]`}
                 value={systolic}
                 onChangeText={(value) => setSystolic(value.replace(/[^0-9]/g, ""))}
                 keyboardType="numeric"
                 placeholderTextColor="#A0AEC0"
-                style={{ fontFamily: "Lexend-Bold" }}
+                style={{ fontFamily: "Outfit-Bold" }}
               />
               <Typography
                 variant="h3"
                 weight="bold"
-                className="text-[#2DE47499]"
+                className="text-[#0E7C5A99]"
               >
                 mmHg
               </Typography>
@@ -360,21 +360,21 @@ export default function BPEntryScreen() {
               className={
                 isDark
                   ? "flex-row items-center bg-[#022C22] rounded-[30px] px-6 h-14 mb-3"
-                  : "flex-row items-center bg-[#E8FCF1] rounded-[30px] px-6 h-14 mb-3"
+                  : "flex-row items-center bg-[#E3F2EC] rounded-[30px] px-6 h-14 mb-3"
               }
             >
               <TextInput
-                className={`flex-1 text-[22px] font-bold text-[#2DE474]`}
+                className={`flex-1 text-[22px] font-bold text-[#0E7C5A]`}
                 value={diastolic}
                 onChangeText={(value) => setDiastolic(value.replace(/[^0-9]/g, ""))}
                 keyboardType="numeric"
                 placeholderTextColor="#A0AEC0"
-                style={{ fontFamily: "Lexend-Bold" }}
+                style={{ fontFamily: "Outfit-Bold" }}
               />
               <Typography
                 variant="h3"
                 weight="bold"
-                className="text-[#2DE47499]"
+                className="text-[#0E7C5A99]"
               >
                 mmHg
               </Typography>

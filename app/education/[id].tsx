@@ -29,7 +29,7 @@ function ArticleContent({
   content: string;
   isDark: boolean;
 }) {
-  const textColor = isDark ? "#E2E8F0" : "#1E293B";
+  const textColor = isDark ? "#E6E1D9" : "#1E293B";
   const mutedColor = isDark ? "#94A3B8" : "#64748B";
  
   const lines = content.split("\n");
@@ -141,7 +141,7 @@ export default function ArticleReaderScreen() {
       <SafeAreaView
         style={{
           flex: 1,
-          backgroundColor: isDark ? Theme.colors.darkBg : "#F9FAFB",
+          backgroundColor: isDark ? Theme.colors.darkBg : "#FBF7F2",
           alignItems: "center",
           justifyContent: "center",
         }}
@@ -154,13 +154,13 @@ export default function ArticleReaderScreen() {
   }
  
   const colors =
-    CATEGORY_COLORS[article.category] ?? { bg: "#F3F4F6", text: "#6B7280" };
+    CATEGORY_COLORS[article.category] ?? { bg: "#F3F4F6", text: "#5B6B64" };
  
   return (
     <SafeAreaView
       style={{
         flex: 1,
-        backgroundColor: isDark ? Theme.colors.darkBg : "#F9FAFB",
+        backgroundColor: isDark ? Theme.colors.darkBg : "#FBF7F2",
       }}
     >
       {/* Header */}
@@ -189,7 +189,7 @@ export default function ArticleReaderScreen() {
           <Ionicons
             name="arrow-back"
             size={20}
-            color={isDark ? "#FFFFFF" : "#1A212E"}
+            color={isDark ? "#FFFFFF" : "#0F241C"}
           />
         </TouchableOpacity>
         <View style={{ flex: 1 }}>
@@ -275,7 +275,7 @@ export default function ArticleReaderScreen() {
           variant="h1"
           weight="bold"
           style={{
-            color: isDark ? "#FFFFFF" : "#1A212E",
+            color: isDark ? "#FFFFFF" : "#0F241C",
             fontSize: 24,
             lineHeight: 32,
             marginBottom: 12,

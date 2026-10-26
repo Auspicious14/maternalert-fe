@@ -101,7 +101,7 @@ export default function EmergencyScreen() {
               EMERGENCY ALERT
             </Typography>
           </View>
-          <View className="w-3.5 h-3.5 rounded-full bg-primary shadow-[0_0_10px_#2DE474]" />
+          <View className="w-3.5 h-3.5 rounded-full bg-primary shadow-[0_0_10px_#0E7C5A]" />
         </View>
 
         <View className="flex-1 items-center justify-center pb-10 px-6">
@@ -209,7 +209,7 @@ export default function EmergencyScreen() {
                 <Typography
                   variant="caption"
                   style={{
-                    color: "#15803D",
+                    color: "#0A5C43",
                     textAlign: "center",
                     marginTop: 4,
                     lineHeight: 18,

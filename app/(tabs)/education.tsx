@@ -27,7 +27,7 @@ const ArticleCard = memo(
     onPress: () => void;
   }) => {
     const colors =
-      CATEGORY_COLORS[article.category] ?? { bg: "#F3F4F6", text: "#6B7280" };
+      CATEGORY_COLORS[article.category] ?? { bg: "#F3F4F6", text: "#5B6B64" };
  
     return (
       <TouchableOpacity
@@ -93,7 +93,7 @@ const ArticleCard = memo(
             variant="h3"
             weight="bold"
             style={{
-              color: isDark ? "#FFFFFF" : "#1A212E",
+              color: isDark ? "#FFFFFF" : "#0F241C",
               marginBottom: 6,
               lineHeight: 22,
             }}
@@ -151,10 +151,10 @@ export default function EducationScreen() {
     <SafeAreaView
       style={{
         flex: 1,
-        backgroundColor: isDark ? Theme.colors.darkBg : "#F9FAFB",
+        backgroundColor: isDark ? Theme.colors.darkBg : "#FBF7F2",
       }}
     >
-      <Screen backgroundColor={isDark ? Theme.colors.darkBg : "#F9FAFB"}>
+      <Screen backgroundColor={isDark ? Theme.colors.darkBg : "#FBF7F2"}>
         <FlatList
           data={articles}
           keyExtractor={(item) => item.id}
@@ -172,7 +172,7 @@ export default function EducationScreen() {
                 weight="bold"
                 style={{
                   fontSize: 28,
-                  color: isDark ? "#FFFFFF" : "#1A212E",
+                  color: isDark ? "#FFFFFF" : "#0F241C",
                   marginBottom: 6,
                 }}
               >

@@ -52,10 +52,10 @@ export default function FacilityLinkingScreen() {
   const [linkStatus, setLinkStatus] = useState<LinkStatus | null>(null);
   const [loadingStatus, setLoadingStatus] = useState(true);
 
-  const bg = isDark ? Theme.colors.darkBg : "#F9FAFB";
+  const bg = isDark ? Theme.colors.darkBg : "#FBF7F2";
   const cardBg = isDark ? "#0F172A" : "#FFFFFF";
   const textMuted = isDark ? "#94A3B8" : "#64748B";
-  const textPrimary = isDark ? "#FFFFFF" : "#1A212E";
+  const textPrimary = isDark ? "#FFFFFF" : "#0F241C";
 
   useEffect(() => {
     fetchLinkStatus();
@@ -452,7 +452,7 @@ export default function FacilityLinkingScreen() {
                 <View style={{ flex: 1 }}>
                   <Typography
                     variant="caption"
-                    style={{ color: "#15803D", marginBottom: 2 }}
+                    style={{ color: "#0A5C43", marginBottom: 2 }}
                   >
                     Linked to
                   </Typography>
@@ -564,13 +564,13 @@ export default function FacilityLinkingScreen() {
                 <Ionicons
                   name="qr-code-outline"
                   size={26}
-                  color={isDark ? "#1A212E" : "#fff"}
+                  color={isDark ? "#0F241C" : "#fff"}
                 />
                 <Typography
                   variant="h3"
                   weight="bold"
                   style={{
-                    color: isDark ? "#1A212E" : "#fff",
+                    color: isDark ? "#0F241C" : "#fff",
                     fontSize: 17,
                   }}
                 >

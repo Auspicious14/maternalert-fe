@@ -34,9 +34,9 @@ export default function FetalDevelopmentScreen() {
   const trimesterLabel = getTrimesterLabel(week);
   const weeksRemaining = getWeeksRemaining(week);
  
-  const bg = isDark ? Theme.colors.darkBg : "#F9FAFB";
+  const bg = isDark ? Theme.colors.darkBg : "#FBF7F2";
   const cardBg = isDark ? "#0F172A" : "#FFFFFF";
-  const textPrimary = isDark ? "#FFFFFF" : "#1A212E";
+  const textPrimary = isDark ? "#FFFFFF" : "#0F241C";
   const textMuted = isDark ? "#94A3B8" : "#64748B";
   const borderColor = isDark ? "rgba(255,255,255,0.08)" : "#F1F5F9";
  
@@ -304,7 +304,7 @@ export default function FetalDevelopmentScreen() {
         {/* Tip of the week */}
         <View
           style={{
-            backgroundColor: isDark ? "#0F2A1A" : "#F0FDF4",
+            backgroundColor: isDark ? "#0F2A1A" : "#EEF6F2",
             borderRadius: 20,
             padding: 20,
             borderWidth: 1,
@@ -316,7 +316,7 @@ export default function FetalDevelopmentScreen() {
             <Typography
               variant="h3"
               weight="bold"
-              style={{ color: isDark ? "#4ADE80" : "#15803D" }}
+              style={{ color: isDark ? "#4ADE80" : "#0A5C43" }}
             >
               Tip for Week {week}
             </Typography>

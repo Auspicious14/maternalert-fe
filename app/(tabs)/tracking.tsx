@@ -130,7 +130,7 @@ const CalendarDay = memo(({ item, isDark }: any) => (
     <View
       style={[
         styles.dateCircle,
-        { borderColor: isDark ? "rgba(255,255,255,0.1)" : "#E2E8F0" },
+        { borderColor: isDark ? "rgba(255,255,255,0.1)" : "#E6E1D9" },
         item.current && styles.dateCircleActive,
         item.status === "stable" && styles.dateCircleStable,
         item.status === "urgent" && styles.dateCircleUrgent,
@@ -142,7 +142,7 @@ const CalendarDay = memo(({ item, isDark }: any) => (
           styles.dateText,
           { color: isDark ? "rgba(255,255,255,0.4)" : "#64748B" },
           (item.current || item.status !== "none") && {
-            color: isDark ? "#FFFFFF" : "#1A212E",
+            color: isDark ? "#FFFFFF" : "#0F241C",
           },
           item.current && { color: "#FFFFFF" },
         ]}
@@ -167,7 +167,7 @@ const VitalsCard = memo(
       <View
         style={[
           styles.vitalIcon,
-          { backgroundColor: "rgba(45, 228, 116, 0.1)" },
+          { backgroundColor: "rgba(14, 124, 90, 0.1)" },
         ]}
       >
         <Ionicons name="pulse" size={20} color={Theme.colors.primary} />
@@ -252,11 +252,11 @@ export default function TrackingScreen() {
     pregnancyTimeline?.progressLabel ?? `${currentWeeks} weeks pregnant`;
   const trimester = pregnancyTimeline?.trimester ?? 2;
 
-  const textColor = isDark ? "#FFFFFF" : "#1A212E";
+  const textColor = isDark ? "#FFFFFF" : "#0F241C";
   const subTextColor = isDark ? "rgba(255,255,255,0.6)" : "#64748B";
   const bgColor = isDark ? Theme.colors.darkBg : Theme.colors.background;
   const cardBg = isDark ? Theme.colors.cardDark : "#FFFFFF";
-  const borderColor = isDark ? Theme.colors.borderDark : "#E2E8F0";
+  const borderColor = isDark ? Theme.colors.borderDark : "#E6E1D9";
 
   // Pregnancy content for this week
   const nutrition = useMemo(
@@ -361,7 +361,7 @@ export default function TrackingScreen() {
           <Ionicons
             name="calendar-outline"
             size={24}
-            color={isDark ? "#FFFFFF" : "#1A212E"}
+            color={isDark ? "#FFFFFF" : "#0F241C"}
           />
         </TouchableOpacity>
       </View>
@@ -394,7 +394,7 @@ export default function TrackingScreen() {
           style={[
             styles.milestoneCard,
             {
-              backgroundColor: isDark ? "rgba(45,228,116,0.08)" : "#F0FFF6",
+              backgroundColor: isDark ? "rgba(14, 124, 90,0.08)" : "#F0FFF6",
               borderColor: Theme.colors.primary,
             },
           ]}
@@ -452,7 +452,7 @@ export default function TrackingScreen() {
 
         <PregnancyContentCard
           icon="nutrition"
-          iconBg={isDark ? "rgba(45,228,116,0.12)" : "#F0FFF6"}
+          iconBg={isDark ? "rgba(14, 124, 90,0.12)" : "#F0FFF6"}
           iconColor={Theme.colors.primary}
           title={nutrition.title}
           items={nutrition.tips}
@@ -567,7 +567,7 @@ export default function TrackingScreen() {
             { backgroundColor: cardBg, borderColor: borderColor },
           ]}
         >
-          <View style={[styles.logIcon, { backgroundColor: "#FF4B4B" }]}>
+          <View style={[styles.logIcon, { backgroundColor: "#C7333B" }]}>
             <Ionicons name="sad" size={20} color="#FFFFFF" />
           </View>
           <View style={styles.logInfo}>
@@ -713,7 +713,7 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: "rgba(45, 228, 116, 0.1)",
+    backgroundColor: "rgba(14, 124, 90, 0.1)",
     justifyContent: "center",
     alignItems: "center",
   },
@@ -782,7 +782,7 @@ const styles = StyleSheet.create({
   },
   dateCircleStable: {
     borderColor: Theme.colors.primary,
-    backgroundColor: "rgba(45, 228, 116, 0.1)",
+    backgroundColor: "rgba(14, 124, 90, 0.1)",
   },
   dateCircleUrgent: {
     borderColor: Theme.colors.emergency,
@@ -915,7 +915,7 @@ const styles = StyleSheet.create({
     gap: 6,
     marginTop: 4,
     padding: 10,
-    backgroundColor: "rgba(45, 228, 116, 0.06)",
+    backgroundColor: "rgba(14, 124, 90, 0.06)",
     borderRadius: 12,
   },
   safetyNoteText: {

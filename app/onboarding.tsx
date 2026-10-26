@@ -66,7 +66,7 @@ export default function OnboardingScreen() {
           <View
             style={{
               backgroundColor: isDark ? Theme.colors.cardDark : "white",
-              borderColor: isDark ? Theme.colors.borderDark : "#E2E8F0",
+              borderColor: isDark ? Theme.colors.borderDark : "#E6E1D9",
             }}
             className="w-[85%] aspect-square rounded-[40px] shadow-sm border overflow-hidden items-center justify-center"
           >
@@ -119,10 +119,10 @@ export default function OnboardingScreen() {
             activeOpacity={0.8}
             onPress={() => router.push("/disclaimer")}
           >
-            <Typography variant="h3" weight="bold" className="text-[#121915]">
+            <Typography variant="h3" weight="bold" className="text-white">
               Get Started
             </Typography>
-            <Ionicons name="arrow-forward" size={24} color="#121915" />
+            <Ionicons name="arrow-forward" size={24} color="#FFFFFF" />
           </TouchableOpacity>
 
           <Typography

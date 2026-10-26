@@ -571,7 +571,7 @@ export default function ClinicFinderScreen() {
             style={{
               flex: 1,
               marginLeft: 10,
-              fontFamily: "Lexend-Regular",
+              fontFamily: "Outfit-Regular",
               fontSize: 14,
               color: textCol,
             }}

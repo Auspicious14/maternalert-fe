@@ -120,7 +120,7 @@ const styles = StyleSheet.create({
     backgroundColor: Theme.colors.white,
     borderRadius: 16,
     borderWidth: 1.5,
-    borderColor: '#E2E8F0',
+    borderColor: '#E6E1D9',
     paddingHorizontal: 16,
     height: 56,
     flexDirection: 'row',
@@ -137,7 +137,7 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    fontFamily: 'Lexend-Regular',
+    fontFamily: 'Outfit-Regular',
     fontSize: 16,
     color: Theme.colors.text,
     paddingVertical: 0,

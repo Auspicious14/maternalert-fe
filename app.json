@@ -4,7 +4,7 @@
     "slug": "maternalert-fe",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/maternalert-logo.png",
+    "icon": "./assets/images/icon.png",
     "scheme": "maternalertfe",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -15,8 +15,8 @@
     "android": {
       "package": "com.products.maternalert",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/maternalert-logo.png",
-        "backgroundColor": "#ffffff"
+        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "backgroundColor": "#0E7C5A"
       },
       "permissions": [
         "ACCESS_COARSE_LOCATION",
@@ -29,23 +29,28 @@
     },
     "web": {
       "output": "static",
-      "favicon": "./assets/images/maternalert-logo.png"
+      "favicon": "./assets/images/icon.png"
     },
     "plugins": [
       "expo-router",
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/matern-splash-screen.png",
-          "resizeMode": "cover",
-          "backgroundColor": "#E6F0FF"
+          "image": "./assets/images/splash-icon.png",
+          "imageWidth": 140,
+          "resizeMode": "contain",
+          "backgroundColor": "#FBF7F2",
+          "dark": {
+            "image": "./assets/images/splash-icon.png",
+            "backgroundColor": "#0B1A14"
+          }
         }
       ],
       [
         "expo-notifications",
         {
-          "icon": "./assets/images/maternalert-logo.png",
-          "color": "#2DE474"
+          "icon": "./assets/images/notification-icon.png",
+          "color": "#0E7C5A"
         }
       ]
     ],

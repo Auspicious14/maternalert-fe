@@ -16,8 +16,8 @@ export default function DisclaimerScreen() {
 
   const isDark = colorScheme === "dark";
 
-  const bgColor = isDark ? Theme.colors.darkBg : "#F9FAFB";
-  const borderColor = isDark ? Theme.colors.borderDark : "#E2E8F0";
+  const bgColor = isDark ? Theme.colors.darkBg : "#FBF7F2";
+  const borderColor = isDark ? Theme.colors.borderDark : "#E6E1D9";
   const iconBgColor = isDark ? "rgba(198, 40, 40, 0.1)" : "#FFEBEE";
   const checkboxBorderColor = isDark ? Theme.colors.borderDark : "#CBD5E0";
 
@@ -44,7 +44,7 @@ export default function DisclaimerScreen() {
             style={{ backgroundColor: iconBgColor }}
             className="items-center my-8 w-[100px] h-[100px] rounded-full justify-center self-center"
           >
-            <Ionicons name="medical" size={60} color="#C62828" />
+            <Ionicons name="medical" size={60} color="#A82A31" />
           </View>
 
           <Typography variant="h1" className="text-center mb-8">
@@ -53,7 +53,7 @@ export default function DisclaimerScreen() {
 
           <View className="gap-8 pb-8">
             <View className="flex-row gap-4 items-start">
-              <Ionicons name="alert-circle" size={24} color="#C62828" />
+              <Ionicons name="alert-circle" size={24} color="#A82A31" />
               <Typography variant="body" className="flex-1 leading-6">
                 <Typography weight="bold">
                   This app does not provide medical diagnoses.

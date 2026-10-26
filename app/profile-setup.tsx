@@ -26,11 +26,11 @@ export default function ProfileSetupScreen() {
   const [step, setStep] = useState(1);
   const totalSteps = 4;
 
-  const textColor = isDark ? "#FFFFFF" : "#121915";
-  const subTextColor = isDark ? "#94A3B8" : "#6B7280";
-  const bgColor = isDark ? "#1A1512" : "#F9FAFB";
-  const cardBg = isDark ? "#26211E" : "#FFFFFF";
-  const borderColor = isDark ? "#3A3430" : "#F1F5F9";
+  const textColor = isDark ? "#FFFFFF" : "#0F241C";
+  const subTextColor = isDark ? "#94A3B8" : "#5B6B64";
+  const bgColor = isDark ? "#0B1A14" : "#FBF7F2";
+  const cardBg = isDark ? "#13261E" : "#FFFFFF";
+  const borderColor = isDark ? "#2A3B34" : "#F1F5F9";
 
   const [ageRange, setAgeRange] = useState<
     "UNDER_18" | "AGE_18_34" | "AGE_35_PLUS"
@@ -188,7 +188,7 @@ export default function ProfileSetupScreen() {
 
               <View className="flex-1 h-10 justify-center relative">
                 <View
-                  style={{ backgroundColor: isDark ? "#3A3430" : "#EDF2F7" }}
+                  style={{ backgroundColor: isDark ? "#2A3B34" : "#EDF2F7" }}
                   className="h-2 rounded-full w-full"
                 />
                 <View
@@ -349,7 +349,7 @@ export default function ProfileSetupScreen() {
                 onPress={() => setIsFirstPregnancy(false)}
               >
                 <View
-                  style={{ backgroundColor: isDark ? "#3A3430" : "#F3F4F6" }}
+                  style={{ backgroundColor: isDark ? "#2A3B34" : "#F3F4F6" }}
                   className="w-20 h-20 rounded-full justify-center items-center mb-5"
                 >
                   <Ionicons
@@ -428,7 +428,7 @@ export default function ProfileSetupScreen() {
             </Typography>
           </View>
           <View
-            style={{ backgroundColor: isDark ? "#3A3430" : "#E2E8F0" }}
+            style={{ backgroundColor: isDark ? "#2A3B34" : "#E6E1D9" }}
             className="h-[6px] rounded-full overflow-hidden"
           >
             <View
@@ -463,12 +463,12 @@ export default function ProfileSetupScreen() {
             <Typography
               variant="h2"
               weight="bold"
-              className="text-[#121915] text-[22px]"
+              className="text-[#0F241C] text-[22px]"
             >
               {step === 4 ? "Finish Profile" : "Next"}
             </Typography>
             {step !== 4 && (
-              <Ionicons name="arrow-forward" size={24} color="#121915" />
+              <Ionicons name="arrow-forward" size={24} color="#0F241C" />
             )}
           </TouchableOpacity>
         </View>
@@ -478,10 +478,10 @@ export default function ProfileSetupScreen() {
 }
 
 function ConditionItem({ title, subtitle, selected, onPress, isDark }: any) {
-  const textColor = isDark ? "#FFFFFF" : "#121915";
-  const subTextColor = isDark ? "#94A3B8" : "#6B7280";
-  const cardBg = isDark ? "#26211E" : "#FFFFFF";
-  const borderColor = isDark ? "#3A3430" : "#F1F5F9";
+  const textColor = isDark ? "#FFFFFF" : "#0F241C";
+  const subTextColor = isDark ? "#94A3B8" : "#5B6B64";
+  const cardBg = isDark ? "#13261E" : "#FFFFFF";
+  const borderColor = isDark ? "#2A3B34" : "#F1F5F9";
 
   return (
     <TouchableOpacity

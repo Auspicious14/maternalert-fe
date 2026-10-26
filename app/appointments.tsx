@@ -196,15 +196,15 @@ export default function AppointmentsScreen() {
   return (
     <SafeAreaView
       className="flex-1"
-      style={{ backgroundColor: isDark ? Theme.colors.darkBg : "#F9FAFB" }}
+      style={{ backgroundColor: isDark ? Theme.colors.darkBg : "#FBF7F2" }}
     >
-      <Screen backgroundColor={isDark ? Theme.colors.darkBg : "#F9FAFB"}>
+      <Screen backgroundColor={isDark ? Theme.colors.darkBg : "#FBF7F2"}>
         <View className="flex-row items-center justify-between px-6 pt-4 mb-8">
           <TouchableOpacity onPress={() => router.back()}>
             <Ionicons
               name="arrow-back"
               size={28}
-              color={isDark ? Theme.colors.white : "#1A212E"}
+              color={isDark ? Theme.colors.white : "#0F241C"}
             />
           </TouchableOpacity>
           <Typography variant="h2" weight="bold" className="text-[22px]">

@@ -25,12 +25,12 @@ export const Theme = {
   colors: BaseColors,
   typography: {
     fontFamilies: {
-      regular: "Lexend-Regular",
-      medium: "Lexend-Medium",
-      semiBold: "Lexend-SemiBold",
-      bold: "Lexend-Bold",
+      regular: "Outfit-Regular",
+      medium: "Outfit-Medium",
+      semiBold: "Outfit-SemiBold",
+      bold: "Outfit-Bold",
     },
-    fontFamily: "Lexend-Regular",
+    fontFamily: "Outfit-Regular",
     baseSize: 16,
     headerSize: 24,
     subHeaderSize: 20,

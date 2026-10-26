@@ -30,7 +30,7 @@ const BP_LABEL = (sys: number, dia: number) => {
 };
  
 const STATE_COLORS: Record<string, { bg: string; text: string; border: string }> = {
-  NORMAL:    { bg: "#F0FDF4", text: "#15803D", border: "#BBF7D0" },
+  NORMAL:    { bg: "#EEF6F2", text: "#0A5C43", border: "#BBF7D0" },
   MONITOR:   { bg: "#FEFCE8", text: "#A16207", border: "#FDE68A" },
   URGENT:    { bg: "#FFF7ED", text: "#C2410C", border: "#FED7AA" },
   EMERGENCY: { bg: "#FEF2F2", text: "#991B1B", border: "#FECACA" },
@@ -44,9 +44,9 @@ export default function MyHealthRecordsScreen() {
   const { bpHistory, recentSymptoms, isLoadingLatestBP } = useHealthData();
   const { monitoringState } = useMonitoringData();
  
-  const bg = isDark ? Theme.colors.darkBg : "#F9FAFB";
+  const bg = isDark ? Theme.colors.darkBg : "#FBF7F2";
   const cardBg = isDark ? "#0F172A" : "#FFFFFF";
-  const textPrimary = isDark ? "#FFFFFF" : "#1A212E";
+  const textPrimary = isDark ? "#FFFFFF" : "#0F241C";
   const textMuted = isDark ? "#94A3B8" : "#64748B";
   const borderColor = isDark ? "rgba(255,255,255,0.08)" : "#F1F5F9";
  

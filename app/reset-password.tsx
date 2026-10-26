@@ -46,7 +46,7 @@ export default function ResetPasswordScreen() {
     }
   };
 
-  const iconColor = isDark ? "#FFFFFF" : "#1A212E";
+  const iconColor = isDark ? "#FFFFFF" : "#0F241C";
 
   if (isSuccess) {
     return (

@@ -42,7 +42,7 @@ export const Button: React.FC<ButtonProps> = ({
     switch (variant) {
       case 'emergency': return Theme.colors.white;
       case 'outline': return Theme.colors.primaryDark;
-      default: return isDark ? Theme.colors.textOnDark : '#121915';
+      default: return Theme.colors.white; // white on Guardian Green in both themes
     }
   };
 

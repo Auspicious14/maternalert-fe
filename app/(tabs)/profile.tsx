@@ -162,7 +162,7 @@ export default function ProfileScreen() {
           message: priorityData.message,
           icon: "eye",
           color: Theme.colors.primary,
-          bgColor: isDark ? "#1a2e1a" : "#F0FDF4",
+          bgColor: isDark ? "#1a2e1a" : "#EEF6F2",
           iconBg: isDark ? "#264526" : "#DCFCE7",
           buttonVariant: "secondary" as const,
         };
@@ -173,7 +173,7 @@ export default function ProfileScreen() {
             "Your blood pressure is within normal range. Keep tracking daily.",
           icon: "checkmark-circle",
           color: "#34E875",
-          bgColor: isDark ? "#1a2e1a" : "#F0FDF4",
+          bgColor: isDark ? "#1a2e1a" : "#EEF6F2",
           iconBg: isDark ? "#264526" : "#DCFCE7",
           buttonVariant: "secondary" as const,
         };
@@ -440,7 +440,7 @@ export default function ProfileScreen() {
           styles.statusCard,
           {
             backgroundColor: statusInfo.bgColor,
-            borderColor: isDark ? "rgba(255,255,255,0.05)" : "#E2E8F0",
+            borderColor: isDark ? "rgba(255,255,255,0.05)" : "#E6E1D9",
             borderWidth: 1,
           },
         ]}
@@ -525,8 +525,8 @@ export default function ProfileScreen() {
               style={[
                 styles.relationshipChip,
                 isDark && {
-                  backgroundColor: "#26211E",
-                  borderColor: "#3A3430",
+                  backgroundColor: "#13261E",
+                  borderColor: "#2A3B34",
                   borderWidth: 1,
                 },
                 contactRelationship === "MIDWIFE" &&
@@ -542,8 +542,8 @@ export default function ProfileScreen() {
               style={[
                 styles.relationshipChip,
                 isDark && {
-                  backgroundColor: "#26211E",
-                  borderColor: "#3A3430",
+                  backgroundColor: "#13261E",
+                  borderColor: "#2A3B34",
                   borderWidth: 1,
                 },
                 contactRelationship === "PARTNER" &&
@@ -559,8 +559,8 @@ export default function ProfileScreen() {
               style={[
                 styles.relationshipChip,
                 isDark && {
-                  backgroundColor: "#26211E",
-                  borderColor: "#3A3430",
+                  backgroundColor: "#13261E",
+                  borderColor: "#2A3B34",
                   borderWidth: 1,
                 },
                 contactRelationship === "FAMILY_MEMBER" &&
@@ -714,7 +714,7 @@ export default function ProfileScreen() {
         <Card style={styles.clinicCard}>
           <View style={styles.clinicHeader}>
             <View style={[styles.clinicIcon, { backgroundColor: "#FFEBEE" }]}>
-              <Ionicons name="medical" size={20} color="#C62828" />
+              <Ionicons name="medical" size={20} color="#A82A31" />
             </View>
             <View style={styles.clinicContent}>
               <Typography variant="h3">{profile.clinicName}</Typography>
@@ -846,7 +846,7 @@ export default function ProfileScreen() {
             style={{
               flexDirection: "row",
               alignItems: "center",
-              backgroundColor: isDark ? "#26211E" : "#F8FAFC",
+              backgroundColor: isDark ? "#13261E" : "#F8FAFC",
               padding: 8,
               borderRadius: 8,
             }}
@@ -885,7 +885,7 @@ export default function ProfileScreen() {
           <TouchableOpacity
             style={[
               styles.themeOption,
-              isDark && { backgroundColor: "#26211E", borderColor: "#3A3430" },
+              isDark && { backgroundColor: "#13261E", borderColor: "#2A3B34" },
               themePreference === "system" &&
                 (isDark
                   ? styles.themeOptionActiveDark
@@ -898,7 +898,7 @@ export default function ProfileScreen() {
           <TouchableOpacity
             style={[
               styles.themeOption,
-              isDark && { backgroundColor: "#26211E", borderColor: "#3A3430" },
+              isDark && { backgroundColor: "#13261E", borderColor: "#2A3B34" },
               themePreference === "light" &&
                 (isDark
                   ? styles.themeOptionActiveDark
@@ -911,7 +911,7 @@ export default function ProfileScreen() {
           <TouchableOpacity
             style={[
               styles.themeOption,
-              isDark && { backgroundColor: "#26211E", borderColor: "#3A3430" },
+              isDark && { backgroundColor: "#13261E", borderColor: "#2A3B34" },
               themePreference === "dark" &&
                 (isDark
                   ? styles.themeOptionActiveDark
@@ -960,7 +960,7 @@ const styles = StyleSheet.create({
     padding: 4,
     borderRadius: 60,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: "#E6E1D9",
     backgroundColor: Theme.colors.white,
   },
   avatarPlaceholder: {
@@ -1091,11 +1091,11 @@ const styles = StyleSheet.create({
     marginTop: 12,
     fontSize: 16,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: "#E6E1D9",
   },
   contactInputDark: {
-    backgroundColor: "#26211E",
-    borderColor: "#3A3430",
+    backgroundColor: "#13261E",
+    borderColor: "#2A3B34",
     color: "#FFFFFF",
   },
   saveContactButton: {
@@ -1163,7 +1163,7 @@ const styles = StyleSheet.create({
     borderBottomColor: "#F3F4F6",
   },
   settingRowDark: {
-    borderBottomColor: "#3A3430",
+    borderBottomColor: "#2A3B34",
   },
   themeRow: {
     flexDirection: "row",
@@ -1218,12 +1218,12 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     backgroundColor: "#FFFFFF",
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: "#E6E1D9",
   },
 
   quickActionCardDark: {
-    backgroundColor: "#26211E",
-    borderColor: "#3A3430",
+    backgroundColor: "#13261E",
+    borderColor: "#2A3B34",
   },
 
   quickActionIcon: {

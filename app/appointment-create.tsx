@@ -69,15 +69,15 @@ export default function AppointmentCreateScreen() {
   return (
     <SafeAreaView
       className="flex-1"
-      style={{ backgroundColor: isDark ? Theme.colors.darkBg : "#F9FAFB" }}
+      style={{ backgroundColor: isDark ? Theme.colors.darkBg : "#FBF7F2" }}
     >
-      <Screen backgroundColor={isDark ? Theme.colors.darkBg : "#F9FAFB"}>
+      <Screen backgroundColor={isDark ? Theme.colors.darkBg : "#FBF7F2"}>
         <View className="px-6 pt-4 mb-8 flex-row items-center">
           <TouchableOpacity onPress={() => router.back()}>
             <Ionicons
               name="arrow-back"
               size={28}
-              color={isDark ? Theme.colors.white : "#1A212E"}
+              color={isDark ? Theme.colors.white : "#0F241C"}
             />
           </TouchableOpacity>
           <Typography variant="h2" weight="bold" className="text-[22px] ml-4">
@@ -139,7 +139,7 @@ export default function AppointmentCreateScreen() {
               Title
             </Typography>
             <TextInput
-              className={`px-4 py-3 rounded-[16px] border ${isDark ? "bg-[#020617] border-white/10 text-white" : "bg-white border-[#F1F5F9] text-[#1A212E]"}`}
+              className={`px-4 py-3 rounded-[16px] border ${isDark ? "bg-[#020617] border-white/10 text-white" : "bg-white border-[#F1F5F9] text-[#0F241C]"}`}
               placeholder="e.g. Routine ANC Checkup"
               placeholderTextColor={isDark ? "#94A3B8" : "#94A3B8"}
               value={title}
@@ -155,7 +155,7 @@ export default function AppointmentCreateScreen() {
               Date & Time
             </Typography>
             <TextInput
-              className={`px-4 py-3 rounded-[16px] border ${isDark ? "bg-[#020617] border-white/10 text-white" : "bg-white border-[#F1F5F9] text-[#1A212E]"}`}
+              className={`px-4 py-3 rounded-[16px] border ${isDark ? "bg-[#020617] border-white/10 text-white" : "bg-white border-[#F1F5F9] text-[#0F241C]"}`}
               value={dateTime}
               onChangeText={setDateTime}
               placeholder="YYYY-MM-DDTHH:MM"
@@ -171,7 +171,7 @@ export default function AppointmentCreateScreen() {
               Location (Optional)
             </Typography>
             <TextInput
-              className={`px-4 py-3 rounded-[16px] border ${isDark ? "bg-[#020617] border-white/10 text-white" : "bg-white border-[#F1F5F9] text-[#1A212E]"}`}
+              className={`px-4 py-3 rounded-[16px] border ${isDark ? "bg-[#020617] border-white/10 text-white" : "bg-white border-[#F1F5F9] text-[#0F241C]"}`}
               placeholder="Clinic or hospital name"
               placeholderTextColor={isDark ? "#94A3B8" : "#94A3B8"}
               value={location}
@@ -187,7 +187,7 @@ export default function AppointmentCreateScreen() {
               Notes (Optional)
             </Typography>
             <TextInput
-              className={`px-4 py-3 rounded-[16px] border min-h-[100px] ${isDark ? "bg-[#020617] border-white/10 text-white" : "bg-white border-[#F1F5F9] text-[#1A212E]"}`}
+              className={`px-4 py-3 rounded-[16px] border min-h-[100px] ${isDark ? "bg-[#020617] border-white/10 text-white" : "bg-white border-[#F1F5F9] text-[#0F241C]"}`}
               placeholder="Any additional notes..."
               placeholderTextColor={isDark ? "#94A3B8" : "#94A3B8"}
               value={notes}
