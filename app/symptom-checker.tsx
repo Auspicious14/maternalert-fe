@@ -114,6 +114,35 @@ const SYMPTOMS = [
 
 type SymptomId = (typeof SYMPTOMS)[number]["id"];
 
+// Offline safety net. The server's care-priority engine is the source of
+// truth, but if the server can't be reached a danger sign must still route the
+// mother to "go to a facility now" rather than a generic error toast.
+// Based on WHO pregnancy danger signs; to be reviewed by our clinical lead.
+const LOCAL_RED_FLAGS: readonly string[] = [
+  "ABNORMAL_BODY_MOVEMENT", // fits / convulsions
+  "VAGINAL_BLEEDING",
+  "BLURRED_VISION",
+  "DIFFICULTY_BREATHING",
+  "CHEST_PAIN",
+  "FAINTING",
+  "CONFUSION",
+  "REDUCED_FETAL_MOVEMENT",
+  "FEVER",
+];
+
+function hasLocalRedFlag(
+  selected: readonly string[],
+  subOptions: Record<string, string[]>,
+): boolean {
+  if (selected.some((id) => LOCAL_RED_FLAGS.includes(id))) return true;
+  // Upper-abdominal / below-the-ribs pain can signal severe pre-eclampsia.
+  const pain = subOptions["ABDOMINAL_PAIN"] ?? [];
+  return pain.includes("UPPER_ABDOMEN") || pain.includes("BELOW_RIBS");
+}
+
+const OFFLINE_DANGER_MESSAGE =
+  "We could not reach our server, but one or more of your symptoms can be a danger sign in pregnancy. Go to the nearest health facility now or call your emergency contact.";
+
 import { useHealthData } from "../hooks/useHealthData";
 import { useMonitoringData } from "../hooks/useMonitoringData";
 
@@ -222,6 +251,13 @@ export default function SymptomCheckerScreen() {
       }
     } catch (error) {
       console.error("Failed to submit symptoms", error);
+      if (hasLocalRedFlag(selected, subOptions)) {
+        router.push({
+          pathname: "/nurse-summary",
+          params: { msg: OFFLINE_DANGER_MESSAGE },
+        });
+        return;
+      }
       showToast({
         type: "error",
         message: "Failed to submit symptoms. Please try again.",

@@ -31,6 +31,11 @@ import { useUserProfile } from "../../hooks/useUserProfile";
 import { getPersonalizedGuidance } from "../../services/personalization";
 import axios from "axios";
 import apiClient from "@/api/client";
+import {
+  ALERT_SENT_MESSAGE,
+  showEmergencyFallback,
+  triggerEmergencyAlert,
+} from "../../services/emergencyAlert";
 
 // const API = process.env.EXPO_PUBLIC_API_URL ?? "";
 
@@ -42,23 +47,23 @@ function FloatingEmergencyButton() {
   const [modalVisible, setModalVisible] = useState(false);
   const [triggering, setTriggering] = useState(false);
   const [triggered, setTriggered] = useState(false);
+  const { profile } = useUserProfile();
+  const router = useRouter();
 
   async function handleConfirm() {
     setTriggering(true);
-    try {
-      const res = await apiClient.post("/emergency/trigger");
-
-      if (res.status !== 201) throw new Error("Server error");
+    // Accept any 2xx (previously only 201, so a 200 showed "failed" even
+    // though the alert went out). On failure, offer phone-based fallbacks
+    // that do not depend on our server.
+    const ok = await triggerEmergencyAlert();
+    setTriggering(false);
+    if (ok) {
       setTriggered(true);
-    } catch {
-      Alert.alert(
-        "Could not send alert",
-        "Check your internet connection and try again. If urgent, call your health facility directly.",
-        [{ text: "OK" }],
-      );
+    } else {
       setModalVisible(false);
-    } finally {
-      setTriggering(false);
+      showEmergencyFallback(profile?.emergencyContactPhone, () =>
+        router.push("/(tabs)/profile"),
+      );
     }
   }
 
@@ -153,8 +158,7 @@ function FloatingEmergencyButton() {
                     marginBottom: 24,
                   }}
                 >
-                  Your emergency contact and health facility have been notified
-                  via WhatsApp and SMS. Stay calm — help is coming.
+                  {ALERT_SENT_MESSAGE}
                 </Typography>
                 <TouchableOpacity
                   onPress={handleClose}

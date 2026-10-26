@@ -15,9 +15,11 @@ import Theme from "../constants/theme";
 import { useColorScheme } from "../hooks/use-color-scheme";
 import { useHealthData } from "../hooks/useHealthData";
 import { useUserProfile } from "../hooks/useUserProfile";
-import apiClient from "@/api/client";
-
-const API = process.env.EXPO_PUBLIC_API_URL ?? "";
+import {
+  ALERT_SENT_MESSAGE,
+  showEmergencyFallback,
+  triggerEmergencyAlert,
+} from "../services/emergencyAlert";
 
 type AlertState = "idle" | "sending" | "sent" | "failed";
 
@@ -40,20 +42,14 @@ export default function EmergencyScreen() {
   // ── SEND ALERT (WhatsApp + SMS to contact & facility) ───────────────────
  async function handleSendAlert() {
   setAlertState("sending");
-  try {
-    const res = await apiClient.post("/emergency/trigger");
-    if (res.status !== 200 && res.status !== 201) throw new Error("Server error");
+  const ok = await triggerEmergencyAlert();
+  if (ok) {
     setAlertState("sent");
-  } catch (error: any) {
-    console.log("Emergency trigger error:", error?.response?.status, error?.response?.data, error?.message);
+  } else {
+    // "failed" state still lets her tap Send again from the screen.
     setAlertState("failed");
-    Alert.alert(
-      "Alert failed to send",
-      "Could not reach the server. Please call your emergency contact directly.",
-      [
-        { text: "Call Now", onPress: handleDirectCall },
-        { text: "Try Again", onPress: () => setAlertState("idle") },
-      ],
+    showEmergencyFallback(profile?.emergencyContactPhone, () =>
+      router.push("/(tabs)/profile"),
     );
   }
 }
@@ -219,8 +215,7 @@ export default function EmergencyScreen() {
                     lineHeight: 18,
                   }}
                 >
-                  Your emergency contact and health facility have been notified
-                  via WhatsApp and SMS.
+                  {ALERT_SENT_MESSAGE}
                 </Typography>
               </View>
 

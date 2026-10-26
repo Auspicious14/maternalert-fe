@@ -1,11 +1,18 @@
 import axios from "axios";
+import Constants from "expo-constants";
 import { appEvents } from "./event-emitter";
 import { TokenStorage } from "./storage";
 
-const BASE_URL = process.env.EXPO_PUBLIC_API_URL;
+// Fall back to app.json "extra.apiUrl" so a build made without the .env file
+// doesn't silently ship with an undefined API URL (every request would fail,
+// including emergency alerts).
+const BASE_URL =
+  process.env.EXPO_PUBLIC_API_URL ??
+  (Constants.expoConfig?.extra?.apiUrl as string | undefined);
 
 const apiClient = axios.create({
   baseURL: BASE_URL,
+  timeout: 20000,
   headers: {
     "Content-Type": "application/json",
     Accept: "application/json",

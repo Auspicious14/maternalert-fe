@@ -49,8 +49,10 @@ export default function BPEntryScreen() {
   const isDark = colorScheme === "dark";
   const { showToast } = useToast();
 
-  const [systolic, setSystolic] = useState("120");
-  const [diastolic, setDiastolic] = useState("80");
+  // Start empty: pre-filling 120/80 let a mother tap Save without measuring,
+  // recording a fake "normal" reading that hides real risk from her clinic.
+  const [systolic, setSystolic] = useState("");
+  const [diastolic, setDiastolic] = useState("");
   const [currentDate, setCurrentDate] = useState(new Date());
 
   const [showConfirmation, setShowConfirmation] = useState(false);
@@ -72,45 +74,9 @@ export default function BPEntryScreen() {
     hour12: true,
   }).format(currentDate);
 
-  const handleSave = async () => {
+  const scheduleTierNotifications = async (tier: Tier) => {
     try {
-      if (validationError) {
-        showToast({ type: "error", message: validationError });
-        return;
-      }
-
-      const sys = parseInt(systolic, 10);
-      const dia = parseInt(diastolic, 10);
-      const tier = getTier(sys, dia);
-      setCurrentTier(tier);
-
-      const savedReading = await addBP({
-        systolic: sys,
-        diastolic: dia,
-      });
-
-      await notificationService.handleBPLogged(
-        savedReading?.reading?.recordedAt || savedReading?.recordedAt,
-      );
-
-      // Analyze trends after saving
-      const trendAlerts = await analyzeLatestTrends();
-      if (trendAlerts.length > 0) {
-        // You could show a trend modal here if needed,
-        // but the notification handles the alert.
-        console.log("Trend alerts detected:", trendAlerts);
-      }
-
-      if (tier === 1) {
-        showToast({
-          type: "success",
-          message: "Blood pressure logged successfully.",
-        });
-        router.back();
-      } else {
-        setShowConfirmation(true);
-
-        if (tier === 2 || tier === 3) {
+      if (tier === 2 || tier === 3) {
           // Schedule follow-up in 4 hours
           await notificationService.scheduleNotification(
             "Follow-up BP Check",
@@ -157,13 +123,67 @@ export default function BPEntryScreen() {
             },
           );
         }
+    } catch (error) {
+      // Local notifications can fail (e.g. permission denied); the on-screen
+      // warning is still shown, so never let this block the flow.
+      console.error("Failed to schedule BP notifications", error);
+    }
+  };
+
+  const handleSave = async () => {
+    if (validationError) {
+      showToast({ type: "error", message: validationError });
+      return;
+    }
+
+    const sys = parseInt(systolic, 10);
+    const dia = parseInt(diastolic, 10);
+    const tier = getTier(sys, dia);
+    setCurrentTier(tier);
+
+    // SAFETY: show the warning and fire local alerts BEFORE talking to the
+    // server. Previously the warning only appeared after a successful save, so
+    // a dangerous reading entered while offline (or while the free-tier server
+    // was asleep) produced only "Failed to save" and no danger warning.
+    if (tier !== 1) {
+      setShowConfirmation(true);
+      await scheduleTierNotifications(tier);
+    }
+
+    let saved = false;
+    try {
+      const savedReading = await addBP({ systolic: sys, diastolic: dia });
+      saved = true;
+
+      try {
+        await notificationService.handleBPLogged(
+          savedReading?.reading?.recordedAt || savedReading?.recordedAt,
+        );
+        const trendAlerts = await analyzeLatestTrends();
+        if (__DEV__ && trendAlerts.length > 0) {
+          console.log("Trend alerts detected:", trendAlerts);
+        }
+      } catch (postSaveError) {
+        // The reading IS saved; reminders/trend analysis failing is non-fatal.
+        console.error("Post-save BP processing failed", postSaveError);
       }
     } catch (error) {
       console.error("Failed to save BP reading", error);
       showToast({
         type: "error",
-        message: "Failed to save blood pressure reading. Please try again.",
+        message:
+          tier === 1
+            ? "Could not save your reading. Check your internet and try again."
+            : "Could not save your reading, so your clinic has not seen it. Follow the advice on screen and contact your clinic directly.",
       });
+    }
+
+    if (tier === 1 && saved) {
+      showToast({
+        type: "success",
+        message: "Blood pressure logged successfully.",
+      });
+      router.back();
     }
   };
 
@@ -371,7 +391,7 @@ export default function BPEntryScreen() {
             </Typography>
           </View>
 
-          {validationError ? (
+          {validationError && (systolic || diastolic) ? (
             <Typography variant="caption" className="text-red-500 text-center mb-3">
               {validationError}
             </Typography>

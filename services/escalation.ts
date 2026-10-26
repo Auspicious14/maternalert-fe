@@ -38,7 +38,7 @@ export const getTierInfo = (tier: Tier): TierInfo => {
       return {
         tier: 3,
         label: "URGENT",
-        color: Colors.accent, // Urgent uses accent color as per instructions
+        color: "#EA580C", // Darker orange so URGENT is visibly different from MONITOR
         response: "Your BP is high. Contact your clinic within 24 hours. Do not ignore this.",
         actionLabel: "Call Clinic",
         actionRoute: "/clinic-finder",

@@ -11,9 +11,12 @@ import { Ionicons } from "@expo/vector-icons";
 import { Typography } from "../components/shared/Typography";
 import { useColorScheme } from "../hooks/use-color-scheme";
 import Theme from "../constants/theme";
-import apiClient from "@/api/client";
- 
-const API = process.env.EXPO_PUBLIC_API_URL ?? "";
+import { useUserProfile } from "../hooks/useUserProfile";
+import {
+  ALERT_SENT_MESSAGE,
+  showEmergencyFallback,
+  triggerEmergencyAlert,
+} from "../services/emergencyAlert";
  
 interface EmergencyButtonProps {
   /** Pass as floating button on any screen */
@@ -26,23 +29,17 @@ export function EmergencyButton({ floating = false }: EmergencyButtonProps) {
   const [modalVisible, setModalVisible] = useState(false);
   const [triggering, setTriggering] = useState(false);
   const [triggered, setTriggered] = useState(false);
- 
+  const { profile } = useUserProfile();
+
   async function confirmAndTrigger() {
     setTriggering(true);
-    try {
-      const res = await apiClient.post(`/emergency/trigger`);
- 
-      if (res.status !== 200 && res.status !== 201) throw new Error("Failed to trigger emergency");
- 
+    const ok = await triggerEmergencyAlert();
+    setTriggering(false);
+    if (ok) {
       setTriggered(true);
-    } catch {
-      Alert.alert(
-        "Could not send alert",
-        "Check your internet connection and try again. If this persists, call your health facility directly.",
-        [{ text: "OK" }],
-      );
-    } finally {
-      setTriggering(false);
+    } else {
+      setModalVisible(false);
+      showEmergencyFallback(profile?.emergencyContactPhone);
     }
   }
  
@@ -152,8 +149,7 @@ function EmergencyContent({
           variant="body"
           style={{ color: "#64748B", textAlign: "center", lineHeight: 24 }}
         >
-          Your emergency contact and health facility have been notified.
-          Help is on the way.
+          {ALERT_SENT_MESSAGE}
         </Typography>
       </View>
     );
@@ -262,8 +258,7 @@ function EmergencyModal({
                 lineHeight: 22,
               }}
             >
-              Your emergency contact and health facility have been notified via
-              WhatsApp and SMS. Stay calm — help is coming.
+              {ALERT_SENT_MESSAGE}
             </Typography>
             <TouchableOpacity
               onPress={onClose}

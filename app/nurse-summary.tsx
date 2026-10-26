@@ -15,6 +15,7 @@ import Theme from "../constants/theme";
 import { useColorScheme } from "../hooks/use-color-scheme";
 import { useHealthData } from "../hooks/useHealthData";
 import { useUserProfile } from "../hooks/useUserProfile";
+import { EMERGENCY_LINE } from "../services/emergencyAlert";
 
 export default function NurseSummaryScreen() {
   const router = useRouter();
@@ -27,7 +28,8 @@ export default function NurseSummaryScreen() {
     if (profile?.emergencyContactPhone) {
       Linking.openURL(`tel:${profile.emergencyContactPhone}`);
     } else {
-      Linking.openURL("tel:999"); // Fallback to local emergency services
+      // Was "999" (the UK number). 112 is Nigeria's national emergency line.
+      Linking.openURL(`tel:${EMERGENCY_LINE}`);
     }
   };
 
