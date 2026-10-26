@@ -7,109 +7,268 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  Text,
 } from "react-native";
 import { Screen } from "../components/shared/Screen";
 import { Typography } from "../components/shared/Typography";
 import { useToast } from "../components/ui/ToastProvider";
 import Theme from "../constants/theme";
 import { useColorScheme } from "../hooks/use-color-scheme";
-
-// ──────────────────────────────────────────────────────────────────────────────
-// Symptom definitions
-// Each symptom may have:
-//   - subOptions: contextual follow-up choices (presented when the symptom is selected)
-//   - note: a contextual informational note
-//   - hasOtherInput: if the sub-option includes a free-text pain location field
-// ──────────────────────────────────────────────────────────────────────────────
+import { useHealthData } from "../hooks/useHealthData";
+import { useMonitoringData } from "../hooks/useMonitoringData";
 
 const SYMPTOMS = [
   {
     id: "HEADACHE",
     title: "Headache",
     icon: "flash",
-    subOptions: [
-      { id: "FEVER", label: "With fever" },
-      { id: "CHILLS_AND_RIGORS", label: "With chills and rigors" },
-      { id: "VOMITING", label: "With vomiting" },
-      { id: "NAUSEA", label: "With nausea" },
-    ],
-    subOptionsPrompt: "Is the headache associated with any of the following?",
-  },
-  { id: "BLURRED_VISION", title: "Blurred Vision", icon: "eye-off" },
-  {
-    id: "LEG_SWELLING",
-    title: "Leg Swelling",
-    subtitle: "Swelling of one or both legs",
-    icon: "hand-left",
-    subOptions: [
-      { id: "PAINFUL", label: "Painful leg swelling" },
-      { id: "NON_PAINFUL", label: "Non-painful leg swelling" },
-      { id: "FROTHY_URINE", label: "Also have frothy urine" },
-    ],
-    subOptionsPrompt: "Is the leg swelling painful or non-painful?",
-  },
-  {
-    id: "FROTHY_URINE",
-    title: "Frothy Urine",
-    subtitle: "Urine forming foam",
-    icon: "water",
-  },
-  {
-    id: "VAGINAL_BLEEDING",
-    title: "Vaginal Bleeding",
-    icon: "medical",
-    note: "Any vaginal bleeding requires medical attention, regardless of volume. This symptom most commonly occurs after the first trimester.",
-    subOptions: [
-      { id: "ASSOCIATED_WITH_ABDOMINAL_PAIN", label: "With abdominal pain" },
-    ],
-    subOptionsPrompt: "Is the bleeding associated with abdominal pain?",
+    groups: [
+      {
+        name: "Type",
+        options: [
+          { id: "MILD_DULL", label: "Mild/dull" },
+          { id: "THROBBING", label: "Throbbing/pulsating" },
+          { id: "PRESSURE", label: "Pressure/tightness" },
+          { id: "SHARP", label: "Sharp" },
+          { id: "SEVERE_SUDDEN", label: "Severe/sudden" },
+          { id: "ONE_SIDED", label: "One-sided" },
+          { id: "BEHIND_EYES", label: "Behind the eyes" },
+        ]
+      },
+      {
+        name: "Duration",
+        options: [
+          { id: "LESS_THAN_1_HOUR", label: "Less than 1 hour" },
+          { id: "1_6_HOURS", label: "1–6 hours" },
+          { id: "MORE_THAN_6_HOURS", label: "More than 6 hours" },
+          { id: "PERSISTENT", label: "Persistent/recurring" },
+        ]
+      },
+      {
+        name: "Associated symptoms",
+        options: [
+          { id: "BLURRED_VISION", label: "Blurred vision" },
+          { id: "SEEING_SPOTS", label: "Seeing spots/flashes" },
+          { id: "DIZZINESS", label: "Dizziness" },
+          { id: "VOMITING", label: "Vomiting" },
+          { id: "LIGHT_SENSITIVITY", label: "Sensitivity to light" },
+          { id: "WEAKNESS", label: "Weakness" },
+        ]
+      }
+    ]
   },
   {
     id: "VAGINAL_DISCHARGE",
     title: "Vaginal Discharge",
     subtitle: "Unusual discharge",
     icon: "water-outline",
-  },
-  { id: "FEVER", title: "Fever", icon: "thermometer" },
-  {
-    id: "REDUCED_FETAL_MOVEMENT",
-    title: "Reduced Fetal Movement",
-    icon: "heart",
-  },
-  { id: "DIFFICULTY_BREATHING", title: "Difficulty Breathing", icon: "walk" },
-  {
-    id: "ABNORMAL_BODY_MOVEMENT",
-    title: "Abnormal Body Movement",
-    subtitle: "Fits or convulsions",
-    icon: "pulse",
+    groups: [
+      {
+        name: "Colour",
+        options: [
+          { id: "CLEAR", label: "Clear" },
+          { id: "WHITE", label: "White" },
+          { id: "CREAMY", label: "Creamy" },
+          { id: "YELLOW", label: "Yellow" },
+          { id: "GREEN", label: "Green" },
+          { id: "GREY", label: "Grey" },
+          { id: "BROWN", label: "Brown" },
+          { id: "PINK", label: "Pink" },
+          { id: "BLOODY", label: "Red/bloody" },
+        ]
+      },
+      {
+        name: "Consistency",
+        options: [
+          { id: "CONTINUOUS_WATERY", label: "Watery" },
+          { id: "THIN", label: "Thin" },
+          { id: "CREAMY_CONSISTENCY", label: "Creamy" },
+          { id: "THICK", label: "Thick" },
+          { id: "STICKY", label: "Sticky" },
+          { id: "CLUMPY", label: "Clumpy" },
+        ]
+      },
+      {
+        name: "Odour",
+        options: [
+          { id: "NO_SMELL", label: "No unusual smell" },
+          { id: "MILD_SMELL", label: "Mild" },
+          { id: "FOUL_SMELL", label: "Strong/foul smell" },
+        ]
+      },
+      {
+        name: "Associated symptoms",
+        options: [
+          { id: "ITCHING", label: "Itching" },
+          { id: "BURNING", label: "Burning" },
+          { id: "VULVAL_PAIN", label: "Vaginal/vulval pain" },
+          { id: "PAIN_WHEN_URINATING", label: "Pain when urinating" },
+          { id: "LOWER_ABDOMINAL_PAIN", label: "Lower abdominal pain" },
+          { id: "FEVER", label: "Fever" },
+        ]
+      }
+    ]
   },
   {
     id: "ABDOMINAL_PAIN",
-    title: "Abdominal Pain",
+    title: "Abdominal/Pelvic Pain",
     icon: "alert-circle",
-    subOptions: [
-      { id: "LOWER_ABDOMEN", label: "Lower abdomen" },
-      { id: "UPPER_ABDOMEN", label: "Upper abdomen" },
-      { id: "BELOW_RIBS", label: "Just below the ribs" },
-      { id: "OTHER", label: "Describe the pain" },
-    ],
-    subOptionsPrompt: "Where is the abdominal pain located?",
-    hasLocationInput: true,
+    groups: [
+      {
+        name: "Location",
+        options: [
+          { id: "LOWER_ABDOMEN", label: "Lower abdomen" },
+          { id: "UPPER_ABDOMEN", label: "Upper abdomen" },
+          { id: "RIGHT_SIDE", label: "Right side" },
+          { id: "LEFT_SIDE", label: "Left side" },
+          { id: "GENERALIZED", label: "Generalized" },
+          { id: "PELVIC", label: "Pelvic area" },
+        ]
+      },
+      {
+        name: "Type",
+        options: [
+          { id: "CRAMPING", label: "Cramping" },
+          { id: "SHARP", label: "Sharp" },
+          { id: "STABBING", label: "Stabbing" },
+          { id: "BURNING", label: "Burning" },
+          { id: "PRESSURE", label: "Pressure" },
+          { id: "CONSTANT", label: "Constant" },
+          { id: "COMES_AND_GOES", label: "Comes and goes" },
+        ]
+      }
+    ]
   },
-  { id: "PAINFUL_URINATION", title: "Painful Urination", icon: "alert" },
-  { id: "FREQUENT_URINATION", title: "Frequent Urination", icon: "refresh" },
+  {
+    id: "VAGINAL_BLEEDING",
+    title: "Vaginal Bleeding",
+    icon: "medical",
+    groups: [
+      {
+        name: "Volume",
+        options: [
+          { id: "SPOTTING", label: "Spotting" },
+          { id: "LIGHT_BLEEDING", label: "Light bleeding" },
+          { id: "MODERATE_BLEEDING", label: "Moderate bleeding" },
+          { id: "HEAVY_BLEEDING", label: "Heavy bleeding" },
+        ]
+      },
+      {
+        name: "Colour",
+        options: [
+          { id: "PINK", label: "Pink" },
+          { id: "BRIGHT_RED", label: "Bright red" },
+          { id: "DARK_RED", label: "Dark red" },
+          { id: "BROWN", label: "Brown" },
+        ]
+      }
+    ]
+  },
+  {
+    id: "NAUSEA_VOMITING",
+    title: "Nausea/Vomiting",
+    icon: "restaurant",
+    groups: [
+      {
+        name: "Severity",
+        options: [
+          { id: "MILD_NAUSEA", label: "Mild nausea" },
+          { id: "SEVERE_NAUSEA", label: "Severe nausea" },
+          { id: "VOMITING_1_2", label: "Vomiting 1–2 times" },
+          { id: "FREQUENT_VOMITING", label: "Frequent vomiting" },
+          { id: "UNABLE_TO_KEEP_FLUIDS", label: "Unable to keep food/fluids down" },
+          { id: "BLOOD_IN_VOMIT", label: "Blood in vomit" },
+        ]
+      }
+    ]
+  },
+  {
+    id: "URINARY_SYMPTOMS",
+    title: "Urinary Symptoms",
+    icon: "refresh",
+    groups: [
+      {
+        name: "Type",
+        options: [
+          { id: "FREQUENT_URINATION", label: "Frequent urination" },
+          { id: "PAIN_BURNING", label: "Pain/burning when urinating" },
+          { id: "BLOOD_IN_URINE", label: "Blood in urine" },
+          { id: "DIFFICULTY_URINATING", label: "Difficulty urinating" },
+          { id: "URGENCY", label: "Urgency" },
+          { id: "LOWER_ABD_PAIN", label: "Lower abdominal pain" },
+          { id: "FOUL_SMELLING_URINE", label: "Foul-smelling urine" },
+        ]
+      }
+    ]
+  },
+  {
+    id: "FEVER",
+    title: "Fever/Infection",
+    icon: "thermometer",
+    groups: [
+      {
+        name: "Symptoms",
+        options: [
+          { id: "MILD_FEVER", label: "Mild fever" },
+          { id: "HIGH_FEVER", label: "High fever" },
+          { id: "CHILLS", label: "Chills" },
+          { id: "WEAKNESS", label: "Feeling unusually weak" },
+          { id: "FOUL_DISCHARGE", label: "Foul-smelling vaginal discharge" },
+        ]
+      }
+    ]
+  },
+  {
+    id: "REDUCED_FETAL_MOVEMENT",
+    title: "Fetal Movement",
+    icon: "heart",
+    groups: [
+      {
+        name: "Status (if established)",
+        options: [
+          { id: "LESS_THAN_USUAL", label: "Less than usual" },
+          { id: "SIGNIFICANTLY_REDUCED", label: "Significantly reduced" },
+          { id: "NO_MOVEMENT", label: "No movement felt" },
+        ]
+      }
+    ]
+  },
+  { id: "DIFFICULTY_BREATHING", title: "Difficulty Breathing", icon: "walk" },
   { id: "CHEST_PAIN", title: "Chest Pain", icon: "heart-dislike" },
   { id: "PALPITATIONS", title: "Palpitations", subtitle: "Fast or irregular heartbeat", icon: "pulse-outline" },
   { id: "FAINTING", title: "Fainting", subtitle: "Loss of consciousness", icon: "bed" },
+  { id: "ABNORMAL_BODY_MOVEMENT", title: "Convulsion/Seizure", icon: "pulse" },
   { id: "CONFUSION", title: "Confusion", icon: "help-circle" },
-  { id: "PERSISTENT_ITCHING", title: "Persistent Itching", subtitle: "Severe itching (especially hands/feet)", icon: "hand-right" },
-
+  { id: "SUDDEN_SWELLING", title: "Sudden Severe Swelling", icon: "hand-left" },
+  { id: "PERSISTENT_ITCHING", title: "Persistent Itching", subtitle: "Especially palms/soles", icon: "hand-right" },
+  { id: "BLURRED_VISION", title: "Blurred Vision / Spots", icon: "eye-off" },
   {
-    id: "OTHER",
-    title: "Something else",
-    subtitle: "Type what you feel",
-    icon: "create",
+    id: "MALARIA",
+    title: "Malaria",
+    subtitle: "Suspected malaria symptoms",
+    icon: "bug",
+    groups: [
+      {
+        name: "Symptoms",
+        options: [
+          { id: "FEVER", label: "Fever" },
+          { id: "HIGH_FEVER", label: "High fever" },
+          { id: "HEADACHE", label: "Headache" },
+          { id: "GENERAL_BODY_PAIN", label: "General body pain" },
+          { id: "VOMITING", label: "Vomiting" },
+          { id: "CHILLS", label: "Chills/shivering" },
+          { id: "SWEATING", label: "Sweating" },
+        ]
+      }
+    ]
   },
+  {
+    id: "ANOREXIA",
+    title: "Anorexia / Loss of Appetite",
+    subtitle: "Not feeling like eating",
+    icon: "restaurant-outline",
+  },
+  { id: "OTHER", title: "Something else", subtitle: "Type what you feel", icon: "create" },
 ] as const;
 
 type SymptomId = (typeof SYMPTOMS)[number]["id"];
@@ -143,8 +302,6 @@ function hasLocalRedFlag(
 const OFFLINE_DANGER_MESSAGE =
   "We could not reach our server, but one or more of your symptoms can be a danger sign in pregnancy. Go to the nearest health facility now or call your emergency contact.";
 
-import { useHealthData } from "../hooks/useHealthData";
-import { useMonitoringData } from "../hooks/useMonitoringData";
 
 export default function SymptomCheckerScreen() {
   const router = useRouter();
@@ -158,8 +315,14 @@ export default function SymptomCheckerScreen() {
   const [otherSymptom, setOtherSymptom] = useState("");
   // sub-options: { [symptomId]: string[] }
   const [subOptions, setSubOptions] = useState<Record<string, string[]>>({});
-  // pain location for abdominal pain
-  const [painLocation, setPainLocation] = useState("");
+  
+  // Common Fields State
+  const [severity, setSeverity] = useState<number>(0);
+  const [trend, setTrend] = useState<string>("");
+  const [duration, setDuration] = useState<string>("");
+  const [onset, setOnset] = useState<string>("");
+  const [hadBefore, setHadBefore] = useState<boolean | null>(null);
+  const [medsTaken, setMedsTaken] = useState<boolean | null>(null);
 
   const textColor = isDark ? "#FFFFFF" : "#1A212E";
   const subTextColor = isDark ? "#94A3B8" : "#6B7280";
@@ -170,7 +333,6 @@ export default function SymptomCheckerScreen() {
   const toggleSymptom = (id: SymptomId) => {
     if (selected.includes(id)) {
       setSelected(selected.filter((s) => s !== id));
-      // clear sub-options when deselected
       setSubOptions((prev) => {
         const next = { ...prev };
         delete next[id];
@@ -196,10 +358,7 @@ export default function SymptomCheckerScreen() {
 
     const cleanedOtherSymptom = otherSymptom.trim().replace(/\s+/g, " ");
     if (selected.includes("OTHER") && !cleanedOtherSymptom) {
-      showToast({
-        type: "error",
-        message: "Please type the other symptom you feel.",
-      });
+      showToast({ type: "error", message: "Please type the other symptom you feel." });
       return;
     }
 
@@ -210,22 +369,27 @@ export default function SymptomCheckerScreen() {
 
       for (const symptomId of selected) {
         let res;
+        const commonData = {
+          severity: severity > 0 ? severity : undefined,
+          trend: trend || undefined,
+          durationLabel: duration || undefined,
+          onsetAt: onset || undefined,
+          hadBefore: hadBefore ?? undefined,
+          medicationTaken: medsTaken ?? undefined,
+        };
+
         if (symptomId === "OTHER") {
           res = await addSymptom({
             symptomType: "OTHER",
             customSymptom: cleanedOtherSymptom,
+            ...commonData
           });
         } else {
           const symptomSubOptions = subOptions[symptomId] ?? [];
-          const locationValue =
-            symptomId === "ABDOMINAL_PAIN" && painLocation.trim()
-              ? painLocation.trim()
-              : undefined;
-
           res = await addSymptom({
             symptomType: symptomId,
             subOptions: symptomSubOptions.length > 0 ? symptomSubOptions : undefined,
-            painLocation: locationValue,
+            ...commonData
           } as any);
         }
         
@@ -242,9 +406,7 @@ export default function SymptomCheckerScreen() {
 
       setTimeout(() => revalidateMonitoring(), 1500);
 
-      if (hasEmergency) {
-        router.push({ pathname: "/nurse-summary", params: { msg } });
-      } else if (hasUrgent) {
+      if (hasEmergency || hasUrgent) {
         router.push({ pathname: "/nurse-summary", params: { msg } });
       } else {
         router.push({ pathname: "/symptom-results", params: { msg } });
@@ -265,339 +427,218 @@ export default function SymptomCheckerScreen() {
     }
   };
 
-  const renderSubOptions = (symptom: (typeof SYMPTOMS)[number]) => {
+  const renderSubOptions = (symptom: any) => {
     if (!selected.includes(symptom.id as SymptomId)) return null;
-    if (!("subOptions" in symptom) || !symptom.subOptions) return null;
-
-    const selectedSubs = subOptions[symptom.id] ?? [];
-    const showLocationInput =
-      "hasLocationInput" in symptom &&
-      symptom.hasLocationInput &&
-      selectedSubs.includes("OTHER");
+    if (!("groups" in symptom) || !symptom.groups) return null;
 
     return (
       <View
         style={{ backgroundColor: subCardBg, borderColor: borderColor }}
         className="rounded-[24px] p-4 border mt-1 ml-4"
       >
-        {"note" in symptom && symptom.note && (
-          <View className="mb-3 flex-row items-start gap-2">
-            <Ionicons
-              name="information-circle-outline"
-              size={16}
-              color={Theme.colors.primary}
-            />
-            <Typography
-              variant="caption"
-              style={{
-                color: subTextColor,
-                flex: 1,
-                fontSize: 12,
-                lineHeight: 18,
-              }}
-            >
-              {symptom.note}
+        {symptom.groups.map((group: any) => (
+          <View key={group.name} className="mb-4">
+            <Typography variant="caption" weight="bold" style={{ color: textColor }} className="mb-2">
+              {group.name}
             </Typography>
+            <View className="flex-row flex-wrap gap-2">
+              {group.options.map((opt: any) => {
+                const isSelected = (subOptions[symptom.id] ?? []).includes(opt.id);
+                return (
+                  <TouchableOpacity
+                    key={opt.id}
+                    onPress={() => toggleSubOption(symptom.id, opt.id)}
+                    style={{
+                      backgroundColor: isSelected ? Theme.colors.primary : "transparent",
+                      borderColor: isSelected ? Theme.colors.primary : borderColor,
+                    }}
+                    className="border rounded-full px-3 py-1.5"
+                  >
+                    <Typography
+                      variant="caption"
+                      style={{ color: isSelected ? "white" : subTextColor }}
+                    >
+                      {opt.label}
+                    </Typography>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
           </View>
-        )}
-        <Typography
-          variant="caption"
-          weight="bold"
-          style={{ color: textColor, marginBottom: 8 }}
-        >
-          {"subOptionsPrompt" in symptom
-            ? symptom.subOptionsPrompt
-            : "Select all that apply:"}
-        </Typography>
-        <View className="gap-2">
-          {symptom.subOptions.map((opt) => {
-            const isSubSelected = selectedSubs.includes(opt.id);
-            return (
-              <TouchableOpacity
-                key={opt.id}
-                onPress={() => toggleSubOption(symptom.id, opt.id)}
-                style={{
-                  backgroundColor: isSubSelected
-                    ? isDark
-                      ? "#1B3A26"
-                      : "#F0FDF4"
-                    : isDark
-                      ? "#020617"
-                      : "#FFFFFF",
-                  borderColor: isSubSelected
-                    ? Theme.colors.primary
-                    : borderColor,
-                }}
-                className="flex-row items-center gap-3 rounded-2xl px-4 py-3 border"
-              >
-                <View
-                  style={{
-                    borderColor: isSubSelected
-                      ? Theme.colors.primary
-                      : isDark
-                        ? "#4B5563"
-                        : "#D1D5DB",
-                    backgroundColor: isSubSelected
-                      ? Theme.colors.primary
-                      : "transparent",
-                  }}
-                  className="w-5 h-5 rounded border-2 justify-center items-center"
-                >
-                  {isSubSelected && (
-                    <Ionicons name="checkmark" size={12} color="#FFFFFF" />
-                  )}
-                </View>
-                <Typography
-                  variant="caption"
-                  style={{ color: textColor, fontSize: 14 }}
-                >
-                  {opt.label}
-                </Typography>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-        {showLocationInput && (
-          <View className="mt-3">
-            <Typography
-              variant="caption"
-              weight="bold"
-              style={{ color: textColor, marginBottom: 4 }}
-            >
-              Describe the pain location:
-            </Typography>
-            <TextInput
-              value={painLocation}
-              onChangeText={setPainLocation}
-              placeholder="e.g. lower left abdomen"
-              placeholderTextColor="#94A3B8"
-              className={
-                isDark ? "text-white text-base" : "text-[#1A212E] text-base"
-              }
-              style={{
-                fontFamily: "Lexend-Regular",
-                minHeight: 40,
-                borderBottomWidth: 1,
-                borderBottomColor: borderColor,
-              }}
-              maxLength={80}
-            />
-          </View>
-        )}
+        ))}
       </View>
     );
   };
 
   return (
-    <SafeAreaView
-      className="flex-1"
-      style={{ backgroundColor: isDark ? Theme.colors.darkBg : "#F9FAFB" }}
-    >
-      <Screen backgroundColor={isDark ? Theme.colors.darkBg : "#F9FAFB"}>
-        <View className="flex-row items-center justify-between px-6 pt-4 mb-10">
-          <TouchableOpacity
-            onPress={() => router.back()}
-            className="w-11 h-11 justify-center items-center"
-          >
-            <Ionicons
-              name="arrow-back"
-              size={28}
-              color={isDark ? Theme.colors.white : "#1A212E"}
-            />
+    <SafeAreaView className="flex-1" style={{ backgroundColor: isDark ? Theme.colors.darkBg : "#F9FAFB" }}>
+      <Screen backgroundColor={isDark ? Theme.colors.darkBg : "#F9FAFB"} scrollable>
+        <View className="flex-row items-center justify-between px-6 pt-4 mb-4">
+          <TouchableOpacity onPress={() => router.back()}>
+            <Ionicons name="arrow-back" size={28} color={textColor} />
           </TouchableOpacity>
           <Typography variant="h2" weight="bold" className="text-[22px]">
-            Check Symptoms
+            Report Symptoms
           </Typography>
           <View className="w-7" />
         </View>
 
-        <ScrollView
-          contentContainerStyle={{ paddingHorizontal: 40, paddingBottom: 40 }}
-          showsVerticalScrollIndicator={false}
-        >
-          <Typography
-            variant="h1"
-            className="text-[36px] font-black leading-[44px] mb-3 shadow-lexend-bold"
-          >
-            How are you feeling today?
-          </Typography>
-          <Typography
-            variant="body"
-            className={
-              isDark
-                ? "text-gray-300 text-lg leading-6 mb-10"
-                : "text-gray-500 text-lg leading-6 mb-10"
-            }
-          >
-            Select any symptoms you are experiencing right now.
+        <View className="px-6 pb-20">
+          <Typography variant="body" style={{ color: subTextColor }} className="mb-6">
+            Select all symptoms you are currently experiencing:
           </Typography>
 
-          <View className="gap-3">
-            {SYMPTOMS.map((symptom) => {
-              const isSelected = selected.includes(symptom.id as SymptomId);
-              const hasSubOpts =
-                "subOptions" in symptom &&
-                symptom.subOptions &&
-                symptom.subOptions.length > 0;
-
-              return (
-                <View key={symptom.id}>
-                  <TouchableOpacity
-                    className={`${isDark ? "bg-[#020617] border-white/10" : "bg-white"} rounded-[40px] py-6 px-[30px] flex-row items-center border shadow-sm ${isSelected ? "border-primary" : "border-[#F1F5F9]"}`}
-                    onPress={() => toggleSymptom(symptom.id as SymptomId)}
-                    activeOpacity={0.7}
+          {SYMPTOMS.map((symptom) => {
+            const isSelected = selected.includes(symptom.id as SymptomId);
+            return (
+              <View key={symptom.id} className="mb-3">
+                <TouchableOpacity
+                  onPress={() => toggleSymptom(symptom.id as SymptomId)}
+                  style={{
+                    backgroundColor: isSelected ? Theme.colors.primary + "10" : cardBg,
+                    borderColor: isSelected ? Theme.colors.primary : borderColor,
+                  }}
+                  className="rounded-[24px] p-4 flex-row items-center border"
+                >
+                  <View
+                    style={{ backgroundColor: isSelected ? Theme.colors.primary : isDark ? "#1E293B" : "#F1F5F9" }}
+                    className="w-12 h-12 rounded-full flex items-center justify-center mr-4"
                   >
-                    <View className="w-11 h-11 rounded-full bg-primary-light justify-center items-center mr-4">
-                      <Ionicons
-                        name={symptom.icon as any}
-                        size={24}
-                        color={Theme.colors.primary}
-                      />
-                    </View>
-                    <View className="flex-1">
-                      <Typography
-                        variant="h3"
-                        weight="bold"
-                        className="text-lg"
-                      >
-                        {symptom.title}
+                    <Ionicons name={symptom.icon as any} size={24} color={isSelected ? "white" : Theme.colors.primary} />
+                  </View>
+                  <View className="flex-1">
+                    <Typography variant="h3" weight="bold" style={{ color: textColor }}>
+                      {symptom.title}
+                    </Typography>
+                    {(symptom as any).subtitle && (
+                      <Typography variant="caption" style={{ color: subTextColor }} className="mt-0.5">
+                        {(symptom as any).subtitle}
                       </Typography>
-                      {"subtitle" in symptom && symptom.subtitle && (
-                        <Typography
-                          variant="caption"
-                          className={isDark ? "text-gray-400" : "text-gray-400"}
-                        >
-                          {symptom.subtitle}
-                        </Typography>
-                      )}
-                      {hasSubOpts && isSelected && (
-                        <Typography
-                          variant="caption"
-                          style={{
-                            color: Theme.colors.primary,
-                            fontSize: 11,
-                            marginTop: 2,
-                          }}
-                        >
-                          Tap below to add details
-                        </Typography>
-                      )}
-                    </View>
-                    <View
-                      className={`w-7 h-7 rounded-full border-2 justify-center items-center ${isSelected ? "border-gray-300" : "border-gray-300"}`}
-                    >
-                      {isSelected && (
-                        <View className="w-4 h-4 rounded-full bg-gray-300" />
-                      )}
-                    </View>
-                  </TouchableOpacity>
-                  {renderSubOptions(symptom as any)}
-                </View>
-              );
-            })}
+                    )}
+                  </View>
+                  <View
+                    style={{
+                      borderColor: isSelected ? Theme.colors.primary : borderColor,
+                      backgroundColor: isSelected ? Theme.colors.primary : "transparent",
+                    }}
+                    className="w-6 h-6 rounded-full border items-center justify-center"
+                  >
+                    {isSelected && <Ionicons name="checkmark" size={16} color="white" />}
+                  </View>
+                </TouchableOpacity>
 
-            {selected.includes("OTHER") && (
-              <View
-                className={
-                  isDark
-                    ? "bg-[#020617] border-white/10 rounded-[28px] p-5 border"
-                    : "bg-white border-[#F1F5F9] rounded-[28px] p-5 border"
-                }
-              >
-                <Typography variant="h3" weight="bold" className="mb-2">
-                  Tell us what you feel
-                </Typography>
-                <TextInput
-                  value={otherSymptom}
-                  onChangeText={setOtherSymptom}
-                  placeholder="Type symptom here"
-                  placeholderTextColor="#94A3B8"
-                  className={
-                    isDark ? "text-white text-base" : "text-[#1A212E] text-base"
-                  }
-                  style={{ fontFamily: "Lexend-Regular", minHeight: 48 }}
-                  multiline
-                  maxLength={80}
-                />
+                {isSelected && symptom.id === "OTHER" && (
+                  <View style={{ backgroundColor: subCardBg, borderColor }} className="rounded-[24px] p-4 border mt-1 ml-4">
+                    <TextInput
+                      placeholder="Please describe..."
+                      placeholderTextColor={subTextColor}
+                      value={otherSymptom}
+                      onChangeText={setOtherSymptom}
+                      style={{ color: textColor, minHeight: 40 }}
+                      multiline
+                    />
+                  </View>
+                )}
+                {renderSubOptions(symptom)}
               </View>
-            )}
-          </View>
-        </ScrollView>
+            );
+          })}
 
-        <View className="px-10 pb-[100px] items-center">
-          <TouchableOpacity
-            className={`bg-primary w-full h-[70px] rounded-[35px] flex-row items-center justify-center gap-3 mb-4 shadow-md ${isAddingSymptom || selected.length === 0 ? "opacity-70" : ""}`}
-            activeOpacity={0.8}
-            onPress={handleSubmit}
-            disabled={
-              isAddingSymptom ||
-              selected.length === 0 ||
-              (selected.includes("OTHER") && !otherSymptom.trim())
-            }
-          >
-            <Typography
-              variant="h2"
-              weight="bold"
-              className="text-[22px] text-[#1A212E]"
-            >
-              {isAddingSymptom ? "Reporting..." : "Submit Report"}
-            </Typography>
-            {!isAddingSymptom && (
-              <Ionicons name="arrow-forward" size={24} color="#1A212E" />
-            )}
-          </TouchableOpacity>
-          <Typography variant="caption" className="text-gray-500">
-            All data is kept private and secure.
-          </Typography>
-        </View>
+          {selected.length > 0 && (
+            <View className="mt-8 mb-4 border-t pt-6" style={{ borderColor }}>
+              <Typography variant="h3" weight="bold" style={{ color: textColor }} className="mb-4">
+                Additional Details
+              </Typography>
+              
+              <Typography variant="caption" style={{ color: subTextColor }} className="mb-2">Severity (0-10)</Typography>
+              <View className="flex-row justify-between mb-6 bg-gray-100 rounded-full overflow-hidden p-1" style={{ backgroundColor: isDark ? "#1E293B" : "#F1F5F9" }}>
+                {[1,2,3,4,5,6,7,8,9,10].map(num => (
+                  <TouchableOpacity 
+                    key={num} 
+                    onPress={() => setSeverity(num)}
+                    className="flex-1 py-2 items-center rounded-full"
+                    style={{ backgroundColor: severity === num ? Theme.colors.primary : "transparent" }}
+                  >
+                    <Typography variant="caption" weight="bold" style={{ color: severity === num ? "white" : subTextColor }}>{num}</Typography>
+                  </TouchableOpacity>
+                ))}
+              </View>
 
-        {/* Tab Mockup for fidelity - Now Functional */}
-        <View
-          className={
-            isDark
-              ? "absolute bottom-0 w-full h-20 bg-[#020617] flex-row border-t border-white/10 px-10 pt-2.5 justify-between"
-              : "absolute bottom-0 w-full h-20 bg-white flex-row border-t border-[#F1F5F9] px-10 pt-2.5 justify-between"
-          }
-        >
-          <TouchableOpacity
-            className="items-center gap-1"
-            onPress={() => router.push("/(tabs)")}
-          >
-            <Ionicons name="home" size={24} color={Theme.colors.textLight} />
-            <Typography variant="caption" className="text-gray-500">
-              Home
-            </Typography>
-          </TouchableOpacity>
-          <TouchableOpacity
-            className="items-center gap-1"
-            onPress={() => router.push("/(tabs)/tracking")}
-          >
-            <View
-              className={
-                isDark
-                  ? "bg-[#022C22] px-5 py-1 rounded-[20px]"
-                  : "bg-[#E8FCF1] px-5 py-1 rounded-[20px]"
-              }
-            >
-              <Ionicons name="medical" size={24} color={Theme.colors.primary} />
+              <Typography variant="caption" style={{ color: subTextColor }} className="mb-2">Is it getting better or worse?</Typography>
+              <View className="flex-row gap-2 mb-6">
+                {["BETTER", "WORSE", "UNCHANGED"].map(opt => (
+                  <TouchableOpacity
+                    key={opt}
+                    onPress={() => setTrend(opt)}
+                    className="flex-1 border rounded-full py-2 items-center"
+                    style={{ 
+                      borderColor: trend === opt ? Theme.colors.primary : borderColor,
+                      backgroundColor: trend === opt ? Theme.colors.primary + "10" : "transparent"
+                    }}
+                  >
+                    <Typography variant="caption" style={{ color: trend === opt ? Theme.colors.primary : subTextColor }}>
+                      {opt.charAt(0) + opt.slice(1).toLowerCase()}
+                    </Typography>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              <Typography variant="caption" style={{ color: subTextColor }} className="mb-2">How long has it lasted?</Typography>
+              <TextInput
+                placeholder="e.g. 2 hours, 3 days"
+                placeholderTextColor={subTextColor}
+                value={duration}
+                onChangeText={setDuration}
+                className="border rounded-2xl px-4 py-3 mb-6"
+                style={{ borderColor, color: textColor }}
+              />
+
+              <Typography variant="caption" style={{ color: subTextColor }} className="mb-2">When did it start?</Typography>
+              <TextInput
+                placeholder="e.g. Today morning, yesterday"
+                placeholderTextColor={subTextColor}
+                value={onset}
+                onChangeText={setOnset}
+                className="border rounded-2xl px-4 py-3 mb-6"
+                style={{ borderColor, color: textColor }}
+              />
+
+              <View className="flex-row items-center justify-between mb-4">
+                <Typography variant="caption" style={{ color: textColor }}>Has this happened before?</Typography>
+                <View className="flex-row gap-2">
+                  <TouchableOpacity onPress={() => setHadBefore(true)} className="px-4 py-2 border rounded-full" style={{ borderColor: hadBefore === true ? Theme.colors.primary : borderColor, backgroundColor: hadBefore === true ? Theme.colors.primary + "10" : "transparent" }}>
+                    <Typography variant="caption" style={{ color: hadBefore === true ? Theme.colors.primary : subTextColor }}>Yes</Typography>
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={() => setHadBefore(false)} className="px-4 py-2 border rounded-full" style={{ borderColor: hadBefore === false ? Theme.colors.primary : borderColor, backgroundColor: hadBefore === false ? Theme.colors.primary + "10" : "transparent" }}>
+                    <Typography variant="caption" style={{ color: hadBefore === false ? Theme.colors.primary : subTextColor }}>No</Typography>
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              <View className="flex-row items-center justify-between mb-8">
+                <Typography variant="caption" style={{ color: textColor }}>Any medication taken?</Typography>
+                <View className="flex-row gap-2">
+                  <TouchableOpacity onPress={() => setMedsTaken(true)} className="px-4 py-2 border rounded-full" style={{ borderColor: medsTaken === true ? Theme.colors.primary : borderColor, backgroundColor: medsTaken === true ? Theme.colors.primary + "10" : "transparent" }}>
+                    <Typography variant="caption" style={{ color: medsTaken === true ? Theme.colors.primary : subTextColor }}>Yes</Typography>
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={() => setMedsTaken(false)} className="px-4 py-2 border rounded-full" style={{ borderColor: medsTaken === false ? Theme.colors.primary : borderColor, backgroundColor: medsTaken === false ? Theme.colors.primary + "10" : "transparent" }}>
+                    <Typography variant="caption" style={{ color: medsTaken === false ? Theme.colors.primary : subTextColor }}>No</Typography>
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              <TouchableOpacity
+                onPress={handleSubmit}
+                disabled={isAddingSymptom}
+                className={`w-full py-4 rounded-full flex-row items-center justify-center ${isAddingSymptom ? "opacity-50" : ""}`}
+                style={{ backgroundColor: Theme.colors.primary }}
+              >
+                <Typography variant="h3" weight="bold" className="text-white">
+                  {isAddingSymptom ? "Submitting..." : "Submit Symptoms"}
+                </Typography>
+              </TouchableOpacity>
             </View>
-            <Typography
-              variant="caption"
-              weight="bold"
-              className="text-primary"
-            >
-              Checkup
-            </Typography>
-          </TouchableOpacity>
-          <TouchableOpacity
-            className="items-center gap-1"
-            onPress={() => router.push("/(tabs)/profile")}
-          >
-            <Ionicons name="person" size={24} color={Theme.colors.textLight} />
-            <Typography variant="caption" className="text-gray-500">
-              Profile
-            </Typography>
-          </TouchableOpacity>
+          )}
         </View>
       </Screen>
     </SafeAreaView>
