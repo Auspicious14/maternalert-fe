@@ -22,9 +22,16 @@ const SMS_TEXT =
 export async function triggerEmergencyAlert(): Promise<boolean> {
   try {
     const res = await apiClient.post("/emergency/trigger", undefined, {
-      timeout: 15000,
+      // The server opens the dashboard alert, then messages contact and
+      // facility in parallel; allow time for slow networks.
+      timeout: 30000,
     });
-    return res.status >= 200 && res.status < 300;
+    if (res.status < 200 || res.status >= 300) return false;
+    // The backend now reports whether anyone was actually reached. If it
+    // explicitly says nobody was, treat it as a failure so the mother gets the
+    // call/SMS/112 fallback instead of a false "alert sent".
+    if (res.data && res.data.success === false) return false;
+    return true;
   } catch (error: any) {
     if (__DEV__) {
       console.log(
