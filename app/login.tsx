@@ -1,184 +1,114 @@
-import { useAuthContext } from "@/context/AuthContext";
-import { Ionicons } from "@expo/vector-icons";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import React from "react";
+import React, { useRef } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { Image, TouchableOpacity, View,  } from "react-native";
-import { Button } from "../components/shared/Button";
-import { Input } from "../components/shared/Input";
-import { Screen } from "../components/shared/Screen";
-import { Typography } from "../components/shared/Typography";
-import Theme from "../constants/theme";
-import { useColorScheme } from "../hooks/use-color-scheme";
+import { Pressable, Text, TextInput, View } from "react-native";
+
+import { AuthShell, Banner, Button, FONT, T, TextField, friendlyApiError, useTokens } from "../components/ds";
 import { useAuth } from "../hooks/useAuth";
 import { LoginFormData, loginSchema } from "../schemas/auth";
 
+// Same screen as maternalert-web/src/app/(patient)/login/page.tsx
+
 export default function LoginScreen() {
   const router = useRouter();
+  const t = useTokens();
   const { message } = useLocalSearchParams<{ message?: string }>();
   const { login, isLoggingIn, loginError } = useAuth();
-  const { login: loginContext } = useAuthContext();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
-
-  const isSessionExpired = message === "session_expired";
+  const passwordRef = useRef<TextInput>(null);
 
   const {
     control,
     handleSubmit,
-    formState: { errors, isValid },
+    formState: { errors },
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
-    mode: "onChange",
-    defaultValues: {
-      email: "",
-      password: "",
-    },
+    mode: "onTouched",
+    defaultValues: { email: "", password: "" },
   });
 
-  const handleLogin = async (payload: LoginFormData) => {
+  // useAuth's onSuccess already sets up the session (tokens, routing).
+  const onSubmit = async (payload: LoginFormData) => {
     try {
-      const data = await login(payload);
-      loginContext(data.accessToken, data.refreshToken, data.user);
-    } catch (error) {
-      console.error("Login failed", error);
+      await login({ ...payload, email: payload.email.trim().toLowerCase() });
+    } catch {
+      // shown below from loginError
     }
   };
 
-  const iconColor = isDark ? "#FFFFFF" : "#0F241C";
+  const apiError = loginError
+    ? friendlyApiError(loginError, { 401: "That email and password don't match. Please try again." })
+    : null;
 
   return (
-    <Screen safe={true} scrollable={true}>
-      <View className="px-6 pt-4">
-        <TouchableOpacity
-          onPress={() => router.back()}
-          className="w-11 h-11 justify-center items-center"
-        >
-          <Ionicons name="arrow-back" size={28} color={iconColor} />
-        </TouchableOpacity>
-      </View>
+    <AuthShell title="Welcome back" subtitle="Sign in to see your readings and alerts." onBack={() => router.back()}>
+      {message === "session_expired" ? (
+        <Banner tone="amber">You were signed out to keep your account safe. Please sign in again.</Banner>
+      ) : null}
 
-      <View className="px-10 pt-5">
-        <View className="items-center">
-          <Image
-            source={require("../assets/images/maternalert-logo.png")}
-            className="w-32 h-32"
-            resizeMode="cover"
-          />
-        </View>
-
-        <Typography
-          variant="h1"
-          className="text-[32px] font-black mb-2 shadow-lexend-bold text-center"
-        >
-          Sign In
-        </Typography>
-        <Typography variant="body" className="mb-10 text-center">
-          Welcome back! Please enter your details.
-        </Typography>
-
-        {isSessionExpired && (
-          <View className="bg-red-50 p-4 rounded-xl mb-6 border border-red-100">
-            <Typography className="text-red-800 text-center font-medium">
-              Your session has expired. Please log in again.
-            </Typography>
-          </View>
-        )}
-
-        <View className="gap-4 mb-8">
-          <Controller
-            control={control}
-            name="email"
-            render={({ field: { onChange, onBlur, value } }) => (
-              <Input
-                label="Email Address"
-                placeholder="example@email.com"
-                value={value}
-                onBlur={onBlur}
-                onChangeText={onChange}
-                error={errors.email?.message}
-                keyboardType="email-address"
-                autoCapitalize="none"
-              />
-            )}
-          />
-
-          <Controller
-            control={control}
-            name="password"
-            render={({ field: { onChange, onBlur, value } }) => (
-              <Input
-                label="Password"
-                placeholder="••••••••"
-                value={value}
-                onBlur={onBlur}
-                onChangeText={onChange}
-                error={errors.password?.message}
-                secureTextEntry
-                showPasswordToggle
-              />
-            )}
-          />
-
-          <TouchableOpacity
-            onPress={() => router.push("/forgot-password")}
-            className="self-end -mt-2"
-          >
-            <Typography
-              variant="caption"
-              color={Theme.colors.primary}
-              className="font-bold"
-            >
-              Forgot Password?
-            </Typography>
-          </TouchableOpacity>
-
-          {loginError as string && (
-            <View
-              style={{
-                backgroundColor: isDark
-                  ? Theme.colors.errorBgDark
-                  : Theme.colors.errorBg,
-                borderColor: isDark
-                  ? Theme.colors.errorBorderDark
-                  : Theme.colors.errorBorder,
-              }}
-              className="p-3 rounded-xl border mt-2"
-            >
-              <Typography
-                variant="caption"
-                color={
-                  isDark ? Theme.colors.errorTextDark : Theme.colors.errorText
-                }
-                className="text-center font-medium"
-              >
-                Invalid email or password. Please try again.
-              </Typography>
-            </View>
+      <View style={{ gap: 16 }}>
+        <Controller
+          control={control}
+          name="email"
+          render={({ field: { onChange, onBlur, value } }) => (
+            <TextField
+              label="Email address"
+              placeholder="you@example.com"
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoComplete="email"
+              textContentType="emailAddress"
+              returnKeyType="next"
+              onSubmitEditing={() => passwordRef.current?.focus()}
+              value={value}
+              onChangeText={onChange}
+              onBlur={onBlur}
+              error={errors.email?.message}
+            />
           )}
-        </View>
-
-        <Button
-          title={isLoggingIn ? "Signing In..." : "Sign In"}
-          onPress={handleSubmit(handleLogin)}
-          disabled={isLoggingIn || !isValid}
-          className="mb-6"
         />
+        <Controller
+          control={control}
+          name="password"
+          render={({ field: { onChange, onBlur, value } }) => (
+            <TextField
+              ref={passwordRef}
+              label="Password"
+              password
+              autoComplete="password"
+              textContentType="password"
+              returnKeyType="go"
+              onSubmitEditing={handleSubmit(onSubmit)}
+              value={value}
+              onChangeText={onChange}
+              onBlur={onBlur}
+              error={errors.password?.message}
+            />
+          )}
+        />
+        <Pressable
+          onPress={() => router.push("/forgot-password")}
+          accessibilityRole="link"
+          style={{ alignSelf: "flex-end", minHeight: 44, justifyContent: "center", marginTop: -8 }}
+        >
+          <Text style={{ fontFamily: FONT.semibold, fontSize: 15, color: t.greenInk }}>Forgot password?</Text>
+        </Pressable>
 
-        <View className="flex-row justify-center items-center mb-10">
-          <Typography variant="body">Don&apos;t have an account? </Typography>
-          <TouchableOpacity onPress={() => router.push("/register")}>
-            <Typography
-              variant="body"
-              color={Theme.colors.primary}
-              className="font-bold"
-            >
-              Sign Up
-            </Typography>
-          </TouchableOpacity>
-        </View>
+        {apiError ? <Banner tone="red">{apiError}</Banner> : null}
+
+        <Button size="lg" block onPress={handleSubmit(onSubmit)} loading={isLoggingIn} disabled={isLoggingIn}>
+          {isLoggingIn ? "Signing in…" : "Sign in"}
+        </Button>
       </View>
-    </Screen>
+
+      <View style={{ flexDirection: "row", justifyContent: "center", flexWrap: "wrap", gap: 4 }}>
+        <T>New to MaternAlert?</T>
+        <Pressable onPress={() => router.push("/register")} accessibilityRole="link">
+          <Text style={{ fontFamily: FONT.semibold, fontSize: 16, color: t.greenInk, textDecorationLine: "underline" }}>
+            Create an account
+          </Text>
+        </Pressable>
+      </View>
+    </AuthShell>
   );
 }

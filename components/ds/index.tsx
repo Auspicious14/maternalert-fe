@@ -15,6 +15,7 @@ import {
   StyleProp,
   StyleSheet,
   Text,
+  TextInput,
   TextStyle,
   View,
   ViewStyle,
@@ -520,3 +521,147 @@ const styles = StyleSheet.create({
 });
 
 export const dsStyles = styles;
+
+// ── Forms ───────────────────────────────────────────────────────────────────
+
+export const TextField = React.forwardRef<
+  TextInput,
+  {
+    label: string;
+    error?: string;
+    hint?: React.ReactNode;
+    password?: boolean;
+  } & React.ComponentProps<typeof TextInput>
+>(function TextField({ label, error, hint, password, style, onFocus, onBlur, ...rest }, ref) {
+  const t = useTokens();
+  const [show, setShow] = React.useState(false);
+  const [focused, setFocused] = React.useState(false);
+  return (
+    <View style={{ gap: 8 }}>
+      <Text style={{ fontFamily: FONT.semibold, fontSize: 15, color: t.ink }}>{label}</Text>
+      <View style={{ justifyContent: "center" }}>
+        <TextInput
+          ref={ref}
+          accessibilityLabel={label}
+          accessibilityHint={error}
+          placeholderTextColor={t.muted}
+          secureTextEntry={password && !show}
+          autoCorrect={password ? false : rest.autoCorrect}
+          onFocus={(e) => {
+            setFocused(true);
+            onFocus?.(e);
+          }}
+          onBlur={(e) => {
+            setFocused(false);
+            onBlur?.(e);
+          }}
+          style={[
+            {
+              fontFamily: FONT.regular,
+              fontSize: 16,
+              color: t.ink,
+              backgroundColor: t.surface,
+              borderWidth: 1.5,
+              borderColor: error ? t.red : focused ? t.green : t.borderStrong,
+              borderRadius: 14,
+              paddingHorizontal: 14,
+              paddingRight: password ? 72 : 14,
+              minHeight: 48,
+            },
+            style,
+          ]}
+          {...rest}
+        />
+        {password ? (
+          <Pressable
+            onPress={() => setShow((s) => !s)}
+            accessibilityRole="button"
+            accessibilityLabel={show ? "Hide password" : "Show password"}
+            style={{ position: "absolute", right: 6, minHeight: 40, minWidth: 56, alignItems: "center", justifyContent: "center" }}
+          >
+            <Text style={{ fontFamily: FONT.semibold, fontSize: 14, color: t.greenInk }}>{show ? "Hide" : "Show"}</Text>
+          </Pressable>
+        ) : null}
+      </View>
+      {hint}
+      {error ? (
+        <Text accessibilityRole="alert" style={{ fontFamily: FONT.medium, fontSize: 14, color: t.redInk }}>
+          {error}
+        </Text>
+      ) : null}
+    </View>
+  );
+});
+
+/** Centred layout for sign-in, sign-up and password screens. */
+export function AuthShell({
+  title,
+  subtitle,
+  onBack,
+  children,
+}: {
+  title: string;
+  subtitle?: string;
+  onBack?: () => void;
+  children: React.ReactNode;
+}) {
+  const t = useTokens();
+  const { ScrollView, KeyboardAvoidingView, Platform } = require("react-native");
+  return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: t.bg }} edges={["top", "bottom"]}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+        <ScrollView
+          contentContainerStyle={{ padding: 20, paddingBottom: 48, gap: 20, width: "100%", maxWidth: 440, alignSelf: "center" }}
+          keyboardShouldPersistTaps="handled"
+        >
+          {onBack ? (
+            <IconButton label="Go back" onPress={onBack}>
+              <Ionicons name="arrow-back" size={22} color={t.ink} />
+            </IconButton>
+          ) : null}
+          <View style={{ alignItems: "center", gap: 8, paddingTop: 8 }}>
+            <LogoMark height={56} />
+            <T variant="h1" accessibilityRole="header" style={{ textAlign: "center" }}>
+              {title}
+            </T>
+            {subtitle ? <T style={{ textAlign: "center" }}>{subtitle}</T> : null}
+          </View>
+          {children}
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
+  );
+}
+
+/** Turn an API error into a sentence a patient can act on. Same as web. */
+export function friendlyApiError(err: unknown, overrides: Record<number, string> = {}): string {
+  const e = err as { response?: { status?: number } } | null | undefined;
+  const status = e?.response?.status;
+  if (status && overrides[status]) return overrides[status];
+  if (!e?.response) {
+    return "We couldn't reach MaternAlert. Check your internet. If it's working, wait a minute and try again.";
+  }
+  if (status === 429) return "Too many attempts. Please wait a minute and try again.";
+  if (status && status >= 500) return "Something went wrong on our side. Please try again in a minute.";
+  return "That didn't work. Please check your details and try again.";
+}
+
+// ── Numbered steps ──────────────────────────────────────────────────────────
+
+/** Numbered "what to do" list (web: .ma-steps). */
+export function Steps({ steps }: { steps: string[] }) {
+  const t = useTokens();
+  return (
+    <View style={{ gap: 10 }}>
+      {steps.map((s, i) => (
+        <View key={s} style={{ flexDirection: "row", gap: 12, alignItems: "flex-start" }}>
+          <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: t.surface2, alignItems: "center", justifyContent: "center" }}>
+            <Text style={{ fontFamily: FONT.bold, fontSize: 14, color: t.ink }}>{i + 1}</Text>
+          </View>
+          <T style={{ flex: 1 }}>{s}</T>
+        </View>
+      ))}
+    </View>
+  );
+}
+

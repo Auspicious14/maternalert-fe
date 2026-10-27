@@ -1,988 +1,369 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import React, { memo, useEffect, useMemo } from "react";
-import { StyleSheet, TouchableOpacity, View } from "react-native";
-import { Card } from "../../components/shared/Card";
-import { Screen } from "../../components/shared/Screen";
-import { Typography } from "../../components/shared/Typography";
-import Theme from "../../constants/theme";
-import { useColorScheme } from "../../hooks/use-color-scheme";
+import React, { useMemo, useState } from "react";
+import { LayoutChangeEvent, Pressable, Text, View } from "react-native";
+
+import {
+  AppHeader,
+  Banner,
+  Button,
+  Card,
+  FONT,
+  Page,
+  Pill,
+  SectionHeader,
+  Skeleton,
+  T,
+  prettySymptom,
+  timeAgo,
+  useTokens,
+} from "../../components/ds";
 import { useHealthData } from "../../hooks/useHealthData";
 import { useTrends } from "../../hooks/useTrends";
 import { useUserProfile } from "../../hooks/useUserProfile";
-import {
-  getActivitySuggestion,
-  getNutritionReminder,
-  getPregnancyMilestone,
-} from "../../services/pregnancyContent";
-import { notificationService } from "../../services/notifications";
+import { getTier } from "../../services/escalation";
+import { readingLabel } from "../../services/patientCopy";
 
-// ─── Summary Card ─────────────────────────────────────────────────────────────
+// Same screen as maternalert-web/src/app/(patient)/tracking/page.tsx
 
-const SummaryCard = memo(
-  ({
-    currentWeeks,
-    trimesterLabel,
-    progressLabel,
-    weeksRemaining,
-    edd,
-    firstPregnancy,
-    isDark,
-    cardBg,
-    borderColor,
-    subTextColor,
-    textColor,
-  }: any) => (
-    <Card
-      style={[
-        styles.summaryCard,
-        { backgroundColor: cardBg, borderColor: borderColor },
-      ]}
-    >
-      <View style={styles.summaryHeader}>
-        <View style={styles.summaryInfo}>
-          <Typography
-            variant="h3"
-            style={[styles.summaryTitle, { color: textColor }]}
-          >
-            {progressLabel || `${currentWeeks} Weeks Pregnant`}
-          </Typography>
-          <Typography
-            variant="caption"
-            style={[styles.summarySubtitle, { color: Theme.colors.primary }]}
-          >
-            {trimesterLabel}
-          </Typography>
-          {weeksRemaining !== undefined && weeksRemaining > 0 && (
-            <Typography
-              variant="caption"
-              style={[styles.summarySubtitle, { color: subTextColor }]}
-            >
-              {weeksRemaining} week{weeksRemaining !== 1 ? "s" : ""} to
-              estimated due date
-            </Typography>
-          )}
-          {edd && (
-            <Typography
-              variant="caption"
-              style={[
-                styles.summarySubtitle,
-                { color: subTextColor, marginTop: 2 },
-              ]}
-            >
-              EDD:{" "}
-              {new Date(edd).toLocaleDateString(undefined, {
-                day: "numeric",
-                month: "long",
-                year: "numeric",
-              })}
-            </Typography>
-          )}
-        </View>
-        <View style={styles.babyIconBg}>
-          <Ionicons name="fitness" size={24} color={Theme.colors.primary} />
-        </View>
-      </View>
-      <View style={styles.progressContainer}>
-        <View
-          style={[
-            styles.progressBar,
-            {
-              backgroundColor: isDark
-                ? "rgba(255,255,255,0.1)"
-                : "rgba(0,0,0,0.05)",
-            },
-          ]}
-        >
-          <View
-            style={[
-              styles.progressFill,
-              {
-                width: `${Math.min(100, (currentWeeks / 40) * 100)}%`,
-              },
-            ]}
-          />
-        </View>
-        <Typography
-          variant="caption"
-          style={[styles.progressText, { color: subTextColor }]}
-        >
-          {Math.round(Math.min(100, (currentWeeks / 40) * 100))}% of 40 weeks
-        </Typography>
-      </View>
-    </Card>
-  ),
-);
+type Reading = { id: string; systolic: number; diastolic: number; recordedAt: string };
 
-// ─── Calendar Day ─────────────────────────────────────────────────────────────
+const DAY_MS = 24 * 60 * 60 * 1000;
 
-const CalendarDay = memo(({ item, isDark }: any) => (
-  <View style={styles.dayItem}>
-    <Typography
-      variant="caption"
-      style={[
-        styles.dayLabel,
-        { color: isDark ? "rgba(255,255,255,0.4)" : "#94A3B8" },
-      ]}
-    >
-      {item.day}
-    </Typography>
-    <View
-      style={[
-        styles.dateCircle,
-        { borderColor: isDark ? "rgba(255,255,255,0.1)" : "#E6E1D9" },
-        item.current && styles.dateCircleActive,
-        item.status === "stable" && styles.dateCircleStable,
-        item.status === "urgent" && styles.dateCircleUrgent,
-      ]}
-    >
-      <Typography
-        variant="body"
-        style={[
-          styles.dateText,
-          { color: isDark ? "rgba(255,255,255,0.4)" : "#64748B" },
-          (item.current || item.status !== "none") && {
-            color: isDark ? "#FFFFFF" : "#0F241C",
-          },
-          item.current && { color: "#FFFFFF" },
-        ]}
-      >
-        {item.date}
-      </Typography>
-    </View>
-    {item.current && <View style={styles.activeDot} />}
-  </View>
-));
+function dayHeading(d: Date): string {
+  const today = new Date();
+  const start = (x: Date) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+  const diff = Math.round((start(today) - start(d)) / DAY_MS);
+  if (diff === 0) return "Today";
+  if (diff === 1) return "Yesterday";
+  return d.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "short" });
+}
 
-// ─── Vitals Card ──────────────────────────────────────────────────────────────
+/** Line chart drawn with plain Views (react-native-svg isn't installed). */
+function BPChart({ readings }: { readings: Reading[] }) {
+  const t = useTokens();
+  const [w, setW] = useState(0);
+  const pts = readings.slice(-14);
+  const H = 170;
+  const pad = { l: 30, r: 8, t: 10, b: 20 };
+  const lo = Math.min(50, ...pts.map((r) => r.diastolic - 5));
+  const hi = Math.max(170, ...pts.map((r) => r.systolic + 5));
+  const innerW = Math.max(w - pad.l - pad.r, 1);
+  const x = (i: number) => pad.l + (pts.length === 1 ? innerW / 2 : (i * innerW) / (pts.length - 1));
+  const y = (v: number) => pad.t + ((hi - v) * (H - pad.t - pad.b)) / (hi - lo);
+  const highs = pts.filter((r) => getTier(r.systolic, r.diastolic) >= 3).length;
 
-const VitalsCard = memo(
-  ({ avgBP, cardBg, borderColor, textColor, subTextColor }: any) => (
-    <Card
-      style={[
-        styles.vitalCard,
-        { backgroundColor: cardBg, borderColor: borderColor },
-      ]}
-    >
+  const segment = (x1: number, y1: number, x2: number, y2: number, color: string, width: number, key: string) => {
+    const len = Math.hypot(x2 - x1, y2 - y1);
+    const angle = Math.atan2(y2 - y1, x2 - x1);
+    return (
       <View
-        style={[
-          styles.vitalIcon,
-          { backgroundColor: "rgba(14, 124, 90, 0.1)" },
-        ]}
-      >
-        <Ionicons name="pulse" size={20} color={Theme.colors.primary} />
-      </View>
-      <Typography
-        variant="h2"
-        style={[styles.vitalValue, { color: textColor }]}
-      >
-        {avgBP ? `${avgBP.systolic}/${avgBP.diastolic}` : "--/--"}
-      </Typography>
-      <Typography
-        variant="caption"
-        style={[styles.vitalLabel, { color: subTextColor }]}
-      >
-        Avg. Blood Pressure
-      </Typography>
-    </Card>
-  ),
-);
-
-// ─── Pregnancy Content Card ───────────────────────────────────────────────────
-
-const PregnancyContentCard = memo(
-  ({
-    icon,
-    iconBg,
-    iconColor,
-    title,
-    items,
-    cardBg,
-    borderColor,
-    textColor,
-    subTextColor,
-  }: any) => (
-    <Card
-      style={[
-        styles.contentCard,
-        { backgroundColor: cardBg, borderColor: borderColor },
-      ]}
-    >
-      <View style={styles.contentCardHeader}>
-        <View style={[styles.contentCardIcon, { backgroundColor: iconBg }]}>
-          <Ionicons name={icon} size={20} color={iconColor} />
-        </View>
-        <Typography
-          variant="h3"
-          style={[styles.contentCardTitle, { color: textColor }]}
-        >
-          {title}
-        </Typography>
-      </View>
-      {items.map((item: string, index: number) => (
-        <View key={index} style={styles.contentBullet}>
-          <View style={[styles.bulletDot, { backgroundColor: iconColor }]} />
-          <Typography
-            variant="caption"
-            style={[styles.bulletText, { color: subTextColor }]}
-          >
-            {item}
-          </Typography>
-        </View>
-      ))}
-    </Card>
-  ),
-);
-
-// ─── Tracking Screen ──────────────────────────────────────────────────────────
-
-export default function TrackingScreen() {
-  const router = useRouter();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
-  const { bpHistory, recentSymptoms } = useHealthData();
-  const { profile, pregnancyTimeline } = useUserProfile();
-  const { trendAlerts } = useTrends();
-
-  const currentWeeks =
-    pregnancyTimeline?.currentWeek ?? profile?.pregnancyWeeks ?? 24;
-  const trimesterLabel =
-    pregnancyTimeline?.trimesterLabel ?? "Second Trimester";
-  const progressLabel =
-    pregnancyTimeline?.progressLabel ?? `${currentWeeks} weeks pregnant`;
-  const trimester = pregnancyTimeline?.trimester ?? 2;
-
-  const textColor = isDark ? "#FFFFFF" : "#0F241C";
-  const subTextColor = isDark ? "rgba(255,255,255,0.6)" : "#64748B";
-  const bgColor = isDark ? Theme.colors.darkBg : Theme.colors.background;
-  const cardBg = isDark ? Theme.colors.cardDark : "#FFFFFF";
-  const borderColor = isDark ? Theme.colors.borderDark : "#E6E1D9";
-
-  // Pregnancy content for this week
-  const nutrition = useMemo(
-    () => getNutritionReminder(currentWeeks, trimester),
-    [currentWeeks, trimester],
-  );
-
-  const activitySuggestion = useMemo(
-    () => getActivitySuggestion(currentWeeks, trimester),
-    [currentWeeks, trimester],
-  );
-
-  const milestone = useMemo(
-    () => getPregnancyMilestone(currentWeeks),
-    [currentWeeks],
-  );
-
-  // Schedule pregnancy notifications when screen mounts / week changes
-  useEffect(() => {
-    if (!pregnancyTimeline?.isValid || !profile) return;
-
-    const [reminderHour, reminderMinute] = (profile.reminderTime || "09:00")
-      .split(":")
-      .map(Number);
-
-    const topActivity = activitySuggestion.activities[0];
-
-    notificationService
-      .schedulePregnancyNotifications({
-        currentWeek: currentWeeks,
-        trimester,
-        milestoneTitle: milestone.title,
-        milestoneMsg: milestone.message,
-        nutritionTitle: nutrition.title,
-        nutritionTip: nutrition.tips[0] || "",
-        activityName: topActivity?.name || "Gentle walk",
-        activityDesc:
-          topActivity?.description || "A short walk to stay active.",
-        reminderHour: isNaN(reminderHour) ? 9 : reminderHour,
-        reminderMinute: isNaN(reminderMinute) ? 0 : reminderMinute,
-        notifyReminders: profile.notifyReminders !== false,
-      })
-      .catch(console.error);
-  }, [currentWeeks]);
-
-  // Calculate average BP
-  const avgBP = useMemo(() => {
-    if (!bpHistory || bpHistory.length === 0) return null;
-    const sysSum = bpHistory.reduce((acc, curr) => acc + curr.systolic, 0);
-    const diaSum = bpHistory.reduce((acc, curr) => acc + curr.diastolic, 0);
-    return {
-      systolic: Math.round(sysSum / bpHistory.length),
-      diastolic: Math.round(diaSum / bpHistory.length),
-    };
-  }, [bpHistory]);
-
-  // Generate current week days
-  const weekDays = useMemo(() => {
-    const days = [];
-    const today = new Date();
-    const currentDay = today.getDay(); // 0 is Sunday
-    const mondayOffset = currentDay === 0 ? -6 : 1 - currentDay;
-
-    for (let i = 0; i < 7; i++) {
-      const date = new Date(today);
-      date.setDate(today.getDate() + mondayOffset + i);
-
-      const isToday = date.toDateString() === today.toDateString();
-      const dayName = date.toLocaleDateString("en-US", { weekday: "narrow" });
-
-      days.push({
-        day: dayName,
-        date: date.getDate().toString(),
-        current: isToday,
-        status: isToday ? "stable" : "none",
-      });
-    }
-    return days;
-  }, []);
+        key={key}
+        style={{
+          position: "absolute",
+          left: (x1 + x2) / 2 - len / 2,
+          top: (y1 + y2) / 2 - width / 2,
+          width: len,
+          height: width,
+          borderRadius: width,
+          backgroundColor: color,
+          transform: [{ rotate: `${angle}rad` }],
+        }}
+      />
+    );
+  };
+  const dotColor = (r: Reading) => {
+    const tier = getTier(r.systolic, r.diastolic);
+    return tier >= 3 ? t.red : tier === 2 ? t.amber : t.green;
+  };
 
   return (
-    <Screen
-      style={styles.container}
-      backgroundColor={bgColor}
-      scrollable={true}
-    >
-      {/* Header */}
-      <View style={styles.header}>
-        <Typography variant="h1" style={[styles.title, { color: textColor }]}>
-          Health Tracking
-        </Typography>
-        <TouchableOpacity
-          style={[
-            styles.calendarButton,
-            {
-              backgroundColor: isDark
-                ? "rgba(255,255,255,0.1)"
-                : "rgba(0,0,0,0.05)",
-            },
-          ]}
-        >
-          <Ionicons
-            name="calendar-outline"
-            size={24}
-            color={isDark ? "#FFFFFF" : "#0F241C"}
-          />
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.scrollContent}>
-        {/* Pregnancy Summary */}
-        <SummaryCard
-          currentWeeks={currentWeeks}
-          trimesterLabel={trimesterLabel}
-          progressLabel={progressLabel}
-          weeksRemaining={pregnancyTimeline?.weeksRemaining}
-          edd={pregnancyTimeline?.estimatedDueDate}
-          firstPregnancy={profile?.firstPregnancy}
-          isDark={isDark}
-          cardBg={cardBg}
-          borderColor={borderColor}
-          subTextColor={subTextColor}
-          textColor={textColor}
-        />
-
-        {/* Weekly Calendar Strip */}
-        <View style={styles.calendarStrip}>
-          {weekDays.map((item, index) => (
-            <CalendarDay key={index} item={item} isDark={isDark} />
-          ))}
-        </View>
-
-        {/* Milestone Banner */}
-        <Card
-          style={[
-            styles.milestoneCard,
-            {
-              backgroundColor: isDark ? "rgba(14, 124, 90,0.08)" : "#F0FFF6",
-              borderColor: Theme.colors.primary,
-            },
-          ]}
-        >
-          <View style={styles.milestoneRow}>
-            <Typography style={styles.milestoneEmoji}>
-              {milestone.emoji}
-            </Typography>
-            <View style={{ flex: 1 }}>
-              <Typography
-                variant="h3"
-                style={[styles.milestoneTitle, { color: textColor }]}
-              >
-                {milestone.title}
-              </Typography>
-              <Typography
-                variant="caption"
-                style={{ color: subTextColor, lineHeight: 18 }}
-              >
-                {milestone.message}
-              </Typography>
-            </View>
-          </View>
-        </Card>
-
-        {/* Vitals Section */}
-        <View style={styles.sectionHeader}>
-          <Typography
-            variant="h2"
-            style={[styles.sectionTitle, { color: textColor }]}
-          >
-            Vitals Overview
-          </Typography>
-        </View>
-
-        <View style={styles.vitalsRow}>
-          <VitalsCard
-            avgBP={avgBP}
-            cardBg={cardBg}
-            borderColor={borderColor}
-            textColor={textColor}
-            subTextColor={subTextColor}
-          />
-        </View>
-
-        {/* Nutrition Reminder */}
-        <View style={styles.sectionHeader}>
-          <Typography
-            variant="h2"
-            style={[styles.sectionTitle, { color: textColor }]}
-          >
-            Nutrition This Week
-          </Typography>
-        </View>
-
-        <PregnancyContentCard
-          icon="nutrition"
-          iconBg={isDark ? "rgba(14, 124, 90,0.12)" : "#F0FFF6"}
-          iconColor={Theme.colors.primary}
-          title={nutrition.title}
-          items={nutrition.tips}
-          cardBg={cardBg}
-          borderColor={borderColor}
-          textColor={textColor}
-          subTextColor={subTextColor}
-        />
-
-        <Typography
-          variant="caption"
-          style={[
-            styles.safetyNote,
-            { color: isDark ? "rgba(255,255,255,0.35)" : "#94A3B8" },
-          ]}
-        >
-          Food guidance is general advice. Follow your health worker's
-          recommendations.
-        </Typography>
-
-        {/* Daily Activity */}
-        <View style={styles.sectionHeader}>
-          <Typography
-            variant="h2"
-            style={[styles.sectionTitle, { color: textColor }]}
-          >
-            Today's Activity
-          </Typography>
-        </View>
-
-        <Card
-          style={[
-            styles.activityCard,
-            { backgroundColor: cardBg, borderColor },
-          ]}
-        >
-          <View style={styles.activityHeader}>
-            <View
-              style={[
-                styles.activityIcon,
-                {
-                  backgroundColor: isDark ? "rgba(99,102,241,0.15)" : "#EEF2FF",
-                },
-              ]}
-            >
-              <Ionicons name="walk" size={20} color="#6366F1" />
-            </View>
-            <Typography
-              variant="h3"
-              style={[styles.activityTitle, { color: textColor }]}
-            >
-              {activitySuggestion.title}
-            </Typography>
-          </View>
-          <Typography
-            variant="caption"
-            style={[{ color: subTextColor, marginBottom: 12, lineHeight: 18 }]}
-          >
-            {activitySuggestion.message}
-          </Typography>
-          {activitySuggestion.activities.slice(0, 3).map((act, i) => (
-            <View key={i} style={styles.activityItem}>
-              <Typography style={styles.activityEmoji}>{act.emoji}</Typography>
-              <View style={{ flex: 1 }}>
-                <Typography
-                  variant="body"
-                  style={{ color: textColor, fontWeight: "600" }}
-                >
-                  {act.name}
-                  <Typography variant="caption" style={{ color: subTextColor }}>
-                    {" "}
-                    · {act.duration}
-                  </Typography>
-                </Typography>
-                <Typography
-                  variant="caption"
-                  style={{ color: subTextColor, lineHeight: 18 }}
-                >
-                  {act.description}
-                </Typography>
+    <View>
+      <View
+        onLayout={(e: LayoutChangeEvent) => setW(e.nativeEvent.layout.width)}
+        style={{ height: H }}
+        accessible
+        accessibilityRole="image"
+        accessibilityLabel={`Chart of your last ${pts.length} readings. ${highs} of them were high, 140/90 or above.`}
+      >
+        {w > 0 ? (
+          <>
+            {[140, 90].map((v) => (
+              <React.Fragment key={v}>
+                <View
+                  style={{
+                    position: "absolute",
+                    left: pad.l,
+                    right: pad.r,
+                    top: y(v),
+                    borderTopWidth: 1,
+                    borderStyle: "dashed",
+                    borderColor: t.red,
+                    opacity: 0.6,
+                  }}
+                />
+                <Text style={{ position: "absolute", left: 0, width: pad.l - 6, textAlign: "right", top: y(v) - 8, fontSize: 11, color: t.muted, fontFamily: FONT.regular }}>
+                  {v}
+                </Text>
+              </React.Fragment>
+            ))}
+            {pts.slice(1).map((r, i) => segment(x(i), y(pts[i].systolic), x(i + 1), y(r.systolic), t.green, 2.5, `s${i}`))}
+            {pts.slice(1).map((r, i) => (
+              <View key={`d${i}`} style={{ opacity: 0.45, position: "absolute", left: 0, top: 0, right: 0, bottom: 0 }} pointerEvents="none">
+                {segment(x(i), y(pts[i].diastolic), x(i + 1), y(r.diastolic), t.green, 2, `dd${i}`)}
               </View>
-            </View>
-          ))}
-          <View style={styles.safetyNoteBox}>
-            <Ionicons
-              name="shield-checkmark-outline"
-              size={14}
-              color={Theme.colors.primary}
-            />
-            <Typography
-              variant="caption"
-              style={[styles.safetyNoteText, { color: subTextColor }]}
-            >
-              {activitySuggestion.safetyNote}
-            </Typography>
+            ))}
+            {pts.map((r, i) =>
+              [r.systolic, r.diastolic].map((v, j) => (
+                <View
+                  key={`${r.id}-${j}`}
+                  style={{
+                    position: "absolute",
+                    left: x(i) - 4,
+                    top: y(v) - 4,
+                    width: 8,
+                    height: 8,
+                    borderRadius: 4,
+                    backgroundColor: dotColor(r),
+                    borderWidth: 1.5,
+                    borderColor: t.surface,
+                  }}
+                />
+              )),
+            )}
+            {pts.length > 1 ? (
+              <>
+                <Text style={{ position: "absolute", left: pad.l, bottom: 0, fontSize: 11, color: t.muted, fontFamily: FONT.regular }}>
+                  {new Date(pts[0].recordedAt).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
+                </Text>
+                <Text style={{ position: "absolute", right: pad.r, bottom: 0, fontSize: 11, color: t.muted, fontFamily: FONT.regular }}>
+                  {new Date(pts[pts.length - 1].recordedAt).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
+                </Text>
+              </>
+            ) : null}
+          </>
+        ) : null}
+      </View>
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 16, marginTop: 10 }}>
+        {[
+          { label: "Top number", color: t.green, opacity: 1, dashed: false },
+          { label: "Bottom number", color: t.green, opacity: 0.45, dashed: false },
+          { label: "High (140/90)", color: t.red, opacity: 1, dashed: true },
+        ].map((k) => (
+          <View key={k.label} style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+            <View style={{ width: 16, borderTopWidth: k.dashed ? 1.5 : 2.5, borderStyle: k.dashed ? "dashed" : "solid", borderColor: k.color, opacity: k.opacity }} />
+            <Text style={{ fontSize: 13, color: t.muted, fontFamily: FONT.regular }}>{k.label}</Text>
           </View>
-        </Card>
-
-        {/* Daily Logs */}
-        <View style={styles.sectionHeader}>
-          <Typography
-            variant="h2"
-            style={[styles.sectionTitle, { color: textColor }]}
-          >
-            Daily Logs
-          </Typography>
-        </View>
-
-        <Card
-          style={[
-            styles.logItem,
-            { backgroundColor: cardBg, borderColor: borderColor },
-          ]}
-        >
-          <View style={[styles.logIcon, { backgroundColor: "#C7333B" }]}>
-            <Ionicons name="sad" size={20} color="#FFFFFF" />
-          </View>
-          <View style={styles.logInfo}>
-            <Typography
-              variant="h3"
-              style={[styles.logTitle, { color: textColor }]}
-            >
-              Symptoms
-            </Typography>
-            <Typography
-              variant="caption"
-              style={[styles.logSubtitle, { color: subTextColor }]}
-            >
-              {recentSymptoms?.length || 0} signs reported recently
-            </Typography>
-          </View>
-          <Ionicons
-            name="chevron-forward"
-            size={20}
-            color={isDark ? "rgba(255,255,255,0.2)" : "rgba(0,0,0,0.2)"}
-          />
-        </Card>
-
-        {/* Trends */}
-        {trendAlerts.length > 0 && (
-          <View style={styles.sectionHeader}>
-            <Typography
-              variant="h2"
-              style={[styles.sectionTitle, { color: textColor }]}
-            >
-              Health Trends
-            </Typography>
-          </View>
-        )}
-
-        {trendAlerts.map((alert) => (
-          <Card
-            key={alert.id}
-            style={[
-              styles.trendCard,
-              {
-                backgroundColor: cardBg,
-                borderColor:
-                  alert.type === "CREEPING_RISE"
-                    ? Theme.colors.emergency
-                    : Theme.colors.accent,
-                borderLeftWidth: 4,
-              },
-            ]}
-          >
-            <View style={styles.trendHeader}>
-              <Ionicons
-                name={alert.type === "SUDDEN_SPIKE" ? "flash" : "trending-up"}
-                size={20}
-                color={
-                  alert.type === "CREEPING_RISE"
-                    ? Theme.colors.emergency
-                    : Theme.colors.accent
-                }
-              />
-              <Typography
-                variant="caption"
-                style={[styles.trendDate, { color: subTextColor }]}
-              >
-                {new Date(alert.detectedAt).toLocaleDateString()}
-              </Typography>
-            </View>
-            <Typography
-              variant="body"
-              style={[styles.trendMessage, { color: textColor }]}
-            >
-              {alert.message}
-            </Typography>
-          </Card>
         ))}
       </View>
-
-      {/* FAB */}
-      <TouchableOpacity
-        style={styles.fab}
-        activeOpacity={0.9}
-        onPress={() => router.push("/bp-entry")}
-      >
-        <Ionicons
-          name="add"
-          size={32}
-          color={isDark ? Theme.colors.darkBg : "#FFFFFF"}
-        />
-      </TouchableOpacity>
-    </Screen>
+    </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    paddingHorizontal: 0,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: Theme.spacing.xl,
-    marginTop: 20,
-    marginBottom: 30,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: "900",
-  },
-  calendarButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  scrollContent: {
-    paddingHorizontal: Theme.spacing.xl,
-    paddingBottom: 100,
-  },
-  summaryCard: {
-    borderWidth: 1,
-    padding: 24,
-    borderRadius: 32,
-    marginBottom: 24,
-  },
-  summaryHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: 16,
-  },
-  summaryInfo: {
-    flex: 1,
-    gap: 2,
-  },
-  summaryTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-  },
-  summarySubtitle: {},
-  babyIconBg: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: "rgba(14, 124, 90, 0.1)",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  progressContainer: {
-    marginTop: 8,
-  },
-  progressBar: {
-    height: 6,
-    borderRadius: 3,
-    marginBottom: 8,
-    overflow: "hidden",
-  },
-  progressFill: {
-    height: "100%",
-    backgroundColor: Theme.colors.primary,
-    borderRadius: 3,
-  },
-  progressText: {
-    textAlign: "right",
-  },
-  milestoneCard: {
-    borderWidth: 1,
-    padding: 16,
-    borderRadius: 20,
-    marginBottom: 24,
-  },
-  milestoneRow: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 12,
-  },
-  milestoneEmoji: {
-    fontSize: 28,
-    lineHeight: 34,
-  },
-  milestoneTitle: {
-    fontSize: 15,
-    fontWeight: "700",
-    marginBottom: 2,
-  },
-  calendarStrip: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 24,
-  },
-  dayItem: {
-    alignItems: "center",
-    gap: 8,
-  },
-  dayLabel: {
-    textTransform: "uppercase",
-    fontSize: 12,
-  },
-  dateCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "transparent",
-    borderWidth: 1,
-  },
-  dateCircleActive: {
-    backgroundColor: Theme.colors.primary,
-    borderColor: Theme.colors.primary,
-  },
-  dateCircleStable: {
-    borderColor: Theme.colors.primary,
-    backgroundColor: "rgba(14, 124, 90, 0.1)",
-  },
-  dateCircleUrgent: {
-    borderColor: Theme.colors.emergency,
-    backgroundColor: "rgba(255, 75, 75, 0.1)",
-  },
-  dateText: {
-    fontWeight: "600",
-  },
-  activeDot: {
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: Theme.colors.primary,
-    marginTop: 4,
-  },
-  sectionHeader: {
-    marginBottom: 14,
-  },
-  sectionTitle: {
-    fontSize: 20,
-  },
-  vitalsRow: {
-    flexDirection: "row",
-    gap: 16,
-    marginBottom: 28,
-  },
-  vitalCard: {
-    flex: 1,
-    padding: 16,
-    borderRadius: 24,
-  },
-  vitalIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 12,
-  },
-  vitalValue: {
-    fontSize: 24,
-    fontWeight: "bold",
-    marginBottom: 4,
-  },
-  vitalLabel: {
-    fontSize: 12,
-  },
-  contentCard: {
-    borderWidth: 1,
-    padding: 16,
-    borderRadius: 24,
-    marginBottom: 8,
-  },
-  contentCardHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    marginBottom: 12,
-  },
-  contentCardIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  contentCardTitle: {
-    fontSize: 15,
-    fontWeight: "700",
-    flex: 1,
-  },
-  contentBullet: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 10,
-    marginBottom: 8,
-  },
-  bulletDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    marginTop: 6,
-  },
-  bulletText: {
-    flex: 1,
-    lineHeight: 18,
-  },
-  safetyNote: {
-    fontSize: 11,
-    marginBottom: 28,
-    fontStyle: "italic",
-  },
-  activityCard: {
-    borderWidth: 1,
-    padding: 16,
-    borderRadius: 24,
-    marginBottom: 8,
-  },
-  activityHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    marginBottom: 8,
-  },
-  activityIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  activityTitle: {
-    fontSize: 15,
-    fontWeight: "700",
-    flex: 1,
-  },
-  activityItem: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 10,
-    marginBottom: 12,
-  },
-  activityEmoji: {
-    fontSize: 22,
-    lineHeight: 28,
-  },
-  safetyNoteBox: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 6,
-    marginTop: 4,
-    padding: 10,
-    backgroundColor: "rgba(14, 124, 90, 0.06)",
-    borderRadius: 12,
-  },
-  safetyNoteText: {
-    flex: 1,
-    fontSize: 11,
-    lineHeight: 16,
-    fontStyle: "italic",
-  },
-  logItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    borderWidth: 1,
-    padding: 16,
-    borderRadius: 24,
-    marginBottom: 28,
-  },
-  logIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 16,
-  },
-  logInfo: {
-    flex: 1,
-  },
-  logTitle: {
-    fontSize: 16,
-    fontWeight: "bold",
-    marginBottom: 4,
-  },
-  logSubtitle: {},
-  trendCard: {
-    marginBottom: 12,
-    padding: 16,
-    borderRadius: 16,
-    borderWidth: 1,
-  },
-  trendHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 8,
-  },
-  trendDate: {
-    fontSize: 12,
-  },
-  trendMessage: {
-    fontSize: 14,
-    lineHeight: 20,
-  },
-  fab: {
-    position: "absolute",
-    bottom: 20,
-    right: 20,
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: Theme.colors.primary,
-    justifyContent: "center",
-    alignItems: "center",
-    shadowColor: Theme.colors.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
-    zIndex: 20,
-  },
-});
+export default function ReadingsScreen() {
+  const router = useRouter();
+  const t = useTokens();
+  const { bpHistory, isLoadingBP, recentSymptoms } = useHealthData();
+  const { pregnancyTimeline } = useUserProfile();
+  const { trendAlerts } = useTrends();
+  const [showAll, setShowAll] = useState(false);
+
+  const readings = useMemo<Reading[]>(
+    () =>
+      [...((bpHistory as Reading[] | undefined) ?? [])].sort(
+        (a, b) => new Date(a.recordedAt).getTime() - new Date(b.recordedAt).getTime(),
+      ),
+    [bpHistory],
+  );
+  const newestFirst = useMemo(() => [...readings].reverse(), [readings]);
+  const latest = newestFirst[0];
+
+  const week = useMemo(() => {
+    const since = Date.now() - 7 * DAY_MS;
+    const recent = readings.filter((r) => new Date(r.recordedAt).getTime() >= since);
+    const highest = recent.reduce<Reading | null>(
+      (m, r) => (!m || r.systolic > m.systolic || (r.systolic === m.systolic && r.diastolic > m.diastolic) ? r : m),
+      null,
+    );
+    return { count: recent.length, high: recent.filter((r) => getTier(r.systolic, r.diastolic) >= 3).length, highest };
+  }, [readings]);
+
+  const groups = useMemo(() => {
+    const list = showAll ? newestFirst : newestFirst.slice(0, 15);
+    const out: { heading: string; items: Reading[] }[] = [];
+    for (const r of list) {
+      const h = dayHeading(new Date(r.recordedAt));
+      if (!out.length || out[out.length - 1].heading !== h) out.push({ heading: h, items: [] });
+      out[out.length - 1].items.push(r);
+    }
+    return out;
+  }, [newestFirst, showAll]);
+
+  const tl = pregnancyTimeline?.isValid ? pregnancyTimeline : null;
+  const latestLabel = latest ? readingLabel(getTier(latest.systolic, latest.diastolic)) : null;
+
+  const Stat = ({ value, label }: { value: string; label: string }) => (
+    <View style={{ flex: 1, gap: 2 }}>
+      <Text style={{ fontFamily: FONT.bold, fontSize: 20, color: t.ink }}>{value}</Text>
+      <Text style={{ fontFamily: FONT.regular, fontSize: 13, lineHeight: 17, color: t.muted }}>{label}</Text>
+    </View>
+  );
+
+  return (
+    <Page>
+      <AppHeader
+        title="Readings"
+        subtitle="Your blood pressure over time"
+        actions={
+          <Button size="sm" href="/bp-entry" icon={(c) => <Ionicons name="add" size={18} color={c} />}>
+            Log BP
+          </Button>
+        }
+      />
+
+      {isLoadingBP ? (
+        <View style={{ gap: 12 }}>
+          <Skeleton height={120} />
+          <Skeleton height={220} />
+        </View>
+      ) : readings.length === 0 ? (
+        <Card>
+          <View style={{ gap: 12, alignItems: "flex-start" }}>
+            <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: t.surface2, alignItems: "center", justifyContent: "center" }}>
+              <Ionicons name="pulse-outline" size={20} color={t.ink2} />
+            </View>
+            <T variant="h2">No readings yet</T>
+            <T>
+              Log your first blood pressure reading. Checking regularly is how problems are found early, often before you
+              feel anything.
+            </T>
+            <Button href="/bp-entry">Log my first reading</Button>
+          </View>
+        </Card>
+      ) : (
+        <>
+          {latest && latestLabel ? (
+            <Card>
+              <T variant="label">{`Latest · ${timeAgo(latest.recordedAt)}`}</T>
+              <View style={{ flexDirection: "row", alignItems: "baseline", gap: 8, flexWrap: "wrap", marginTop: 6 }}>
+                <Text style={{ fontFamily: FONT.bold, fontSize: 40, lineHeight: 44, letterSpacing: -1, color: t.ink }}>
+                  {latest.systolic}/{latest.diastolic}
+                </Text>
+                <Text style={{ fontFamily: FONT.medium, fontSize: 15, color: t.muted }}>mmHg</Text>
+                <Pill tone={latestLabel.tone}>{latestLabel.text}</Pill>
+              </View>
+              <View style={{ flexDirection: "row", gap: 10, marginTop: 16, paddingTop: 14, borderTopWidth: 1, borderTopColor: t.border }}>
+                <Stat value={String(week.count)} label="readings this week" />
+                <Stat value={String(week.high)} label="high this week" />
+                <Stat value={week.highest ? `${week.highest.systolic}/${week.highest.diastolic}` : "–"} label="highest this week" />
+              </View>
+            </Card>
+          ) : null}
+
+          {(trendAlerts ?? []).slice(0, 2).map((a) => (
+            <Banner key={a.id ?? `${a.type}-${a.detectedAt}`} tone={a.type === "SUDDEN_SPIKE" ? "red" : "amber"}>
+              {a.message}
+            </Banner>
+          ))}
+
+          {readings.length >= 2 ? (
+            <Card>
+              <T variant="h2" style={{ marginBottom: 8 }}>{`Last ${Math.min(readings.length, 14)} readings`}</T>
+              <BPChart readings={readings} />
+            </Card>
+          ) : null}
+
+          <SectionHeader title="All readings" />
+          <Card>
+            {groups.map((g, gi) => (
+              <View key={g.heading} style={{ marginTop: gi ? 16 : 0 }}>
+                <T variant="label" style={{ marginBottom: 4 }}>
+                  {g.heading}
+                </T>
+                {g.items.map((r, i) => {
+                  const label = readingLabel(getTier(r.systolic, r.diastolic));
+                  return (
+                    <View
+                      key={r.id}
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        paddingVertical: 12,
+                        borderBottomWidth: i < g.items.length - 1 ? 1 : 0,
+                        borderBottomColor: t.border,
+                      }}
+                    >
+                      <View style={{ flex: 1 }}>
+                        <Text style={{ fontFamily: FONT.semibold, fontSize: 16, color: t.ink }}>
+                          {r.systolic}/{r.diastolic}
+                          <Text style={{ fontFamily: FONT.medium, fontSize: 14, color: t.muted }}> mmHg</Text>
+                        </Text>
+                        <T variant="small">
+                          {new Date(r.recordedAt).toLocaleTimeString("en-GB", { hour: "numeric", minute: "2-digit", hour12: true })}
+                        </T>
+                      </View>
+                      <Pill tone={label.tone}>{label.text}</Pill>
+                    </View>
+                  );
+                })}
+              </View>
+            ))}
+          </Card>
+          {!showAll && newestFirst.length > 15 ? (
+            <Button variant="secondary" block onPress={() => setShowAll(true)}>
+              {`Show ${newestFirst.length - 15} older readings`}
+            </Button>
+          ) : null}
+        </>
+      )}
+
+      <SectionHeader title="Symptoms" />
+      <Card>
+        {recentSymptoms && recentSymptoms.length > 0 ? (
+          recentSymptoms.slice(0, 5).map((s: any, i: number) => (
+            <View key={s.id} style={{ paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: t.border, paddingTop: i ? 10 : 0 }}>
+              <Text style={{ fontFamily: FONT.semibold, fontSize: 16, color: t.ink }}>
+                {prettySymptom(s.symptomType, s.customSymptom)}
+              </Text>
+              <T variant="small">{timeAgo(s.recordedAt ?? s.createdAt)}</T>
+            </View>
+          ))
+        ) : (
+          <T>No symptoms reported recently.</T>
+        )}
+        <Pressable
+          onPress={() => router.push("/symptom-checker")}
+          accessibilityRole="link"
+          style={{ flexDirection: "row", alignItems: "center", gap: 14, minHeight: 56, marginTop: 8 }}
+        >
+          <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: t.surface2, alignItems: "center", justifyContent: "center" }}>
+            <Ionicons name="medkit-outline" size={20} color={t.ink2} />
+          </View>
+          <Text style={{ flex: 1, fontFamily: FONT.semibold, fontSize: 16, color: t.ink }}>Report how you feel</Text>
+          <Ionicons name="chevron-forward" size={20} color={t.muted} />
+        </Pressable>
+      </Card>
+
+      {tl ? (
+        <Card flat>
+          <View style={{ flexDirection: "row", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+            <Text style={{ fontFamily: FONT.semibold, fontSize: 16, color: t.ink }}>
+              {`${tl.currentWeek} weeks · ${tl.trimesterLabel}`}
+            </Text>
+            <T variant="small">
+              {`Due ${new Date(tl.estimatedDueDate).toLocaleDateString("en-GB", { day: "numeric", month: "long" })}`}
+            </T>
+          </View>
+          <View
+            accessibilityRole="progressbar"
+            accessibilityLabel="Weeks of pregnancy"
+            accessibilityValue={{ min: 0, max: 40, now: Math.min(tl.currentWeek, 40) }}
+            style={{ height: 8, borderRadius: 999, backgroundColor: t.surface2, overflow: "hidden", marginTop: 12 }}
+          >
+            <View style={{ height: "100%", width: `${Math.min((tl.currentWeek / 40) * 100, 100)}%`, backgroundColor: t.green, borderRadius: 999 }} />
+          </View>
+        </Card>
+      ) : null}
+    </Page>
+  );
+}

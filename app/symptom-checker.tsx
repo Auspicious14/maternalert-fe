@@ -544,17 +544,21 @@ export default function SymptomCheckerScreen() {
 
       setTimeout(() => revalidateMonitoring(), 1500);
 
+      const s = selected.join(",");
       if (hasEmergency || hasUrgent) {
-        router.push({ pathname: "/nurse-summary", params: { msg } });
+        router.push({
+          pathname: "/nurse-summary",
+          params: { msg: msg.slice(0, 500), s, level: hasEmergency ? "emergency" : "urgent" },
+        });
       } else {
-        router.push({ pathname: "/symptom-results", params: { msg } });
+        router.push({ pathname: "/symptom-results", params: { msg: msg.slice(0, 500), s } });
       }
     } catch (error) {
       console.error("Failed to submit symptoms", error);
       if (hasLocalRedFlag(selected, subOptions)) {
         router.push({
           pathname: "/nurse-summary",
-          params: { msg: OFFLINE_DANGER_MESSAGE },
+          params: { msg: OFFLINE_DANGER_MESSAGE, s: selected.join(","), level: "offline" },
         });
         return;
       }

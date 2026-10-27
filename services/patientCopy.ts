@@ -96,3 +96,68 @@ export const BP_TIPS = [
   "Rest your arm on a table at the level of your heart.",
   "Don't talk while the machine is measuring.",
 ];
+
+// ── After a symptom check ────────────────────────────────────────────────────
+
+export type SymptomLevel = "emergency" | "urgent" | "offline" | "routine";
+
+/** Wording for the screen shown after a symptom check. */
+export function symptomResultCopy(level: SymptomLevel): {
+  tone: "red" | "urgent" | "green";
+  kicker: string;
+  title: string;
+  message: string;
+  steps: string[];
+} {
+  switch (level) {
+    case "emergency":
+      return {
+        tone: "red",
+        kicker: "Emergency",
+        title: "Go to a health facility now",
+        message: "What you described can be a danger sign in pregnancy. Please don't wait to see if it gets better.",
+        steps: [
+          "Ask someone to take you. Don't go alone if you can avoid it.",
+          "Take your antenatal card and this phone.",
+          "Show the summary below to the nurse or doctor.",
+        ],
+      };
+    case "offline":
+      return {
+        tone: "red",
+        kicker: "Danger sign",
+        title: "Go to a health facility now",
+        message:
+          "We couldn't reach our server, but one or more of your symptoms can be a danger sign in pregnancy. Go now, or call your emergency contact.",
+        steps: [
+          "Ask someone to take you.",
+          "Take your antenatal card and this phone.",
+          "Show the summary below to the nurse or doctor.",
+        ],
+      };
+    case "urgent":
+      return {
+        tone: "urgent",
+        kicker: "See a health worker today",
+        title: "Get checked today",
+        message: "Your symptoms need a health worker to look at them today. Don't wait for your next appointment.",
+        steps: [
+          "Go to your clinic or the nearest health facility today.",
+          "Show the summary below to the nurse or doctor.",
+          "If it gets worse, or you get a danger sign, go immediately.",
+        ],
+      };
+    default:
+      return {
+        tone: "green",
+        kicker: "Thank you",
+        title: "Your symptoms were sent",
+        message: "Nothing you reported needs urgent care right now. Your clinic can see what you sent.",
+        steps: [
+          "Rest, drink water, and keep checking your blood pressure.",
+          "Tell your health worker at your next visit.",
+          "If anything gets worse or you notice a danger sign, report it again or go to a facility.",
+        ],
+      };
+  }
+}
