@@ -1,534 +1,363 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import React, { useState } from "react";
-import {
-  Dimensions,
-  SafeAreaView,
-  ScrollView,
-  TouchableOpacity,
-  View,
-} from "react-native";
-import { Screen } from "../components/shared/Screen";
-import { Typography } from "../components/shared/Typography";
-import Theme from "../constants/theme";
-import { useAuthContext } from "../context/AuthContext";
-import { useColorScheme } from "../hooks/use-color-scheme";
-import { useUserProfile } from "../hooks/useUserProfile";
+import React, { useRef, useState } from "react";
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-const { height: SCREEN_HEIGHT } = Dimensions.get("window");
+import { Banner, Button, FONT, IconButton, T, useTokens } from "../components/ds";
+import { useAuthContext } from "../context/AuthContext";
+import { useUserProfile } from "../hooks/useUserProfile";
+import {
+  AGE_OPTIONS,
+  AgeRange,
+  CONDITION_OPTIONS,
+  RELATIONSHIP_OPTIONS,
+  Relationship,
+  SETUP_STEPS,
+  isValidNigerianPhone,
+  weeksFromLastPeriod,
+} from "../services/profileSetup";
+
+// Same screen as maternalert-web/src/app/(patient)/profile-setup/page.tsx
+
+function Choice({
+  selected,
+  onPress,
+  title,
+  subtitle,
+  multi,
+}: {
+  selected: boolean;
+  onPress: () => void;
+  title: string;
+  subtitle?: string;
+  multi?: boolean;
+}) {
+  const t = useTokens();
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole={multi ? "checkbox" : "radio"}
+      accessibilityState={{ checked: selected }}
+      style={{
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 14,
+        padding: 16,
+        minHeight: 60,
+        borderRadius: 16,
+        borderWidth: 1.5,
+        borderColor: selected ? t.green : t.border,
+        backgroundColor: selected ? t.mint : t.surface,
+      }}
+    >
+      <View style={{ flex: 1, gap: 2 }}>
+        <Text style={{ fontFamily: FONT.semibold, fontSize: 16, color: t.ink }}>{title}</Text>
+        {subtitle ? <Text style={{ fontFamily: FONT.regular, fontSize: 14, color: t.muted }}>{subtitle}</Text> : null}
+      </View>
+      <View
+        style={{
+          width: 24,
+          height: 24,
+          borderRadius: multi ? 7 : 12,
+          borderWidth: 2,
+          borderColor: selected ? t.green : t.borderStrong,
+          backgroundColor: selected ? t.green : "transparent",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        {selected ? <Ionicons name="checkmark" size={16} color="#fff" /> : null}
+      </View>
+    </Pressable>
+  );
+}
+
+/** YYYY-MM-DD from a typed DD/MM/YYYY, or "" (no native date picker installed). */
+function toIso(dmy: string): string {
+  const m = dmy.trim().match(/^(\d{1,2})[/.\- ](\d{1,2})[/.\- ](\d{4})$/);
+  if (!m) return "";
+  const [, d, mo, y] = m;
+  return `${y}-${mo.padStart(2, "0")}-${d.padStart(2, "0")}`;
+}
 
 export default function ProfileSetupScreen() {
   const router = useRouter();
+  const t = useTokens();
   const { createProfile, isCreatingProfile } = useUserProfile();
   const { checkSession } = useAuthContext();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
-  const [step, setStep] = useState(1);
-  const totalSteps = 4;
+  const scrollRef = useRef<ScrollView>(null);
 
-  const textColor = isDark ? "#FFFFFF" : "#0F241C";
-  const subTextColor = isDark ? "#94A3B8" : "#5B6B64";
-  const bgColor = isDark ? "#0B1A14" : "#FBF7F2";
-  const cardBg = isDark ? "#13261E" : "#FFFFFF";
-  const borderColor = isDark ? "#2A3B34" : "#F1F5F9";
+  const [step, setStep] = useState(0);
+  const [ageRange, setAgeRange] = useState<AgeRange | null>(null);
+  const [weeks, setWeeks] = useState("");
+  const [useLmp, setUseLmp] = useState(false);
+  const [lmp, setLmp] = useState("");
+  const [firstPregnancy, setFirstPregnancy] = useState<boolean | null>(null);
+  const [conditions, setConditions] = useState<string[] | null>(null);
+  const [relationship, setRelationship] = useState<Relationship | null>(null);
+  const [phone, setPhone] = useState("");
+  const [error, setError] = useState<string | null>(null);
 
-  const [ageRange, setAgeRange] = useState<
-    "UNDER_18" | "AGE_18_34" | "AGE_35_PLUS"
-  >("AGE_18_34");
-  const [weeks, setWeeks] = useState(24);
-  const [conditions, setConditions] = useState<string[]>([]);
-  const [isFirstPregnancy, setIsFirstPregnancy] = useState<boolean | null>(
-    null,
-  );
+  const current = SETUP_STEPS[step];
+  const last = step === SETUP_STEPS.length - 1;
+  const weeksNum = useLmp ? weeksFromLastPeriod(toIso(lmp)) : weeks === "" ? null : Number(weeks);
 
-  const toggleCondition = (id: string) => {
-    if (conditions.includes(id)) {
-      setConditions(conditions.filter((c) => c !== id));
-    } else {
-      setConditions([...conditions, id]);
-    }
-  };
-
-  const handleNext = async () => {
-    if (step < totalSteps) {
-      setStep(step + 1);
-    } else {
-      try {
-        const mappedConditions = conditions.map((c) => {
-          switch (c) {
-            case "hbp":
-              return "CHRONIC_HYPERTENSION";
-            case "diabetes":
-              return "DIABETES";
-            case "twins":
-              return "MULTIPLE_PREGNANCY";
-            case "kidney":
-              return "KIDNEY_DISEASE";
-            case "frothy_urine":
-              return "FROTHY_URINE_CONDITION";
-            default:
-              return "NONE";
-          }
-        });
-
-        await createProfile({
-          ageRange,
-          pregnancyWeeks: weeks,
-          firstPregnancy: isFirstPregnancy ?? true,
-          knownConditions:
-            mappedConditions.length > 0 ? mappedConditions : ["NONE"],
-        });
-
-        // Crucial: Update auth state before redirecting
-        await checkSession();
-
-        router.replace("/(tabs)");
-      } catch (error) {
-        console.error("Failed to create profile", error);
-      }
-    }
-  };
-
-  const renderStepContent = () => {
-    switch (step) {
-      case 1:
-        return (
-          <View className="flex-1">
-            <Typography
-              variant="h1"
-              weight="bold"
-              style={{ color: textColor }}
-              className="text-[32px] leading-10 mb-4 text-center"
-            >
-              How old are you?
-            </Typography>
-
-            <Typography
-              variant="body"
-              style={{ color: subTextColor }}
-              className="text-center mb-10"
-            >
-              We use age range instead of exact age for privacy.
-            </Typography>
-
-            <View className="gap-4 mb-8">
-              <ConditionItem
-                title="Under 18"
-                subtitle="You are younger than 18"
-                selected={ageRange === "UNDER_18"}
-                onPress={() => setAgeRange("UNDER_18")}
-                isDark={isDark}
-              />
-              <ConditionItem
-                title="18 – 34 years"
-                subtitle="Most first pregnancies"
-                selected={ageRange === "AGE_18_34"}
-                onPress={() => setAgeRange("AGE_18_34")}
-                isDark={isDark}
-              />
-              <ConditionItem
-                title="35 years and above"
-                subtitle="Advanced maternal age"
-                selected={ageRange === "AGE_35_PLUS"}
-                onPress={() => setAgeRange("AGE_35_PLUS")}
-                isDark={isDark}
-              />
-            </View>
-          </View>
-        );
-      case 2:
-        return (
-          <View className="flex-1">
-            <Typography
-              variant="h1"
-              weight="bold"
-              style={{ color: textColor }}
-              className="text-[32px] leading-10 mb-4 text-center"
-            >
-              How many weeks{"\n"}pregnant are you?
-            </Typography>
-            <Typography
-              variant="body"
-              style={{ color: subTextColor }}
-              className="text-center mb-10"
-            >
-              If you aren&apos;t sure, give your best guess.
-            </Typography>
-
-            <View className="items-center my-10">
-              <Typography
-                variant="h1"
-                weight="bold"
-                style={{ color: textColor }}
-                className="text-[100px] leading-[110px]"
-              >
-                {weeks}
-              </Typography>
-              <Typography
-                variant="h3"
-                style={{ color: subTextColor }}
-                className="text-2xl"
-              >
-                Weeks
-              </Typography>
-            </View>
-
-            <View className="flex-row items-center gap-5 mb-2">
-              <TouchableOpacity
-                style={{ backgroundColor: cardBg, borderColor: borderColor }}
-                className="w-16 h-16 rounded-full justify-center items-center border shadow-sm"
-                onPress={() => setWeeks(Math.max(0, weeks - 1))}
-              >
-                <Ionicons
-                  name="remove"
-                  size={32}
-                  color={Theme.colors.primary}
-                />
-              </TouchableOpacity>
-
-              <View className="flex-1 h-10 justify-center relative">
-                <View
-                  style={{ backgroundColor: isDark ? "#2A3B34" : "#EDF2F7" }}
-                  className="h-2 rounded-full w-full"
-                />
-                <View
-                  className="h-2 bg-primary rounded-full absolute"
-                  style={{ width: `${(weeks / 42) * 100}%` }}
-                />
-                <View
-                  className="w-6 h-6 rounded-full bg-primary border-4 border-white absolute shadow-sm"
-                  style={{ left: `${(weeks / 42) * 100}%`, marginLeft: -12 }}
-                />
-              </View>
-
-              <TouchableOpacity
-                className="w-16 h-16 rounded-full bg-primary justify-center items-center shadow-sm"
-                onPress={() => setWeeks(Math.min(42, weeks + 1))}
-              >
-                <Ionicons name="add" size={32} color="#FFFFFF" />
-              </TouchableOpacity>
-            </View>
-
-            <View className="flex-row justify-between px-2 mt-2">
-              <Typography variant="caption" style={{ color: subTextColor }}>
-                0 Weeks
-              </Typography>
-              <Typography variant="caption" style={{ color: subTextColor }}>
-                42 Weeks
-              </Typography>
-            </View>
-          </View>
-        );
-      case 3:
-        return (
-          <View className="flex-1">
-            <Typography
-              variant="h1"
-              weight="bold"
-              style={{ color: textColor }}
-              className="text-[32px] leading-10 mb-4 text-center"
-            >
-              Have you ever had any of these conditions?
-            </Typography>
-
-            <View className="gap-4 mb-8">
-              <ConditionItem
-                id="hbp"
-                title="High blood pressure"
-                subtitle="Before this pregnancy"
-                selected={conditions.includes("hbp")}
-                onPress={() => toggleCondition("hbp")}
-                isDark={isDark}
-              />
-              <ConditionItem
-                id="diabetes"
-                title="Diabetes"
-                subtitle="Sugar problems"
-                selected={conditions.includes("diabetes")}
-                onPress={() => toggleCondition("diabetes")}
-                isDark={isDark}
-              />
-              <ConditionItem
-                id="twins"
-                title="Twins, triplets, or more"
-                subtitle="Twin or higher-order multiple gestation"
-                selected={conditions.includes("twins")}
-                onPress={() => toggleCondition("twins")}
-                isDark={isDark}
-              />
-              <ConditionItem
-                id="kidney"
-                title="Kidney problems"
-                subtitle="Ongoing issues with kidneys"
-                selected={conditions.includes("kidney")}
-                onPress={() => toggleCondition("kidney")}
-                isDark={isDark}
-              />
-              <ConditionItem
-                id="frothy_urine"
-                title="Frothy Urine"
-                subtitle="Urine forming foam or bubbles"
-                selected={conditions.includes("frothy_urine")}
-                onPress={() => toggleCondition("frothy_urine")}
-                isDark={isDark}
-              />
-            </View>
-
-            <TouchableOpacity
-              className="items-center mt-2"
-              onPress={() => setConditions([])}
-            >
-              <Typography
-                variant="h3"
-                weight="bold"
-                className="text-setup-blue"
-              >
-                None of these apply to me
-              </Typography>
-            </TouchableOpacity>
-          </View>
-        );
-      case 4:
-        return (
-          <View className="flex-1">
-            <Typography
-              variant="h1"
-              weight="bold"
-              style={{ color: textColor }}
-              className="text-[32px] leading-10 mb-4 text-center"
-            >
-              Is this your first pregnancy?
-            </Typography>
-
-            <View className="flex-row justify-between mt-10 mb-10 gap-4">
-              <TouchableOpacity
-                style={{
-                  backgroundColor: cardBg,
-                  borderColor:
-                    isFirstPregnancy === true
-                      ? Theme.colors.primary
-                      : borderColor,
-                }}
-                className="flex-1 rounded-[40px] p-[30px] items-center border-2 shadow-sm relative"
-                onPress={() => setIsFirstPregnancy(true)}
-              >
-                <View
-                  style={{ backgroundColor: isDark ? "#1B3A26" : "#E0FAEB" }}
-                  className="w-20 h-20 rounded-full justify-center items-center mb-5"
-                >
-                  <Ionicons
-                    name="happy-outline"
-                    size={40}
-                    color={Theme.colors.primary}
-                  />
-                </View>
-                <Typography
-                  variant="h2"
-                  weight="bold"
-                  style={{ color: textColor }}
-                  className="text-[22px]"
-                >
-                  Yes
-                </Typography>
-                {isFirstPregnancy === true && (
-                  <View className="absolute top-[15px] right-[15px] w-5 h-5 rounded-full bg-primary justify-center items-center">
-                    <Ionicons name="checkmark" size={12} color="#FFFFFF" />
-                  </View>
-                )}
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={{
-                  backgroundColor: cardBg,
-                  borderColor:
-                    isFirstPregnancy === false
-                      ? Theme.colors.primary
-                      : borderColor,
-                }}
-                className="flex-1 rounded-[40px] p-[30px] items-center border-2 shadow-sm relative"
-                onPress={() => setIsFirstPregnancy(false)}
-              >
-                <View
-                  style={{ backgroundColor: isDark ? "#2A3B34" : "#F3F4F6" }}
-                  className="w-20 h-20 rounded-full justify-center items-center mb-5"
-                >
-                  <Ionicons
-                    name="people-outline"
-                    size={40}
-                    color={subTextColor}
-                  />
-                </View>
-                <Typography
-                  variant="h2"
-                  weight="bold"
-                  style={{ color: textColor }}
-                  className="text-[22px]"
-                >
-                  No
-                </Typography>
-                {isFirstPregnancy === false && (
-                  <View className="absolute top-[15px] right-[15px] w-5 h-5 rounded-full bg-primary justify-center items-center">
-                    <Ionicons name="checkmark" size={12} color="#FFFFFF" />
-                  </View>
-                )}
-              </TouchableOpacity>
-            </View>
-
-            <Typography
-              variant="body"
-              style={{ color: subTextColor }}
-              className="text-center px-5 leading-5"
-            >
-              This helps us provide the most relevant health tips and tracking
-              for your specific needs.
-            </Typography>
-          </View>
-        );
+  const validate = (): string | null => {
+    switch (current.id) {
+      case "age":
+        return ageRange ? null : "Please choose your age range.";
+      case "weeks":
+        if (weeksNum === null || Number.isNaN(weeksNum)) {
+          return useLmp ? "Please enter the date like 14/03/2026." : "Please enter how many weeks pregnant you are.";
+        }
+        if (weeksNum < 0 || weeksNum > 42) return "That works out to more than 42 weeks. Please check the date or number.";
+        return null;
+      case "first":
+        return firstPregnancy === null ? "Please choose Yes or No." : null;
+      case "conditions":
+        return conditions === null ? "Choose any that apply, or “None of these”." : null;
+      case "contact":
+        if (!phone.trim()) return null;
+        if (!isValidNigerianPhone(phone)) return "Please enter a full phone number, for example 0803 123 4567.";
+        if (!relationship) return "Please choose who this person is.";
+        return null;
       default:
         return null;
     }
   };
 
-  return (
-    <SafeAreaView style={{ backgroundColor: bgColor }} className="flex-1">
-      <Screen backgroundColor={bgColor}>
-        <View className="flex-row items-center justify-between px-6 pt-4 mb-2">
-          <TouchableOpacity
-            onPress={() => router.back()}
-            className="w-11 h-11 justify-center items-center"
-          >
-            <Ionicons name="arrow-back" size={28} color={textColor} />
-          </TouchableOpacity>
-          <Typography
-            variant="h2"
-            weight="bold"
-            style={{ color: textColor }}
-            className="text-[22px]"
-          >
-            Profile Setup
-          </Typography>
-          <View className="w-7" />
-        </View>
+  const next = async () => {
+    const problem = validate();
+    setError(problem);
+    if (problem) return;
+    if (!last) {
+      setStep((s) => s + 1);
+      scrollRef.current?.scrollTo({ y: 0, animated: false });
+      return;
+    }
+    try {
+      await createProfile({
+        ageRange: ageRange!,
+        pregnancyWeeks: Math.round(weeksNum!),
+        firstPregnancy: firstPregnancy!,
+        knownConditions: conditions && conditions.length ? conditions : ["NONE"],
+        ...(phone.trim() ? { emergencyContactPhone: phone.trim(), emergencyContactRelationship: relationship! } : {}),
+      } as any);
+      await checkSession();
+      router.replace({ pathname: "/facility-linking", params: { from: "setup" } });
+    } catch (err) {
+      console.error("[PROFILE_SETUP] Failed to create profile:", err);
+      setError("We couldn't save your profile. Check your internet and try again.");
+    }
+  };
 
-        <View className="px-10 mb-8">
-          <View className="flex-row justify-between mb-2">
-            <Typography
-              variant="caption"
-              style={{ color: subTextColor }}
-              className="uppercase tracking-widest text-[10px]"
-            >
-              {step === 4 ? "Final Step" : `STEP ${step} OF ${totalSteps}`}
-            </Typography>
-            <Typography
-              variant="caption"
-              weight="bold"
-              style={{ color: textColor }}
-            >
-              {step} of {totalSteps}
-            </Typography>
-          </View>
-          <View
-            style={{ backgroundColor: isDark ? "#2A3B34" : "#E6E1D9" }}
-            className="h-[6px] rounded-full overflow-hidden"
-          >
+  const back = () => {
+    setError(null);
+    if (step > 0) setStep((s) => s - 1);
+    else router.back();
+  };
+
+  const toggleCondition = (value: string) =>
+    setConditions((c) => {
+      const list = c ?? [];
+      return list.includes(value) ? list.filter((x) => x !== value) : [...list, value];
+    });
+
+  const inputStyle = {
+    fontFamily: FONT.regular,
+    fontSize: 16,
+    color: t.ink,
+    backgroundColor: t.surface,
+    borderWidth: 1.5,
+    borderColor: t.borderStrong,
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    minHeight: 48,
+  };
+
+  return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: t.bg }} edges={["top", "bottom"]}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+        <ScrollView ref={scrollRef} contentContainerStyle={{ padding: 20, paddingBottom: 48, gap: 18 }} keyboardShouldPersistTaps="handled">
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
+            <IconButton label={step > 0 ? "Previous question" : "Go back"} onPress={back}>
+              <Ionicons name="arrow-back" size={22} color={t.ink} />
+            </IconButton>
             <View
-              className="h-full bg-primary rounded-full shadow-sm"
-              style={{ width: `${(step / totalSteps) * 100}%` }}
-            />
-          </View>
-        </View>
-
-        <ScrollView
-          contentContainerStyle={{ paddingHorizontal: 40, paddingBottom: 40 }}
-          showsVerticalScrollIndicator={false}
-        >
-          {renderStepContent()}
-        </ScrollView>
-
-        <View
-          className={`px-10 pb-10 ${SCREEN_HEIGHT < 700 ? "pb-4" : "pb-8"}`}
-        >
-          <TouchableOpacity
-            className={`bg-primary h-[70px] rounded-[35px] flex-row items-center justify-center gap-3 shadow-md ${
-              isCreatingProfile || (step === 4 && isFirstPregnancy === null)
-                ? "opacity-50"
-                : ""
-            }`}
-            activeOpacity={0.8}
-            onPress={handleNext}
-            disabled={
-              isCreatingProfile || (step === 4 && isFirstPregnancy === null)
-            }
-          >
-            <Typography
-              variant="h2"
-              weight="bold"
-              className="text-[#0F241C] text-[22px]"
+              style={{ flex: 1, flexDirection: "row", gap: 6 }}
+              accessible
+              accessibilityRole="progressbar"
+              accessibilityLabel={`Question ${step + 1} of ${SETUP_STEPS.length}`}
             >
-              {step === 4 ? "Finish Profile" : "Next"}
-            </Typography>
-            {step !== 4 && (
-              <Ionicons name="arrow-forward" size={24} color="#0F241C" />
-            )}
-          </TouchableOpacity>
-        </View>
-      </Screen>
+              {SETUP_STEPS.map((s, i) => (
+                <View key={s.id} style={{ flex: 1, height: 6, borderRadius: 3, backgroundColor: i <= step ? t.green : t.border }} />
+              ))}
+            </View>
+            <T variant="small">{`${step + 1}/${SETUP_STEPS.length}`}</T>
+          </View>
+
+          <View style={{ gap: 8, paddingTop: 4 }}>
+            <T variant="h1" accessibilityRole="header">
+              {current.title}
+            </T>
+            <T>{current.help}</T>
+          </View>
+
+          {current.id === "age" ? (
+            <View style={{ gap: 10 }}>
+              {AGE_OPTIONS.map((o) => (
+                <Choice key={o.value} title={o.label} selected={ageRange === o.value} onPress={() => setAgeRange(o.value)} />
+              ))}
+            </View>
+          ) : null}
+
+          {current.id === "weeks" ? (
+            <View style={{ gap: 16 }}>
+              {!useLmp ? (
+                <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 16 }}>
+                  <IconButton label="One week less" onPress={() => setWeeks(String(Math.max(0, (weeksNum ?? 1) - 1)))}>
+                    <Ionicons name="remove" size={22} color={t.ink} />
+                  </IconButton>
+                  <View style={{ alignItems: "center", gap: 6 }}>
+                    <TextInput
+                      accessibilityLabel="Weeks pregnant"
+                      keyboardType="number-pad"
+                      maxLength={2}
+                      value={weeks}
+                      placeholder="–"
+                      placeholderTextColor={t.muted}
+                      onChangeText={(v) => setWeeks(v.replace(/[^0-9]/g, ""))}
+                      style={{
+                        width: 140,
+                        minHeight: 84,
+                        textAlign: "center",
+                        fontFamily: FONT.bold,
+                        fontSize: 44,
+                        color: t.ink,
+                        backgroundColor: t.surface,
+                        borderWidth: 2,
+                        borderColor: t.green,
+                        borderRadius: 18,
+                      }}
+                    />
+                    <T variant="small">weeks</T>
+                  </View>
+                  <IconButton label="One week more" onPress={() => setWeeks(String(Math.min(42, (weeksNum ?? -1) + 1)))}>
+                    <Ionicons name="add" size={22} color={t.ink} />
+                  </IconButton>
+                </View>
+              ) : (
+                <View style={{ gap: 8 }}>
+                  <Text style={{ fontFamily: FONT.semibold, fontSize: 15, color: t.ink }}>First day of your last period</Text>
+                  <TextInput
+                    accessibilityLabel="First day of your last period, day month year"
+                    keyboardType="numbers-and-punctuation"
+                    placeholder="DD/MM/YYYY"
+                    placeholderTextColor={t.muted}
+                    value={lmp}
+                    onChangeText={setLmp}
+                    maxLength={10}
+                    style={inputStyle}
+                  />
+                  {weeksNum !== null && weeksNum >= 0 && weeksNum <= 42 ? (
+                    <T variant="small">{`That makes you about ${weeksNum} weeks pregnant.`}</T>
+                  ) : null}
+                </View>
+              )}
+              <Pressable onPress={() => setUseLmp((v) => !v)} accessibilityRole="button" style={{ minHeight: 44, justifyContent: "center" }}>
+                <Text style={{ fontFamily: FONT.semibold, fontSize: 15, color: t.greenInk }}>
+                  {useLmp ? "I know how many weeks I am" : "Not sure? Use the date of your last period"}
+                </Text>
+              </Pressable>
+            </View>
+          ) : null}
+
+          {current.id === "first" ? (
+            <View style={{ gap: 10 }}>
+              <Choice title="Yes, this is my first" selected={firstPregnancy === true} onPress={() => setFirstPregnancy(true)} />
+              <Choice title="No, I've been pregnant before" selected={firstPregnancy === false} onPress={() => setFirstPregnancy(false)} />
+            </View>
+          ) : null}
+
+          {current.id === "conditions" ? (
+            <View style={{ gap: 10 }}>
+              {CONDITION_OPTIONS.map((c) => (
+                <Choice
+                  key={c.value}
+                  multi
+                  title={c.label}
+                  subtitle={c.hint}
+                  selected={(conditions ?? []).includes(c.value)}
+                  onPress={() => toggleCondition(c.value)}
+                />
+              ))}
+              <Choice title="None of these" selected={conditions !== null && conditions.length === 0} onPress={() => setConditions([])} />
+            </View>
+          ) : null}
+
+          {current.id === "contact" ? (
+            <View style={{ gap: 16 }}>
+              <View style={{ gap: 8 }}>
+                <Text style={{ fontFamily: FONT.semibold, fontSize: 15, color: t.ink }}>Who is this person?</Text>
+                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }} accessibilityRole="radiogroup">
+                  {RELATIONSHIP_OPTIONS.map((r) => {
+                    const on = relationship === r.value;
+                    return (
+                      <Pressable
+                        key={r.value}
+                        onPress={() => setRelationship(r.value)}
+                        accessibilityRole="radio"
+                        accessibilityState={{ checked: on }}
+                        style={{
+                          minHeight: 44,
+                          paddingHorizontal: 16,
+                          borderRadius: 999,
+                          borderWidth: 1.5,
+                          justifyContent: "center",
+                          borderColor: on ? t.green : t.borderStrong,
+                          backgroundColor: on ? t.green : t.surface,
+                        }}
+                      >
+                        <Text style={{ fontFamily: FONT.medium, fontSize: 15, color: on ? "#fff" : t.ink2 }}>{r.label}</Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+              </View>
+              <View style={{ gap: 8 }}>
+                <Text style={{ fontFamily: FONT.semibold, fontSize: 15, color: t.ink }}>Their phone number</Text>
+                <TextInput
+                  accessibilityLabel="Their phone number"
+                  keyboardType="phone-pad"
+                  textContentType="telephoneNumber"
+                  autoComplete="tel"
+                  placeholder="0803 123 4567"
+                  placeholderTextColor={t.muted}
+                  value={phone}
+                  onChangeText={setPhone}
+                  style={inputStyle}
+                />
+                <T variant="small">Use a number that has WhatsApp if possible. We also send an SMS.</T>
+              </View>
+              <Banner tone="amber">
+                Without an emergency contact, the emergency button can only alert your clinic. You can add one later in Profile.
+              </Banner>
+            </View>
+          ) : null}
+
+          {error ? <Banner tone="red">{error}</Banner> : null}
+
+          <View style={{ gap: 10, marginTop: 4 }}>
+            <Button size="lg" block onPress={next} loading={isCreatingProfile} disabled={isCreatingProfile}>
+              {isCreatingProfile ? "Saving…" : last ? (phone.trim() ? "Save and continue" : "Skip and finish") : "Next"}
+            </Button>
+            <T variant="small" style={{ textAlign: "center" }}>
+              Only you and your linked clinic can see this. You can change it later in Profile.
+            </T>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
-  );
-}
-
-function ConditionItem({ title, subtitle, selected, onPress, isDark }: any) {
-  const textColor = isDark ? "#FFFFFF" : "#0F241C";
-  const subTextColor = isDark ? "#94A3B8" : "#5B6B64";
-  const cardBg = isDark ? "#13261E" : "#FFFFFF";
-  const borderColor = isDark ? "#2A3B34" : "#F1F5F9";
-
-  return (
-    <TouchableOpacity
-      style={{
-        backgroundColor: selected ? (isDark ? "#1B3A26" : "#F7FFF9") : cardBg,
-        borderColor: selected ? Theme.colors.primary : borderColor,
-      }}
-      className="rounded-[35px] py-5 px-6 flex-row items-center justify-between border shadow-sm"
-      onPress={onPress}
-      activeOpacity={0.7}
-    >
-      <View className="flex-1">
-        <Typography
-          variant="h3"
-          weight="bold"
-          style={{ color: textColor }}
-          className="text-lg mb-0.5"
-        >
-          {title}
-        </Typography>
-        <Typography
-          variant="caption"
-          style={{ color: subTextColor }}
-          className="text-sm"
-        >
-          {subtitle}
-        </Typography>
-      </View>
-      <View
-        style={{
-          borderColor: selected
-            ? Theme.colors.primary
-            : isDark
-              ? "#4B5563"
-              : "#D1D5DB",
-          backgroundColor: selected
-            ? isDark
-              ? "#FFFFFF"
-              : "white"
-            : "transparent",
-        }}
-        className="w-7 h-7 border rounded-full justify-center items-center"
-      >
-        {selected && (
-          <Ionicons name="checkmark" size={16} color={Theme.colors.primary} />
-        )}
-      </View>
-    </TouchableOpacity>
   );
 }

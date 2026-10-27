@@ -250,6 +250,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
             );
             setIntendedDestination(null);
             router.replace(dest as any);
+          } else if (rootSegment === "profile-setup") {
+            // Leaving profile setup: next step is linking to a clinic.
+            router.replace({ pathname: "/facility-linking", params: { from: "setup" } } as any);
           } else {
             console.log("[AUTH-GUARD] Authenticated — redirecting to /(tabs)");
             router.replace("/(tabs)");
