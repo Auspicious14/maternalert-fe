@@ -1,426 +1,828 @@
 // ═══════════════════════════════════════════════════════════════════════════
-// FILE: constants/education.ts
-// All education content hardcoded — works fully offline, no API needed
-// Validated against WHO, ACOG, Preeclampsia Foundation guidelines
-// Your co-founder (nurse) should review all clinical content before launch
+// MaternAlert education content: ONE file, copied byte-for-byte to
+//   maternalert-web/src/constants/education.ts
+//   maternalert-fe/constants/education.ts
+//   maternalert-be/src/education/data/education.content.ts (via shared import)
+// Edit it in one place and copy it to the others.
+//
+// Content is bundled with the app so it works offline.
+//
+// Written October 2026 from: WHO antenatal care (2016), WHO aspirin for
+// pre-eclampsia (2021), WHO postnatal care (2022), WHO/FIGO/ICM postpartum
+// haemorrhage (Oct 2025), WHO malaria guidelines, WHO/UNICEF breastfeeding,
+// and the AWHONN POST-BIRTH warning signs. Numbers in "bp-numbers" match the
+// app's own alert levels (services/escalation.ts).
+//
+// CLINICAL SIGN-OFF REQUIRED before launch: a registered midwife or doctor
+// should read every article and set `reviewedBy`.
 // ═══════════════════════════════════════════════════════════════════════════
+
+export type EducationCategory =
+  | "DANGER_SIGNS"
+  | "BLOOD_PRESSURE"
+  | "PREGNANCY_CARE"
+  | "FOOD_MEDICINE"
+  | "BIRTH"
+  | "AFTER_BIRTH"
+  | "BABY";
+
+export type Block =
+  | { type: "p"; text: string }
+  | { type: "h"; text: string }
+  | { type: "list"; items: string[] }
+  | { type: "alert"; tone: "red" | "amber" | "green"; text: string };
 
 export interface EducationArticle {
   id: string;
   title: string;
-  category:
-    | "HYPERTENSION"
-    | "NUTRITION"
-    | "WARNING_SIGNS"
-    | "POSTPARTUM"
-    | "ANTENATAL";
-  categoryLabel: string;
+  category: EducationCategory;
   summary: string;
-  content: string;
   readTimeMinutes: number;
-  source: string;
-  sourceUrl?: string;
-  urgent?: boolean; // true = show at top, red accent
+  /** Shown first, with a red accent. */
+  urgent?: boolean;
+  /** Pregnancy weeks this matters most for (used to order the list). */
+  weeks?: [number, number];
+  body: Block[];
+  sources: { title: string; url: string }[];
+  updated: string; // YYYY-MM
+  reviewedBy?: string;
 }
 
+export const CATEGORY_LABELS: Record<EducationCategory, string> = {
+  DANGER_SIGNS: "Danger signs",
+  BLOOD_PRESSURE: "Blood pressure",
+  PREGNANCY_CARE: "Pregnancy care",
+  FOOD_MEDICINE: "Food and medicines",
+  BIRTH: "Labour and birth",
+  AFTER_BIRTH: "After birth",
+  BABY: "Your baby",
+};
+
+const WHO_ANC = {
+  title: "WHO recommendations on antenatal care for a positive pregnancy experience (2016)",
+  url: "https://www.who.int/publications/i/item/9789241549912",
+};
+const WHO_PNC = {
+  title: "WHO: Quality care for women and newborns in the first weeks after childbirth (2022)",
+  url: "https://www.who.int/news/item/30-03-2022-who-urges-quality-care-for-women-and-newborns-in-critical-first-weeks-after-childbirth",
+};
+const WHO_PPH = {
+  title: "WHO, FIGO and ICM: New recommendations on postpartum haemorrhage (October 2025)",
+  url: "https://www.who.int/news/item/05-10-2025-global-health-agencies-issue-new-recommendations-to-help-end-deaths-from-postpartum-haemorrhage",
+};
+const WHO_ASPIRIN = {
+  title: "WHO recommendation on antiplatelet agents for the prevention of pre-eclampsia (2021)",
+  url: "https://www.who.int/publications/i/item/9789240037540",
+};
+const PE_FOUNDATION = {
+  title: "Preeclampsia Foundation: Signs and symptoms",
+  url: "https://www.preeclampsia.org/health-information/signs-and-symptoms",
+};
+const POST_BIRTH = {
+  title: "Lamaze / AWHONN: POST-BIRTH warning signs",
+  url: "https://lamaze.org/Giving-Birth-with-Confidence/GBWC-Post/do-you-know-these-deadly-post-birth-warning-signs",
+};
+
 export const EDUCATION_CONTENT: EducationArticle[] = [
-  // ── WARNING SIGNS (urgent — show first) ──────────────────────────────────
+  // ── DANGER SIGNS ───────────────────────────────────────────────────────────
   {
     id: "danger-signs",
-    title: "Danger Signs to Act On Immediately",
-    category: "WARNING_SIGNS",
-    categoryLabel: "Warning Signs",
+    title: "Danger signs in pregnancy: go now",
+    category: "DANGER_SIGNS",
     urgent: true,
-    summary:
-      "These symptoms mean you should go to a health facility right away — do not wait.",
-    content: `If you experience any of the following, go to a health facility immediately. Do not wait to see if it gets better on its own.
- 
-HEADACHE
-Any persistent or worsening headache is a warning sign — especially if it is associated with fever, chills and rigors, vomiting, or nausea. It may feel like pressure at the front or back of your head.
- 
-CHANGES IN YOUR VISION
-If your vision becomes blurred, you see flashing lights, dark spots, or you feel like something is wrong with your eyes, this needs urgent attention.
- 
-BILATERAL LEG SWELLING
-Swelling of both legs is a warning sign. Note whether the swelling is painful or non-painful — both types require evaluation. Bilateral leg swelling is common in people diagnosed with pre-eclampsia. Sudden or worsening swelling should not be ignored.
- 
-FROTHY URINE
-If your urine is foamy or forms bubbles, this can be a sign of protein in the urine, which is associated with pre-eclampsia. Report this to your health worker.
- 
-ABDOMINAL PAIN
-Any abdominal pain during pregnancy warrants attention — the risk is not limited to the upper abdomen. Pain may occur in the lower abdomen, upper abdomen, just below the ribs, or elsewhere.
- 
-VAGINAL BLEEDING
-Any vaginal bleeding during pregnancy requires immediate medical attention, regardless of how much blood is present. This symptom most commonly occurs after the first trimester.
- 
-DIFFICULTY BREATHING
-If you find it hard to breathe, feel short of breath while resting, or feel tightness in your chest, seek care immediately.
- 
-ABNORMAL BODY MOVEMENT
-Any abnormal body movement — including fits, shaking, or tremors — is a medical emergency. Someone near you must get you to a hospital as quickly as possible.
- 
-REDUCED FETAL MOVEMENT
-If you notice your baby is moving much less than usual after 28 weeks, contact your health worker or go to a facility.
- 
-FEVER
-A high temperature during pregnancy can harm you and your baby. If you feel very hot or are shivering, seek care.
- 
-Remember: it is always better to go and be told everything is fine than to stay home and wait. No question is too small to ask your health worker.`,
-    readTimeMinutes: 6,
-    source:
-      "Preeclampsia Foundation and WHO guidelines on warning signs in pregnancy",
+    summary: "If you have any of these, go to a health facility straight away. Don't wait to see if it passes.",
+    readTimeMinutes: 3,
+    body: [
+      {
+        type: "alert",
+        tone: "red",
+        text: "Go to a hospital now, or call 112, if you have any sign below. Ask someone to take you. Don't go alone if you can avoid it.",
+      },
+      { type: "h", text: "Go now for" },
+      {
+        type: "list",
+        items: [
+          "Bleeding from the vagina, any amount",
+          "Fits (convulsions), or fainting",
+          "A very bad headache that doesn't go away, especially with blurred vision or seeing spots or flashing lights",
+          "Pain high in your belly, under the ribs on the right, or very bad belly pain anywhere",
+          "Hard to breathe, or chest pain",
+          "Fever and feeling too weak to get out of bed",
+          "Your waters break (fluid leaks from the vagina) before labour starts",
+          "Your baby is moving less than usual, or has stopped moving",
+          "Sudden swelling of your face or hands",
+        ],
+      },
+      { type: "h", text: "See your clinic today for" },
+      {
+        type: "list",
+        items: [
+          "Fever, even if you feel strong enough to walk",
+          "Pain or burning when you pass urine",
+          "Vomiting so much that you can't keep food or water down",
+          "Vaginal discharge that smells bad, itches, or looks green or grey",
+          "Feeling very sad or hopeless most days",
+        ],
+      },
+      {
+        type: "p",
+        text: "Swollen feet at the end of the day and passing urine often are common in pregnancy and usually normal. Swelling that comes on suddenly, or swelling of the face and hands, is not.",
+      },
+      {
+        type: "p",
+        text: "If you are not sure, go and get checked. Health workers would much rather see you for nothing than see you too late.",
+      },
+    ],
+    sources: [WHO_ANC, PE_FOUNDATION],
+    updated: "2026-10",
+  },
+  {
+    id: "bleeding-after-birth",
+    title: "Heavy bleeding after birth",
+    category: "DANGER_SIGNS",
+    urgent: true,
+    weeks: [34, 42],
+    summary: "Bleeding after birth is the leading cause of maternal death. Know the signs so you and your family act fast.",
+    readTimeMinutes: 3,
+    body: [
+      {
+        type: "p",
+        text: "Some bleeding after birth is normal. It is heavy at first, then gets lighter and changes from red to brown to yellow-white over a few weeks.",
+      },
+      {
+        type: "p",
+        text: "Too much bleeding (postpartum haemorrhage) can become dangerous within minutes. It is the most common cause of mothers dying in childbirth in Nigeria and worldwide, and most of these deaths can be prevented with quick care.",
+      },
+      { type: "h", text: "Get help immediately if" },
+      {
+        type: "list",
+        items: [
+          "Blood soaks through a pad in an hour or less",
+          "You pass clots the size of an egg or bigger",
+          "Bleeding suddenly gets heavier after it had become lighter",
+          "You feel dizzy, faint, very weak, or your heart is racing",
+          "You feel cold and clammy, or look very pale",
+        ],
+      },
+      {
+        type: "alert",
+        tone: "red",
+        text: "If this happens at home, go to the nearest hospital now. Lie down with your legs raised on the way. Don't wait for the bleeding to stop by itself.",
+      },
+      { type: "h", text: "How to lower your risk" },
+      {
+        type: "list",
+        items: [
+          "Give birth in a health facility with a skilled midwife or doctor",
+          "Take your iron and folic acid tablets every day in pregnancy. Low blood (anaemia) makes bleeding more dangerous",
+          "After the baby is born, you will be given an injection to help your womb tighten. This is normal and protects you",
+          "Stay in the facility for at least 24 hours after birth",
+          "Plan ahead for a blood donor in case you need blood",
+        ],
+      },
+      {
+        type: "p",
+        text: "In October 2025, WHO and international midwife and obstetrician groups asked health workers to act earlier, when blood loss reaches 300 ml with warning signs, instead of waiting for 500 ml. Telling a health worker early really matters.",
+      },
+    ],
+    sources: [WHO_PPH, POST_BIRTH],
+    updated: "2026-10",
   },
 
-  // ── HYPERTENSION ─────────────────────────────────────────────────────────
+  // ── BLOOD PRESSURE ─────────────────────────────────────────────────────────
   {
-    id: "preeclampsia-eclampsia",
-    title: "Preeclampsia and Eclampsia: What Every Mother Should Know",
-    category: "HYPERTENSION",
-    categoryLabel: "Blood Pressure",
-    summary:
-      "Understanding preeclampsia — one of the leading causes of maternal death that can be prevented with early care.",
-    content: `Preeclampsia is a condition that develops during pregnancy, usually after 20 weeks. It causes high blood pressure and can damage organs such as the kidneys and liver. If it is not treated, it can progress to eclampsia, which involves dangerous seizures.
- 
-The good news is that when preeclampsia is caught early and properly managed, most women and babies do well.
- 
-WHAT CAUSES IT?
-The exact cause is not fully understood, but it is related to how the placenta develops. Some women are at higher risk than others.
- 
-WHO IS AT HIGHER RISK?
-- First-time mothers
-- Women carrying twins or more
-- Women with a history of high blood pressure, diabetes, or kidney disease
-- Women whose mother or sister had preeclampsia
-- Women who are overweight
- 
-HOW IS IT DIAGNOSED?
-Your health worker will check your blood pressure and may test your urine for protein. Blood pressure at or above 140/90 mmHg measured on more than one occasion, together with other signs, leads to a diagnosis of preeclampsia.
- 
-WHAT ARE THE WARNING SIGNS?
-- Severe or persistent headache
-- Blurred vision or seeing spots
-- Pain under the right side of your ribs
-- Sudden swelling of the face, hands, or around the eyes
-- Nausea or vomiting after the first three months of pregnancy
-- Difficulty breathing
- 
-WHAT HAPPENS IF IT IS NOT TREATED?
-Untreated preeclampsia can lead to:
-- Eclampsia (seizures)
-- HELLP syndrome, which affects the liver and blood
-- Kidney or liver failure
-- Stroke
-- Early birth or low birth weight for the baby
- 
-HOW IS IT TREATED?
-Treatment depends on how far along you are in your pregnancy and how serious the condition is. Your health worker may:
-- Monitor your blood pressure and urine closely
-- Give you medication to lower your blood pressure
-- Give you magnesium sulfate to prevent seizures
-- Decide to deliver your baby early if the risk becomes too high
- 
-AFTER BIRTH
-Preeclampsia can still develop in the first six weeks after delivery. Continue to watch for warning symptoms and attend your postpartum visits.
- 
-LONG-TERM HEALTH
-Women who have had preeclampsia have a higher chance of developing high blood pressure or heart disease later in life. Regular health check-ups after pregnancy are important.
- 
-The most important thing you can do is attend all your antenatal appointments and report any warning symptoms to your health worker promptly.`,
-    readTimeMinutes: 8,
-    source: "World Health Organization (WHO) and Preeclampsia Foundation",
+    id: "bp-numbers",
+    title: "What your blood pressure numbers mean",
+    category: "BLOOD_PRESSURE",
+    summary: "The two numbers, what is normal in pregnancy, and what to do at each level.",
+    readTimeMinutes: 3,
+    body: [
+      {
+        type: "p",
+        text: "A blood pressure reading has two numbers, for example 118/76. The top number (systolic) is the pressure when your heart beats. The bottom number (diastolic) is the pressure when your heart rests between beats.",
+      },
+      {
+        type: "p",
+        text: "High blood pressure in pregnancy often causes no symptoms at all. That is why checking it regularly matters, even when you feel well.",
+      },
+      { type: "h", text: "What the app tells you to do" },
+      {
+        type: "list",
+        items: [
+          "Below 130/80: normal. Keep checking as your clinic advises.",
+          "130 to 139, or bottom number 80 to 89: a little high. Rest, drink some water, and check again in about 4 hours.",
+          "140 to 149, or bottom number 90 to 99: high. Contact your clinic today. Don't wait for your next appointment.",
+          "150 or more, or bottom number 100 or more: very high. Go to a health facility now.",
+        ],
+      },
+      {
+        type: "p",
+        text: "Either number counts. 128/92 is high because the bottom number is 90 or more.",
+      },
+      {
+        type: "alert",
+        tone: "red",
+        text: "Any reading with a bad headache, blurred vision, pain under the ribs, or breathing trouble: go now, whatever the numbers say.",
+      },
+      {
+        type: "p",
+        text: "Doctors diagnose high blood pressure in pregnancy at 140/90 or more, and call 160/110 or more severe. The app asks you to act a little earlier, to be on the safe side.",
+      },
+    ],
+    sources: [WHO_ANC, PE_FOUNDATION],
+    updated: "2026-10",
   },
-
   {
-    id: "understanding-bp",
-    title: "Understanding Blood Pressure in Pregnancy",
-    category: "HYPERTENSION",
-    categoryLabel: "Blood Pressure",
-    summary:
-      "What blood pressure numbers mean and why your health worker tracks them at every visit.",
-    content: `At every antenatal visit, your health worker will take your blood pressure. Understanding what these numbers mean helps you take part in your own care.
- 
-WHAT IS BLOOD PRESSURE?
-Blood pressure is the force of your blood pushing against the walls of your blood vessels as your heart pumps. It is written as two numbers:
- 
-Systolic (the top number): The pressure when your heart beats and pushes blood out.
-Diastolic (the bottom number): The pressure when your heart rests between beats.
- 
-For example, a reading of 120/80 mmHg means a systolic of 120 and a diastolic of 80.
- 
-WHAT IS NORMAL IN PREGNANCY?
-A normal blood pressure reading is generally below 120/80 mmHg. In early pregnancy, blood pressure often drops slightly and then gradually rises again in the third trimester.
- 
-WHAT IS TOO HIGH?
-A reading of 140/90 mmHg or above is considered high blood pressure (hypertension) in pregnancy. Your health worker will want to monitor you closely and may start treatment.
- 
-A reading of 160/110 mmHg or above is severe and needs immediate attention.
- 
-WHY DOES IT MATTER?
-High blood pressure during pregnancy can affect blood flow to the placenta, which supplies oxygen and nutrients to your baby. It can also be a sign of preeclampsia, a serious condition that affects your kidneys, liver, and other organs.
- 
-This is why your health worker takes your blood pressure at every visit — not just once. A single normal reading is reassuring, but what matters most is the trend over time. A slow rise in your numbers over several visits is a warning sign even if no single reading is very high.
- 
-WHAT CAN YOU DO?
-- Attend all antenatal visits so your blood pressure can be tracked over time
-- Tell your health worker if you have any headaches, vision changes, or swelling
-- Follow any advice your health worker gives about rest, diet, or medication
-- Do not stop taking any prescribed medication without talking to your health worker first`,
-    readTimeMinutes: 4,
-    source:
-      "World Health Organization (WHO) patient information on hypertension in pregnancy",
+    id: "measure-bp",
+    title: "How to check your blood pressure correctly",
+    category: "BLOOD_PRESSURE",
+    summary: "Small mistakes can make a reading wrong. Follow these steps every time.",
+    readTimeMinutes: 2,
+    body: [
+      { type: "h", text: "Before you measure" },
+      {
+        type: "list",
+        items: [
+          "Use an upper-arm machine (cuff on the arm, not the wrist) if you can",
+          "Don't eat a big meal, drink tea or coffee, or exercise in the 30 minutes before",
+          "Empty your bladder",
+          "Sit quietly for 5 minutes with your back supported and feet flat on the floor. Don't cross your legs",
+        ],
+      },
+      { type: "h", text: "While you measure" },
+      {
+        type: "list",
+        items: [
+          "Put the cuff on bare skin, about two fingers above the elbow crease",
+          "Rest your arm on a table so the cuff is level with your heart",
+          "Don't talk or move",
+          "Take two readings one minute apart. If they are different, enter the second one",
+        ],
+      },
+      {
+        type: "p",
+        text: "Check at about the same times each day. If the machine shows an error or a number that seems very different from usual, rest and measure again.",
+      },
+      {
+        type: "alert",
+        tone: "amber",
+        text: "No machine? Many clinics, PHCs and pharmacies will check it for you. Never guess the numbers. A wrong reading can hide a real problem.",
+      },
+    ],
+    sources: [WHO_ANC],
+    updated: "2026-10",
   },
-
-  // ── WARNING SIGNS (supporting) ────────────────────────────────────────────
   {
-    id: "when-to-seek-care",
-    title: "When to Go to a Health Facility",
-    category: "WARNING_SIGNS",
-    categoryLabel: "Warning Signs",
-    summary:
-      "A simple guide to help you decide when to stay home and when to go immediately.",
-    content: `Knowing when to seek care can save your life. This guide will help you decide what to do.
- 
-GO IMMEDIATELY — DO NOT WAIT
-Go to a health facility right away if you have any of these:
-- Abnormal body movement (fits, shaking, or convulsions)
-- Vaginal bleeding — any amount, at any stage after the first trimester
-- Severe difficulty breathing
-- A headache that will not go away, especially with fever, chills, vomiting, or nausea
-- Blurred vision or seeing flashing lights
-- Your baby has stopped moving and does not respond when you push your belly
-- You feel something is very wrong
- 
-GO TODAY — SAME DAY
-Contact your health worker or go to a facility today if you have:
-- A headache that has lasted more than two hours
-- Bilateral leg swelling (both legs swollen) — note whether it is painful or non-painful
-- Frothy urine (urine forming foam or bubbles)
-- Abdominal pain — in any location (lower abdomen, upper abdomen, or below the ribs)
-- Fever with chills or rigors
-- Burning or painful urination
-- Frequent urination that is new or unusual
-- Any vaginal discharge that is unusual in colour or smell
- 
-MENTION AT YOUR NEXT VISIT
-Tell your health worker at your next visit if you have:
-- Mild swelling of your feet or ankles that is not getting worse
-- Heartburn that is not getting better
-- Difficulty sleeping or unusual tiredness
-- Reduced fetal movement compared to before (if before 28 weeks)
- 
-IF YOU ARE UNSURE
-If you are not sure which category your symptoms fall into, always choose to go. A health worker can always reassure you that everything is fine. They cannot help you if you stay home.
- 
-Never feel embarrassed to seek care. Your health and your baby's health come first.`,
-    readTimeMinutes: 4,
-    source: "WHO guidelines on essential antenatal care",
-  },
-
-  // ── ANTENATAL CARE ────────────────────────────────────────────────────────
-  {
-    id: "importance-of-anc",
-    title: "Why Antenatal Visits Save Lives",
-    category: "ANTENATAL",
-    categoryLabel: "Antenatal Care",
-    summary:
-      "What happens at antenatal visits and why attending every appointment matters.",
-    content: `Antenatal care (ANC) is the care you receive from a health worker during your pregnancy. It is one of the most important things you can do for yourself and your baby.
- 
-WHY IS ANTENATAL CARE IMPORTANT?
-Antenatal visits allow your health worker to:
-- Monitor your blood pressure, weight, and urine over time
-- Check that your baby is growing well
-- Identify problems early, before they become serious
-- Give you vaccines to protect you and your baby
-- Provide iron and folic acid supplements
-- Prepare you for labour and delivery
-- Answer your questions and address your concerns
- 
-Many of the conditions that cause maternal deaths — including preeclampsia, anaemia, and infection — can be caught and managed during antenatal visits. The earlier a problem is found, the more options exist for treatment.
- 
-HOW MANY VISITS DO YOU NEED?
-WHO recommends at least eight antenatal visits during pregnancy. Many women attend fewer than this, especially in rural areas. Even if you cannot attend all recommended visits, attending as many as possible makes a real difference.
- 
-WHAT HAPPENS AT A VISIT?
-At each visit, your health worker will typically:
-- Take your blood pressure
-- Check your weight
-- Test your urine for protein and sugar
-- Listen to your baby's heartbeat
-- Measure the size of your belly
-- Ask how you are feeling and whether you have any concerns
- 
-At certain visits, you may also receive iron tablets, malaria prevention treatment, or tetanus vaccines.
- 
-WHAT TO BRING TO YOUR VISIT
-- Your antenatal card or health record book
-- Any medications you are taking
-- A list of any symptoms or questions you have
- 
-WHAT IF YOU MISS A VISIT?
-Do not feel ashamed if you miss a visit. Return as soon as you can. One missed visit does not mean your pregnancy care has failed. What matters is that you return.`,
+    id: "pre-eclampsia",
+    title: "Pre-eclampsia and eclampsia",
+    category: "BLOOD_PRESSURE",
+    weeks: [20, 42],
+    summary: "A serious blood pressure problem of pregnancy and the weeks after birth. Early care keeps mother and baby safe.",
     readTimeMinutes: 5,
-    source:
-      "World Health Organization — Recommendations on Antenatal Care for a Positive Pregnancy Experience (2016)",
+    body: [
+      {
+        type: "p",
+        text: "Pre-eclampsia is high blood pressure that starts after 20 weeks of pregnancy, together with signs that the kidneys, liver, brain or blood are under strain (often protein in the urine). It can also start up to 6 weeks after birth.",
+      },
+      {
+        type: "p",
+        text: "Eclampsia is when pre-eclampsia causes fits. Together they are one of the biggest causes of maternal death in Nigeria. With early checks and treatment, most women and babies do well.",
+      },
+      { type: "h", text: "Who is more at risk" },
+      {
+        type: "list",
+        items: [
+          "Pre-eclampsia in a past pregnancy",
+          "High blood pressure, diabetes, kidney disease, or lupus before pregnancy",
+          "Twins or more",
+          "First pregnancy, or more than 10 years since the last one",
+          "Age 40 or over",
+          "Being very overweight",
+          "Mother or sister had pre-eclampsia",
+        ],
+      },
+      {
+        type: "p",
+        text: "Many women with pre-eclampsia have none of these. It can happen to anyone, which is why every pregnant woman needs her blood pressure checked.",
+      },
+      { type: "h", text: "Signs" },
+      {
+        type: "list",
+        items: [
+          "Blood pressure 140/90 or higher",
+          "A bad headache that doesn't go away with rest or paracetamol",
+          "Blurred vision, seeing spots or flashing lights",
+          "Pain high in the belly or under the right ribs",
+          "Sudden swelling of the face, hands or feet",
+          "Feeling sick or vomiting in the second half of pregnancy",
+          "Shortness of breath",
+        ],
+      },
+      {
+        type: "alert",
+        tone: "red",
+        text: "Any of these signs: go to a health facility today. Headache with vision changes, upper belly pain, or fits: go now.",
+      },
+      { type: "h", text: "Treatment" },
+      {
+        type: "list",
+        items: [
+          "Medicine to lower blood pressure",
+          "Magnesium sulphate injection to prevent or stop fits",
+          "Steroid injections to help the baby's lungs if birth may come early",
+          "Birth of the baby, which is the only cure. Your doctor will decide the safest time",
+        ],
+      },
+      { type: "h", text: "After birth and later life" },
+      {
+        type: "p",
+        text: "Keep checking your blood pressure for at least 6 weeks after birth. Women who had pre-eclampsia have a higher chance of high blood pressure, heart disease and stroke later in life, so check your blood pressure at least once a year, and tell your health worker in any future pregnancy.",
+      },
+    ],
+    sources: [WHO_ANC, WHO_ASPIRIN, PE_FOUNDATION],
+    updated: "2026-10",
   },
-
-  // ── NUTRITION ─────────────────────────────────────────────────────────────
   {
-    id: "nutrition-pregnancy",
-    title: "Eating Well During Pregnancy",
-    category: "NUTRITION",
-    categoryLabel: "Nutrition",
-    summary:
-      "Practical nutrition advice for Nigerian pregnant women — using affordable local foods.",
-    content: `Good nutrition during pregnancy supports your baby's development and helps your body cope with the demands of pregnancy. You do not need to eat expensive or imported foods to eat well.
- 
-WHAT YOUR BODY NEEDS MORE OF IN PREGNANCY
- 
-Iron
-Iron helps make blood for you and your baby. Without enough iron, you may become anaemic, which makes you feel very tired and weak and increases risks during delivery.
-Good sources: Beans, lentils, dark green vegetables (like ugwu and waterleaf), liver, red meat, and fish. Eating foods rich in vitamin C (like tomatoes and oranges) alongside iron-rich foods helps your body absorb more iron.
- 
-Folic Acid
-Folic acid helps prevent serious birth defects of the brain and spine. You should start taking folic acid supplements before pregnancy if possible, and continue through the first three months.
-Good sources: Dark green leafy vegetables, beans, groundnuts.
- 
-Calcium
-Calcium helps build your baby's bones and teeth. If you do not get enough, your body will take calcium from your own bones.
-Good sources: Milk, yoghurt, small fish eaten with their bones (like sardines), dark leafy vegetables, and sesame seeds.
- 
-Protein
-Protein is needed for your baby to grow and for your body to repair itself.
-Good sources: Eggs, fish, chicken, beans, lentils, groundnuts, and meats.
- 
-PRACTICAL TIPS FOR NIGERIAN MOTHERS
- 
-- Eat three meals a day and include a variety of foods — grains, proteins, vegetables, and fruits.
-- Pots of beans, ewa, or lentils are affordable, filling, and rich in iron and protein.
-- Ugwu (fluted pumpkin leaves) is one of the most nutritious vegetables available and is widely affordable.
-- Oily fish like mackerel and sardines provide protein, healthy fats, and calcium.
-- Drink enough water throughout the day — at least 6 to 8 glasses.
- 
-FOODS TO AVOID OR LIMIT
-- Raw or undercooked meat, fish, or eggs
-- Unpasteurised milk or soft cheeses
-- Excess salt and highly processed foods
-- Alcohol — there is no safe amount during pregnancy
- 
-IRON SUPPLEMENTS
-Your health worker may prescribe iron tablets. Take them as directed even if they cause nausea. Taking them with a small meal or at night can help reduce nausea.
- 
-If you are struggling to afford food or are losing weight during pregnancy, please tell your health worker. There may be programmes in your area that can help.`,
-    readTimeMinutes: 6,
-    source:
-      "WHO recommendations on nutrition during pregnancy and ACOG nutrition guidelines",
+    id: "lower-pe-risk",
+    title: "Lowering your risk of pre-eclampsia",
+    category: "BLOOD_PRESSURE",
+    weeks: [8, 20],
+    summary: "Low-dose aspirin and calcium can help some women. Ask at your clinic early, before 20 weeks.",
+    readTimeMinutes: 2,
+    body: [
+      {
+        type: "p",
+        text: "If your health worker says you are at high risk of pre-eclampsia, WHO recommends low-dose aspirin every day, started before 20 weeks of pregnancy (or as soon as you start antenatal care).",
+      },
+      {
+        type: "alert",
+        tone: "amber",
+        text: "Only take aspirin in pregnancy if a health worker prescribes it. The dose for pregnancy is much lower than a normal painkiller dose.",
+      },
+      {
+        type: "p",
+        text: "In places like Nigeria where many diets are low in calcium, WHO recommends calcium tablets in pregnancy to lower the risk of pre-eclampsia. Ask your clinic if you should take them. Take calcium and iron tablets at different times of day, because calcium stops iron from being absorbed.",
+      },
+      { type: "h", text: "Other things that help" },
+      {
+        type: "list",
+        items: [
+          "Start antenatal care early, ideally before 12 weeks",
+          "Go to every antenatal visit and have your blood pressure and urine checked",
+          "Eat calcium-rich foods: milk, yoghurt, small fish eaten with bones (like sardines or crayfish), green vegetables",
+          "Keep active with walking unless told otherwise",
+        ],
+      },
+    ],
+    sources: [WHO_ASPIRIN, WHO_ANC],
+    updated: "2026-10",
   },
 
-  // ── POSTPARTUM ─────────────────────────────────────────────────────────────
+  // ── PREGNANCY CARE ─────────────────────────────────────────────────────────
   {
-    id: "postpartum-care",
-    title: "Your Health After Delivery",
-    category: "POSTPARTUM",
-    categoryLabel: "After Birth",
-    summary:
-      "Why the weeks after birth are still a critical time for your health — and what to watch for.",
-    content: `Many women focus entirely on staying well during pregnancy and forget that the weeks after birth — called the postpartum period — are also a critical time for health. Most maternal deaths in Nigeria occur around the time of delivery or in the days and weeks that follow.
- 
-THE FIRST 24 HOURS
-The first 24 hours after delivery are the highest-risk period. Your health worker will monitor you closely during this time for bleeding, high blood pressure, and infection. Stay at the health facility for as long as your health worker recommends.
- 
-DANGER SIGNS AFTER BIRTH
-Go to a health facility immediately if you experience any of these after delivery:
-- Heavy vaginal bleeding (soaking more than one pad per hour)
-- Severe headache or vision changes — this could be postpartum preeclampsia
-- Fever or chills
-- Difficulty breathing
-- Severe pain in the abdomen
-- Foul-smelling discharge
-- Signs of infection in a wound (if you had a caesarean or tears)
-- Feeling very confused or unlike yourself
- 
-POSTPARTUM PREECLAMPSIA
-Preeclampsia can develop for the first time after birth, usually within the first six weeks. The symptoms are the same: severe headache, vision changes, and swelling. Do not assume you are safe from high blood pressure because you delivered safely.
- 
-YOUR POSTPARTUM VISITS
-Attend your scheduled postpartum visits. At these visits your health worker will:
-- Check your blood pressure and temperature
-- Check that your uterus is returning to normal size
-- Examine any wounds or stitches
-- Discuss family planning options if you wish
-- Support you with breastfeeding
-- Screen for signs of postpartum depression
- 
-EMOTIONAL HEALTH AFTER BIRTH
-It is normal to feel emotional, overwhelmed, or tearful in the first few days after birth. This is sometimes called the "baby blues" and usually improves within two weeks. If you feel persistently sad, hopeless, or are having trouble caring for yourself or your baby, talk to your health worker. Postpartum depression is a real condition and it can be treated.
- 
-RETURNING TO HEALTH FACILITY
-Return to the health facility or contact your health worker at any time if something does not feel right. Do not wait for a scheduled appointment if you are worried.
- 
-Your recovery matters. A healthy mother is the foundation of a healthy family.`,
-    readTimeMinutes: 6,
-    source:
-      "WHO recommendations on postnatal care for mothers and newborns (2013)",
+    id: "antenatal-visits",
+    title: "Your antenatal visits",
+    category: "PREGNANCY_CARE",
+    weeks: [0, 40],
+    summary: "WHO recommends at least 8 antenatal contacts. Here's when they are and what happens at each.",
+    readTimeMinutes: 3,
+    body: [
+      {
+        type: "p",
+        text: "Antenatal care finds problems early, often before you feel anything. WHO and Nigeria's health ministry recommend at least 8 contacts with a health worker in pregnancy.",
+      },
+      { type: "h", text: "When" },
+      {
+        type: "list",
+        items: [
+          "First visit before 12 weeks",
+          "Then at about 20, 26, 30, 34, 36, 38 and 40 weeks",
+          "More often if you have high blood pressure or another problem",
+        ],
+      },
+      { type: "h", text: "What is checked" },
+      {
+        type: "list",
+        items: [
+          "Blood pressure and urine at every visit",
+          "Your blood level (for anaemia), blood group, and tests for HIV, syphilis and hepatitis B. Treatment protects your baby",
+          "An ultrasound scan before 24 weeks to check dates and the number of babies",
+          "Your baby's growth and heartbeat",
+          "Tetanus vaccine",
+          "Malaria prevention tablets (from the second trimester)",
+          "Iron and folic acid tablets",
+        ],
+      },
+      {
+        type: "p",
+        text: "Bring your antenatal card to every visit, and bring it with you if you ever go to a different hospital.",
+      },
+    ],
+    sources: [WHO_ANC],
+    updated: "2026-10",
+  },
+  {
+    id: "baby-movements",
+    title: "Your baby's movements",
+    category: "PREGNANCY_CARE",
+    weeks: [16, 42],
+    summary: "Feeling your baby move is a sign they are well. Less movement than usual needs checking the same day.",
+    readTimeMinutes: 2,
+    body: [
+      {
+        type: "p",
+        text: "Most women first feel movements between 16 and 24 weeks. Movements become stronger and more regular as the baby grows, and continue right up to and during labour.",
+      },
+      {
+        type: "p",
+        text: "There is no set number of kicks to count. What matters is your baby's own usual pattern. Get to know it.",
+      },
+      {
+        type: "alert",
+        tone: "red",
+        text: "If your baby is moving less than usual, the pattern changes, or you can't feel movements, go to your clinic or hospital today. Don't wait until the next day.",
+      },
+      {
+        type: "list",
+        items: [
+          "It is not true that babies move less near the end of pregnancy",
+          "Don't use a home heartbeat machine or app to reassure yourself. Only a health worker can check properly",
+          "If it happens again after a normal check, go back again. Every time counts",
+        ],
+      },
+    ],
+    sources: [WHO_ANC],
+    updated: "2026-10",
+  },
+  {
+    id: "malaria",
+    title: "Malaria in pregnancy",
+    category: "PREGNANCY_CARE",
+    weeks: [12, 42],
+    summary: "Malaria is more dangerous in pregnancy. Sleep under a treated net and take your prevention tablets.",
+    readTimeMinutes: 2,
+    body: [
+      {
+        type: "p",
+        text: "Malaria in pregnancy can cause severe anaemia, miscarriage, early birth and a small baby. Pregnant women get malaria more easily and more severely.",
+      },
+      { type: "h", text: "Protect yourself" },
+      {
+        type: "list",
+        items: [
+          "Sleep under an insecticide-treated mosquito net every night. Ask your clinic for a free one",
+          "Take the malaria prevention tablets (SP, sometimes called IPTp) at your antenatal visits, starting in the second trimester. They are given at least 4 weeks apart",
+          "Close windows and doors at dusk, and clear standing water near your home",
+        ],
+      },
+      {
+        type: "alert",
+        tone: "amber",
+        text: "Fever in pregnancy needs a malaria test the same day. Don't treat yourself with drugs from a chemist without a test: some malaria drugs are not safe in early pregnancy.",
+      },
+    ],
+    sources: [WHO_ANC, { title: "WHO guidelines for malaria", url: "https://www.who.int/publications/i/item/guidelines-for-malaria" }],
+    updated: "2026-10",
   },
 
+  // ── FOOD AND MEDICINES ─────────────────────────────────────────────────────
+  {
+    id: "iron-anaemia",
+    title: "Iron, folic acid and low blood",
+    category: "FOOD_MEDICINE",
+    summary: "Low blood (anaemia) is common in pregnancy and makes bleeding at birth more dangerous. Daily tablets help.",
+    readTimeMinutes: 2,
+    body: [
+      {
+        type: "p",
+        text: "WHO recommends iron and folic acid tablets every day in pregnancy. Folic acid helps prevent problems with the baby's brain and spine. Iron prevents low blood.",
+      },
+      { type: "h", text: "Signs of low blood" },
+      {
+        type: "list",
+        items: [
+          "Feeling very tired or weak",
+          "Pale inside the eyelids, gums or palms",
+          "Getting out of breath easily, or a racing heart",
+          "Dizziness",
+        ],
+      },
+      { type: "h", text: "Tips" },
+      {
+        type: "list",
+        items: [
+          "Take the tablet every day, even when you feel fine",
+          "Take it with water or orange juice, not with tea, coffee or milk",
+          "Dark stools are normal on iron. Constipation is common: drink water and eat fruit and vegetables",
+          "Iron-rich foods: beans, liver, meat, fish, eggs, ugu, spinach (efo), and other dark green leaves",
+        ],
+      },
+    ],
+    sources: [WHO_ANC, WHO_PPH],
+    updated: "2026-10",
+  },
+  {
+    id: "eating-well",
+    title: "Eating well in pregnancy",
+    category: "FOOD_MEDICINE",
+    summary: "Simple, local food choices for you and your baby, and what to avoid.",
+    readTimeMinutes: 3,
+    body: [
+      {
+        type: "p",
+        text: "You don't need to eat for two. Eat a mix of foods every day and add one extra small meal or snack in the second half of pregnancy.",
+      },
+      { type: "h", text: "Every day, try to eat" },
+      {
+        type: "list",
+        items: [
+          "Protein: beans, moi moi, eggs, fish, chicken, meat, groundnuts",
+          "Vegetables and fruit: ugu, efo, garden egg, carrots, oranges, pawpaw, banana, watermelon",
+          "Calcium: milk, yoghurt, sardines, crayfish",
+          "Energy foods in moderate amounts: rice, yam, garri, bread, oats. Choose brown or whole-grain when you can",
+          "Plenty of clean water",
+        ],
+      },
+      { type: "h", text: "Avoid" },
+      {
+        type: "list",
+        items: [
+          "Alcohol (including palm wine) and smoking, in any amount",
+          "Raw or undercooked meat, eggs or fish, and unpasteurised (fresh unboiled) milk",
+          "More than about 2 cups of coffee a day. Strong tea and cola drinks also contain caffeine",
+          "Lots of sugary drinks and very salty foods. Use seasoning cubes sparingly",
+        ],
+      },
+      {
+        type: "p",
+        text: "Wash fruit and vegetables well, and wash your hands before cooking and eating.",
+      },
+    ],
+    sources: [WHO_ANC],
+    updated: "2026-10",
+  },
+  {
+    id: "medicines-herbs",
+    title: "Medicines, herbs and agbo",
+    category: "FOOD_MEDICINE",
+    summary: "Some medicines and herbal mixtures can harm your baby or cause dangerous labour. Check first.",
+    readTimeMinutes: 2,
+    body: [
+      {
+        type: "p",
+        text: "Many medicines are safe in pregnancy, but some are not. Always tell the pharmacist or health worker you are pregnant.",
+      },
+      {
+        type: "list",
+        items: [
+          "Paracetamol is the usual safe choice for pain or fever. Avoid ibuprofen, diclofenac and similar painkillers unless a doctor says so",
+          "Don't take antibiotics, malaria drugs or blood pressure drugs from a chemist without a prescription",
+          "Keep taking medicines for long-term conditions (like high blood pressure or epilepsy), but tell your clinic early. Some need changing",
+        ],
+      },
+      {
+        type: "alert",
+        tone: "red",
+        text: "Avoid agbo and other herbal mixtures in pregnancy, especially near the end and in labour. Some make the womb squeeze too hard, which can tear it, harm the baby, or cause heavy bleeding.",
+      },
+      {
+        type: "p",
+        text: "If you have already taken something, don't panic. Tell your health worker what it was so they can check.",
+      },
+    ],
+    sources: [WHO_ANC],
+    updated: "2026-10",
+  },
+
+  // ── LABOUR AND BIRTH ───────────────────────────────────────────────────────
+  {
+    id: "birth-plan",
+    title: "Getting ready for birth",
+    category: "BIRTH",
+    weeks: [28, 42],
+    summary: "Plan now so that when labour or an emergency comes, nothing slows you down.",
+    readTimeMinutes: 3,
+    body: [
+      { type: "h", text: "Plan before 36 weeks" },
+      {
+        type: "list",
+        items: [
+          "Where you will give birth. Choose a facility with a skilled midwife or doctor, and know the nearest hospital for emergencies",
+          "How you will get there, day or night. Save a driver's number",
+          "Money set aside for transport and care",
+          "A blood donor: a relative or friend who is willing to give blood if needed",
+          "Who will come with you, and who will look after your other children",
+          "A bag: antenatal card, wrappers, pads, baby clothes, soap, and your phone charger",
+        ],
+      },
+      { type: "h", text: "Signs labour has started" },
+      {
+        type: "list",
+        items: [
+          "Tightenings that come regularly, get stronger, and get closer together",
+          "A 'show': sticky mucus, sometimes with a little blood",
+          "Your waters breaking",
+        ],
+      },
+      {
+        type: "alert",
+        tone: "red",
+        text: "Go to the facility straight away if your waters break, if there is more than a little blood, if the fluid is green or brown, or if your baby moves less.",
+      },
+      {
+        type: "p",
+        text: "Labour before 37 weeks is early (preterm). If you have regular tightenings before 37 weeks, go in to be checked.",
+      },
+    ],
+    sources: [WHO_ANC],
+    updated: "2026-10",
+  },
+
+  // ── AFTER BIRTH ────────────────────────────────────────────────────────────
+  {
+    id: "after-birth",
+    title: "Your health after birth",
+    category: "AFTER_BIRTH",
+    weeks: [36, 42],
+    summary: "The 6 weeks after birth are a risky time for mothers. Know your check-ups and warning signs.",
+    readTimeMinutes: 4,
+    body: [
+      { type: "h", text: "Your check-ups" },
+      {
+        type: "list",
+        items: [
+          "Stay in the facility for at least 24 hours after birth",
+          "Then at 2 to 3 days, 1 to 2 weeks, and 6 weeks after birth",
+          "If you gave birth at home, see a health worker within 24 hours",
+        ],
+      },
+      {
+        type: "alert",
+        tone: "red",
+        text: "Go now for: heavy bleeding (a pad soaked in an hour, or clots the size of an egg), fits, chest pain, trouble breathing, or thoughts of harming yourself or your baby.",
+      },
+      { type: "h", text: "See a health worker the same day for" },
+      {
+        type: "list",
+        items: [
+          "Headache that doesn't get better with paracetamol, or headache with blurred vision. Pre-eclampsia can start after birth",
+          "Blood pressure of 140/90 or more",
+          "Fever (38°C or more), or bad-smelling discharge from the vagina",
+          "A caesarean or tear wound that is red, swollen, leaking or opening",
+          "One leg that is red, swollen, warm or painful",
+          "Painful, red, hard area in the breast with fever",
+        ],
+      },
+      { type: "h", text: "Spacing your next baby" },
+      {
+        type: "p",
+        text: "WHO advises waiting at least 2 years after a birth before getting pregnant again. This is safer for you and your next baby. Ask about family planning at your postnatal visit. Many methods are safe while breastfeeding.",
+      },
+    ],
+    sources: [WHO_PNC, POST_BIRTH],
+    updated: "2026-10",
+  },
+  {
+    id: "feelings-after-birth",
+    title: "Your feelings after birth",
+    category: "AFTER_BIRTH",
+    summary: "Feeling low for a few days is common. Feeling low for weeks is an illness that can be treated.",
+    readTimeMinutes: 2,
+    body: [
+      {
+        type: "p",
+        text: "Many mothers feel tearful, worried or irritable in the first 2 weeks after birth. This is often called the 'baby blues' and usually passes with rest and support.",
+      },
+      { type: "h", text: "Talk to a health worker if, for more than 2 weeks, you" },
+      {
+        type: "list",
+        items: [
+          "Feel sad, empty or hopeless most of the day",
+          "Have lost interest in things, including your baby",
+          "Can't sleep even when the baby sleeps, or sleep all the time",
+          "Feel worthless or guilty, or very anxious",
+        ],
+      },
+      {
+        type: "p",
+        text: "This is postnatal depression. It is common, it is not weakness and not a spiritual attack, and it gets better with treatment and support.",
+      },
+      {
+        type: "alert",
+        tone: "red",
+        text: "If you have thoughts of harming yourself or your baby, or you see or hear things others don't, get help now. Tell someone you trust and go to a hospital.",
+      },
+    ],
+    sources: [
+      WHO_PNC,
+      { title: "WHO: Maternal mental health", url: "https://www.who.int/teams/mental-health-and-substance-use/promotion-prevention/maternal-mental-health" },
+    ],
+    updated: "2026-10",
+  },
+
+  // ── YOUR BABY ──────────────────────────────────────────────────────────────
   {
     id: "breastfeeding",
-    title: "Breastfeeding: Getting Started",
-    category: "POSTPARTUM",
-    categoryLabel: "After Birth",
-    summary:
-      "Practical guidance on starting breastfeeding and why it matters for you and your baby.",
-    content: `Breast milk is the best food for your newborn. It contains everything your baby needs in the right amounts and helps protect against infections that are common causes of infant illness and death.
- 
-START WITHIN THE FIRST HOUR
-Try to breastfeed within the first hour of birth. The first milk, called colostrum, is thick and yellowish. Some mothers worry it is not enough or not good, but it is extremely valuable. It is full of antibodies that protect your baby from infection. Do not discard or delay giving it.
- 
-HOW TO KNOW YOUR BABY IS FEEDING WELL
-- Your baby feeds 8 to 12 times per day in the first weeks
-- You can hear your baby swallowing
-- Your baby is gaining weight
-- Your baby has 6 or more wet nappies per day after the first week
- 
-COMMON CHALLENGES AND WHAT TO DO
- 
-Sore nipples
-Some discomfort in the first few days is normal as you and your baby learn. Make sure your baby takes a good mouthful of the breast, not just the nipple. Ask your health worker to check your positioning and latch. Pain should improve within a week.
- 
-Feeling like you don't have enough milk
-Breast milk works on supply and demand. The more your baby feeds, the more milk your body makes. Feeding frequently and on demand is the best way to build your supply. Supplementing with water or formula can reduce your supply.
- 
-Engorgement
-When your full milk comes in (usually day 2 to 4), your breasts may feel very full and hard. Feed your baby frequently. A warm cloth applied before feeding can help.
- 
-EXCLUSIVE BREASTFEEDING FOR SIX MONTHS
-WHO and UNICEF recommend exclusive breastfeeding (no water, no formula, no other foods) for the first six months of life. After six months, continue breastfeeding alongside other foods.
- 
-IF YOU CANNOT BREASTFEED
-Some women cannot breastfeed due to medical reasons or circumstances beyond their control. If this is your situation, speak to your health worker about the safest alternatives for your baby. You are not a failure.
- 
-Ask your health worker or a midwife for support with breastfeeding. It is a skill that most mothers and babies learn together, and help is available.`,
-    readTimeMinutes: 5,
-    source: "WHO and UNICEF guidelines on breastfeeding (2023)",
+    title: "Breastfeeding",
+    category: "BABY",
+    weeks: [34, 42],
+    summary: "Breast milk is all your baby needs for 6 months. Start within an hour of birth.",
+    readTimeMinutes: 3,
+    body: [
+      {
+        type: "list",
+        items: [
+          "Put your baby to the breast within the first hour after birth",
+          "The first yellow milk (colostrum) is very good for your baby. Don't throw it away",
+          "Give only breast milk for the first 6 months: no water, glucose water, herbal drinks or formula. Breast milk has enough water, even in hot weather",
+          "Feed whenever your baby wants, day and night, usually 8 or more times a day",
+          "Keep breastfeeding with other foods until 2 years or beyond",
+        ],
+      },
+      { type: "h", text: "Signs your baby is getting enough" },
+      {
+        type: "list",
+        items: [
+          "6 or more wet nappies a day after the first week",
+          "You can hear or see swallowing",
+          "Your baby is gaining weight at check-ups",
+        ],
+      },
+      {
+        type: "p",
+        text: "Sore nipples usually mean the baby isn't taking enough of the breast into their mouth. Ask a midwife to check the latch. If you have HIV, your clinic will advise on safe feeding with your treatment.",
+      },
+    ],
+    sources: [{ title: "WHO: Breastfeeding", url: "https://www.who.int/health-topics/breastfeeding" }, WHO_PNC],
+    updated: "2026-10",
+  },
+  {
+    id: "newborn-danger-signs",
+    title: "Danger signs in your newborn",
+    category: "BABY",
+    urgent: true,
+    weeks: [36, 42],
+    summary: "Newborns get sick fast. Take your baby to a health facility straight away if you see any of these.",
+    readTimeMinutes: 2,
+    body: [
+      {
+        type: "alert",
+        tone: "red",
+        text: "Take your baby to a health facility now if you notice any sign below.",
+      },
+      {
+        type: "list",
+        items: [
+          "Not feeding well, or stopped feeding",
+          "Fits (convulsions)",
+          "Fast breathing, or the chest pulls in with each breath",
+          "Fever, or feels cold to the touch",
+          "Very sleepy, floppy, or only moves when touched",
+          "Yellow skin in the first day, or yellow palms and soles at any time",
+          "Redness, pus or a bad smell around the cord",
+        ],
+      },
+      { type: "h", text: "Keeping your baby well" },
+      {
+        type: "list",
+        items: [
+          "Keep the cord clean and dry. Don't put anything on it unless your health worker says so",
+          "Keep your baby warm, skin-to-skin with you as much as you can",
+          "Go to all postnatal check-ups and get the birth vaccines (BCG, polio and hepatitis B)",
+        ],
+      },
+    ],
+    sources: [WHO_PNC],
+    updated: "2026-10",
   },
 ];
 
-// Helper: get articles by category
-export function getArticlesByCategory(
-  category: EducationArticle["category"],
-): EducationArticle[] {
+/** Danger signs first, then articles for the current pregnancy week, then the rest. */
+export function getSortedArticles(pregnancyWeeks?: number | null): EducationArticle[] {
+  const score = (a: EducationArticle) => {
+    let s = 0;
+    if (a.urgent) s += 100;
+    if (pregnancyWeeks && a.weeks && pregnancyWeeks >= a.weeks[0] && pregnancyWeeks <= a.weeks[1]) s += 10;
+    return s;
+  };
+  return EDUCATION_CONTENT.map((a, i) => ({ a, i }))
+    .sort((x, y) => score(y.a) - score(x.a) || x.i - y.i)
+    .map((x) => x.a);
+}
+
+export function getArticleById(id: string): EducationArticle | undefined {
+  return EDUCATION_CONTENT.find((a) => a.id === id);
+}
+
+export function getArticlesByCategory(category: EducationCategory): EducationArticle[] {
   return EDUCATION_CONTENT.filter((a) => a.category === category);
 }
 
-// Helper: get urgent articles first
-export function getSortedArticles(): EducationArticle[] {
-  return [...EDUCATION_CONTENT].sort((a, b) => {
-    if (a.urgent && !b.urgent) return -1;
-    if (!a.urgent && b.urgent) return 1;
-    return 0;
-  });
-}
-
-// Helper: get article by id
-export function getArticleById(id: string): EducationArticle | undefined {
-  return EDUCATION_CONTENT.find((a) => a.id === id);
+/** Plain text version, e.g. for the API or sharing by SMS/WhatsApp. */
+export function articleToText(a: EducationArticle): string {
+  return a.body
+    .map((b) =>
+      b.type === "list" ? b.items.map((i) => `- ${i}`).join("\n") : b.type === "h" ? b.text.toUpperCase() : b.text,
+    )
+    .join("\n\n");
 }

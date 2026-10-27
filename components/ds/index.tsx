@@ -123,12 +123,13 @@ export function AppHeader({
   leading?: React.ReactNode;
   actions?: React.ReactNode;
 }) {
+  const t = useTokens();
   return (
     <View style={styles.header}>
       <View style={styles.headerMain}>
         {onBack ? (
           <IconButton label="Go back" onPress={onBack}>
-            <Ionicons name="arrow-back" size={22} color={useTokens().ink} />
+            <Ionicons name="arrow-back" size={22} color={t.ink} />
           </IconButton>
         ) : (
           leading
