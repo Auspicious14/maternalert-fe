@@ -1,1237 +1,499 @@
-import { notificationService } from "@/services/notifications";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import React, { useState } from "react";
-import {
-  Image,
-  Linking,
-  Platform,
-  StyleSheet,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import React, { useEffect, useState } from "react";
+import { Linking, Pressable, Text, TextInput, View } from "react-native";
+
+import apiClient from "../../api/client";
 import { TokenStorage } from "../../api/storage";
-import { Badge } from "../../components/shared/Badge";
-import { Button } from "../../components/shared/Button";
-import { Card } from "../../components/shared/Card";
-import { Screen } from "../../components/shared/Screen";
-import { Typography } from "../../components/shared/Typography";
-import { Skeleton } from "../../components/ui/Skeleton";
+import { AppHeader, Banner, Button, Card, FONT, Page, Pill, SectionHeader, Skeleton, T, useTokens } from "../../components/ds";
 import { useToast } from "../../components/ui/ToastProvider";
-import Theme from "../../constants/theme";
-import { useColorScheme } from "../../hooks/use-color-scheme";
 import { useAppTheme } from "../../hooks/useAppTheme";
 import { useAuth } from "../../hooks/useAuth";
-import { useCarePriority } from "../../hooks/useCarePriority";
 import { useUserProfile } from "../../hooks/useUserProfile";
-// import { notificationService } from "../../services/notifications";
+import { notificationService } from "../../services/notifications";
+import { CONDITION_OPTIONS, RELATIONSHIP_OPTIONS, Relationship, isValidNigerianPhone } from "../../services/profileSetup";
 
-export default function ProfileScreen() {
-  const router = useRouter();
-  const {
-    profile,
-    isLoadingProfile,
-    updateProfile,
-    calculatedPregnancyWeeks,
-    isErrorProfile,
-    refetchProfile,
-  } = useUserProfile();
-  const { data: priorityData } = useCarePriority();
-  const { preference: themePreference, setPreference: setThemePreference } =
-    useAppTheme();
-  const { logout } = useAuth();
-  const { showToast } = useToast();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
+// Same screen as maternalert-web/src/app/(patient)/profile/page.tsx
 
-  const [reminderTime, setReminderTime] = useState("09:00");
-  const [isUpdatingReminder, setIsUpdatingReminder] = useState(false);
+type Editing = null | "contact" | "pregnancy" | "clinic";
 
-  React.useEffect(() => {
-    const loadReminderTime = async () => {
-      // Prioritize profile data from backend
-      if (profile?.reminderTime) {
-        setReminderTime(profile.reminderTime);
-        await TokenStorage.saveReminderTime(profile.reminderTime);
-      } else {
-        // Fallback to local storage if profile is missing it
-        const localTime = await TokenStorage.getReminderTime();
-        if (localTime) setReminderTime(localTime);
-      }
-    };
-    loadReminderTime();
-  }, [profile?.id]); // Only load when profile ID changes (initial load)
+const relLabel = (r?: string | null) => RELATIONSHIP_OPTIONS.find((o) => o.value === r)?.label ?? "Emergency contact";
+const conditionLabel = (c: string) => CONDITION_OPTIONS.find((o) => o.value === c)?.label ?? c.replace(/_/g, " ").toLowerCase();
+const REMINDER_PRESETS = ["07:00", "09:00", "13:00", "18:00", "20:00"];
 
-  const handleUpdateReminder = async (time: string | null = null) => {
-    let finalTime = (time || reminderTime).trim();
-
-    // Auto-pad single hour digit (e.g., "9:00" -> "09:00")
-    if (/^[0-9]:[0-5][0-9]$/.test(finalTime)) {
-      finalTime = "0" + finalTime;
-      setReminderTime(finalTime);
-    }
-
-    // Only schedule if it's a valid HH:mm format
-    const timeRegex = /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/;
-    if (timeRegex.test(finalTime)) {
-      try {
-        setIsUpdatingReminder(true);
-        await TokenStorage.saveReminderTime(finalTime);
-        const [hour, minute] = finalTime.split(":").map(Number);
-
-        // Update local notification service
-        await notificationService.scheduleDailyBPReminder(hour, minute);
-
-        // Update backend preference for persistent reminders
-        await updateProfile({ reminderTime: finalTime });
-
-        showToast({
-          type: "success",
-          message: `Daily reminder set for ${finalTime}`,
-        });
-      } catch (error) {
-        console.error("Failed to update reminder time:", error);
-        showToast({
-          type: "error",
-          message: "Failed to save reminder time. Please try again.",
-        });
-      } finally {
-        setIsUpdatingReminder(false);
-      }
-    } else if (time === null) {
-      // If called from onBlur/onSubmit and invalid, reset to current profile value
-      setReminderTime(profile?.reminderTime || "09:00");
-      showToast({
-        type: "info",
-        message: "Please use HH:mm format (e.g., 20:30)",
-      });
-    }
-  };
-
-  // Redirect to profile setup if profile is missing and not loading/error
-  React.useEffect(() => {
-    if (!isLoadingProfile && !isErrorProfile && profile === null) {
-      router.replace("/profile-setup");
-    }
-  }, [profile, isLoadingProfile, isErrorProfile]);
-
-  const [isEditingContact, setIsEditingContact] = useState(false);
-  const [contactRelationship, setContactRelationship] = useState(
-    profile?.emergencyContactRelationship ?? null,
-  );
-  const [contactPhone, setContactPhone] = useState(
-    profile?.emergencyContactPhone ?? "",
-  );
-
-  const [isEditingClinic, setIsEditingClinic] = useState(false);
-  const [clinicName, setClinicName] = useState(profile?.clinicName ?? "");
-  const [clinicAddress, setClinicAddress] = useState(
-    profile?.clinicAddress ?? "",
-  );
-  const [clinicPhone, setClinicPhone] = useState(profile?.clinicPhone ?? "");
-
-  const [isSavingEmergency, setIsSavingEmergency] = useState(false);
-  const [isSavingClinic, setIsSavingClinic] = useState(false);
-
-  const statusInfo = React.useMemo(() => {
-    switch (priorityData?.priority) {
-      case "EMERGENCY":
-        return {
-          title: "Emergency attention needed",
-          message: priorityData.message,
-          icon: "alert-circle",
-          color: Theme.colors.emergency,
-          bgColor: isDark ? "#451a1a" : "#FEF2F2",
-          iconBg: isDark ? "#5c2626" : "#FEE2E2",
-          buttonVariant: "emergency" as const,
-        };
-      case "URGENT_REVIEW":
-        return {
-          title: "Urgent review recommended",
-          message: priorityData.message,
-          icon: "warning",
-          color: Theme.colors.accent,
-          bgColor: isDark ? "#452a1a" : "#FFFBEB",
-          iconBg: isDark ? "#5c402d" : "#FEF3C7",
-          buttonVariant: "secondary" as const,
-        };
-      case "INCREASED_MONITORING":
-        return {
-          title: "Increased monitoring",
-          message: priorityData.message,
-          icon: "eye",
-          color: Theme.colors.primary,
-          bgColor: isDark ? "#1a2e1a" : "#EEF6F2",
-          iconBg: isDark ? "#264526" : "#DCFCE7",
-          buttonVariant: "secondary" as const,
-        };
-      default:
-        return {
-          title: "Routine care recommended",
-          message:
-            "Your blood pressure is within normal range. Keep tracking daily.",
-          icon: "checkmark-circle",
-          color: "#34E875",
-          bgColor: isDark ? "#1a2e1a" : "#EEF6F2",
-          iconBg: isDark ? "#264526" : "#DCFCE7",
-          buttonVariant: "secondary" as const,
-        };
-    }
-  }, [priorityData, isDark]);
-
-  const relationshipLabel =
-    profile?.emergencyContactRelationship === "MIDWIFE"
-      ? "Midwife"
-      : profile?.emergencyContactRelationship === "PARTNER"
-        ? "Husband/Partner"
-        : profile?.emergencyContactRelationship === "FAMILY_MEMBER"
-          ? "Family member"
-          : profile?.emergencyContactRelationship === "OTHER"
-            ? "Emergency contact"
-            : "Emergency contact";
-
-  const handleSaveEmergencyContact = async () => {
-    if (!contactRelationship || !contactPhone.trim()) return;
-    try {
-      setIsSavingEmergency(true);
-      await updateProfile({
-        emergencyContactRelationship: contactRelationship,
-        emergencyContactPhone: contactPhone.trim(),
-      });
-      setIsEditingContact(false);
-    } finally {
-      setIsSavingEmergency(false);
-    }
-  };
-
-  const handleSaveClinic = async () => {
-    try {
-      setIsSavingClinic(true);
-      await updateProfile({
-        clinicName,
-        clinicAddress,
-        clinicPhone,
-      });
-      setIsEditingClinic(false);
-    } finally {
-      setIsSavingClinic(false);
-    }
-  };
-
-  const handleCallContact = () => {
-    if (!profile?.emergencyContactPhone) return;
-    Linking.openURL(`tel:${profile.emergencyContactPhone}`);
-  };
-
-  const handleCallClinic = () => {
-    if (!profile?.clinicPhone) return;
-    Linking.openURL(`tel:${profile.clinicPhone}`);
-  };
-
-  const handleGetDirections = () => {
-    if (!profile?.clinicAddress) return;
-    const scheme = Platform.select({
-      ios: "maps:0,0?q=",
-      android: "geo:0,0?q=",
-    });
-    const url = Platform.select({
-      ios: `${scheme}${profile.clinicName || "Clinic"}@${profile.clinicAddress}`,
-      android: `${scheme}${profile.clinicAddress}(${profile.clinicName || "Clinic"})`,
-    });
-
-    if (url) {
-      Linking.openURL(url);
-    }
-  };
-
-  if (isLoadingProfile) {
-    const skeletonVariant = isDark ? "dark" : "light";
-    return (
-      <Screen style={styles.container} scrollable={false} safe={false}>
-        <View style={[styles.header, { marginBottom: 32 }]}>
-          <Skeleton
-            width={32}
-            height={32}
-            borderRadius={16}
-            variant={skeletonVariant}
-          />
-          <Skeleton width={120} height={32} variant={skeletonVariant} />
-          <Skeleton width={40} height={20} variant={skeletonVariant} />
-        </View>
-
-        <View style={{ alignItems: "center", marginBottom: 24 }}>
-          <Skeleton
-            width={110}
-            height={110}
-            borderRadius={55}
-            variant={skeletonVariant}
-          />
-        </View>
-
-        <View
-          style={{
-            flexDirection: "row",
-            justifyContent: "center",
-            gap: 16,
-            marginBottom: 32,
-          }}
-        >
-          <Skeleton
-            width={100}
-            height={40}
-            borderRadius={20}
-            variant={skeletonVariant}
-          />
-          <Skeleton
-            width={140}
-            height={40}
-            borderRadius={20}
-            variant={skeletonVariant}
-          />
-        </View>
-
-        <Skeleton
-          height={120}
-          borderRadius={16}
-          variant={skeletonVariant}
-          style={{ marginBottom: 32 }}
-        />
-
-        <Skeleton
-          width={200}
-          height={24}
-          variant={skeletonVariant}
-          style={{ marginBottom: 16 }}
-        />
-        <Skeleton
-          height={80}
-          borderRadius={16}
-          variant={skeletonVariant}
-          style={{ marginBottom: 32 }}
-        />
-
-        <Skeleton
-          width={200}
-          height={24}
-          variant={skeletonVariant}
-          style={{ marginBottom: 16 }}
-        />
-        <Skeleton height={80} borderRadius={16} variant={skeletonVariant} />
-      </Screen>
-    );
-  }
-
-  if (isErrorProfile) {
-    return (
-      <Screen style={styles.container} safe={false}>
-        <View style={styles.header}>
-          <TouchableOpacity
-            style={styles.iconButton}
-            onPress={() => router.back()}
-          >
-            <Ionicons name="arrow-back" size={24} color={Theme.colors.text} />
-          </TouchableOpacity>
-          <Typography variant="h2">My Profile</Typography>
-          <View style={styles.iconButton} />
-        </View>
-        <View
-          style={{
-            flex: 1,
-            justifyContent: "center",
-            alignItems: "center",
-            padding: 20,
-          }}
-        >
-          <Ionicons
-            name="alert-circle-outline"
-            size={64}
-            color={Theme.colors.emergency}
-          />
-          <Typography
-            variant="h2"
-            style={{ marginTop: 16, textAlign: "center" }}
-          >
-            Failed to load profile
-          </Typography>
-          <Typography
-            variant="body"
-            style={{
-              marginTop: 8,
-              textAlign: "center",
-              color: Theme.colors.textLight,
-            }}
-          >
-            An error occurred while fetching your profile information. Please
-            check your connection and try again.
-          </Typography>
-          <Button
-            title="Retry"
-            // variant="outline"
-            containerStyle={{ marginTop: 24, width: "100%" }}
-            onPress={() => refetchProfile()}
-          />
-        </View>
-      </Screen>
-    );
-  }
-
-  if (profile === null) {
-    return null; // Redirecting in useEffect
-  }
-
+function Chip({ on, label, onPress, role = "button" }: { on: boolean; label: string; onPress: () => void; role?: "button" | "radio" }) {
+  const t = useTokens();
   return (
-    <Screen style={styles.container} scrollable={true}>
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.iconButton}
-          onPress={() => router.back()}
-        >
-          <Ionicons name="arrow-back" size={24} color={Theme.colors.text} />
-        </TouchableOpacity>
-        <Typography variant="h2">My Profile</Typography>
-        <View style={styles.iconButton} />
-      </View>
-
-      <View style={styles.profileInfo}>
-        <View style={styles.avatarContainer}>
-          <View style={styles.avatarOutline}>
-            <View style={styles.avatarPlaceholder}>
-              <Image
-                source={require("../../assets/images/maternal_onboarding_illustration.jpg")}
-                style={{ width: 100, height: 100, borderRadius: 50 }}
-              />
-            </View>
-          </View>
-          <TouchableOpacity style={styles.editAvatarButton}>
-            <Ionicons name="pencil" size={16} color={Theme.colors.white} />
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.badgeRow}>
-          <Badge
-            label={
-              calculatedPregnancyWeeks
-                ? `${calculatedPregnancyWeeks} Weeks`
-                : profile
-                  ? `${profile.pregnancyWeeks} Weeks`
-                  : "Weeks"
-            }
-            variant="white"
-            icon={
-              <Ionicons name="calendar-outline" size={16} color="#34E875" />
-            }
-            containerStyle={styles.profileBadge}
-          />
-          <Badge
-            label={
-              profile?.firstPregnancy ? "1st Pregnancy" : "Previous pregnancy"
-            }
-            variant="white"
-            icon={<Ionicons name="medical-outline" size={16} color="#34E875" />}
-            containerStyle={styles.profileBadge}
-          />
-        </View>
-      </View>
-
-      {/* Health Status Card */}
-      <Card
-        style={[
-          styles.statusCard,
-          {
-            backgroundColor: statusInfo.bgColor,
-            borderColor: isDark ? "rgba(255,255,255,0.05)" : "#E6E1D9",
-            borderWidth: 1,
-          },
-        ]}
-      >
-        <View style={styles.statusRow}>
-          <View
-            style={[
-              styles.statusCheckContainer,
-              { backgroundColor: statusInfo.iconBg },
-            ]}
-          >
-            <Ionicons
-              name={statusInfo.icon as any}
-              size={24}
-              color={statusInfo.color}
-            />
-          </View>
-          <View style={styles.statusTextContainer}>
-            <Typography
-              variant="h3"
-              style={[styles.statusTitle, { color: statusInfo.color }]}
-            >
-              {statusInfo.title}
-            </Typography>
-            <Typography variant="caption" color={Theme.colors.textLight}>
-              {statusInfo.message}
-            </Typography>
-          </View>
-        </View>
-        <Button
-          title="View Recommendations"
-          variant={statusInfo.buttonVariant}
-          containerStyle={
-            statusInfo.buttonVariant === "emergency"
-              ? styles.emergencyButton
-              : styles.historyButton
-          }
-          onPress={() =>
-            router.push(
-              priorityData?.priority === "EMERGENCY"
-                ? "/nurse-summary"
-                : "/symptom-results",
-            )
-          }
-        />
-      </Card>
-
-      <View style={styles.sectionHeader}>
-        <Typography variant="h2">My Emergency Contact</Typography>
-        <TouchableOpacity
-          onPress={() => {
-            setContactRelationship(
-              profile?.emergencyContactRelationship ?? null,
-            );
-            setContactPhone(profile?.emergencyContactPhone ?? "");
-            setIsEditingContact(true);
-          }}
-        >
-          <Typography variant="body" style={styles.actionLinkText}>
-            {profile?.emergencyContactPhone ? "Edit" : "Add New"}
-          </Typography>
-        </TouchableOpacity>
-      </View>
-
-      {isEditingContact ? (
-        <Card style={styles.contactCard}>
-          <View style={styles.contactHeaderRow}>
-            <View style={{ flex: 1 }}>
-              <Typography variant="h3">Emergency contact</Typography>
-              <Typography
-                variant="caption"
-                color={Theme.colors.textLight}
-                style={styles.contactSubtitle}
-              >
-                Choose who should be contacted first and add their phone number.
-              </Typography>
-            </View>
-          </View>
-
-          <View style={styles.relationshipRow}>
-            <TouchableOpacity
-              style={[
-                styles.relationshipChip,
-                isDark && {
-                  backgroundColor: "#13261E",
-                  borderColor: "#2A3B34",
-                  borderWidth: 1,
-                },
-                contactRelationship === "MIDWIFE" &&
-                  (isDark
-                    ? styles.relationshipChipActiveDark
-                    : styles.relationshipChipActive),
-              ]}
-              onPress={() => setContactRelationship("MIDWIFE")}
-            >
-              <Typography variant="caption">Midwife</Typography>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                styles.relationshipChip,
-                isDark && {
-                  backgroundColor: "#13261E",
-                  borderColor: "#2A3B34",
-                  borderWidth: 1,
-                },
-                contactRelationship === "PARTNER" &&
-                  (isDark
-                    ? styles.relationshipChipActiveDark
-                    : styles.relationshipChipActive),
-              ]}
-              onPress={() => setContactRelationship("PARTNER")}
-            >
-              <Typography variant="caption">Husband/Partner</Typography>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                styles.relationshipChip,
-                isDark && {
-                  backgroundColor: "#13261E",
-                  borderColor: "#2A3B34",
-                  borderWidth: 1,
-                },
-                contactRelationship === "FAMILY_MEMBER" &&
-                  (isDark
-                    ? styles.relationshipChipActiveDark
-                    : styles.relationshipChipActive),
-              ]}
-              onPress={() => setContactRelationship("FAMILY_MEMBER")}
-            >
-              <Typography variant="caption">Family member</Typography>
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.contactFieldGroup}>
-            <Typography
-              variant="caption"
-              color={Theme.colors.textLight}
-              style={styles.fieldLabel}
-            >
-              Phone number
-            </Typography>
-            <TextInput
-              style={[styles.contactInput, isDark && styles.contactInputDark]}
-              placeholder="Enter phone number"
-              placeholderTextColor={isDark ? "#94A3B8" : "#94A3B8"}
-              keyboardType="phone-pad"
-              value={contactPhone}
-              onChangeText={setContactPhone}
-            />
-          </View>
-
-          <View style={styles.contactActions}>
-            <Button
-              title="Cancel"
-              variant="outline"
-              containerStyle={styles.cancelButton}
-              textStyle={isDark ? { color: "#94A3B8" } : {}}
-              onPress={() => setIsEditingContact(false)}
-              disabled={isSavingEmergency}
-            />
-            <Button
-              title={isSavingEmergency ? "Saving..." : "Save"}
-              variant="secondary"
-              containerStyle={styles.saveContactButton}
-              onPress={handleSaveEmergencyContact}
-              disabled={isSavingEmergency}
-            />
-          </View>
-        </Card>
-      ) : profile?.emergencyContactPhone ? (
-        <Card style={styles.contactCard}>
-          <View style={styles.contactInfo}>
-            <View style={[styles.contactIcon, { backgroundColor: "#EBF3FE" }]}>
-              <Ionicons name="person" size={20} color="#1565C0" />
-            </View>
-            <View style={styles.contactContent}>
-              <Typography variant="h3">{relationshipLabel}</Typography>
-              <Typography variant="caption" color={Theme.colors.textLight}>
-                {profile.emergencyContactPhone}
-              </Typography>
-            </View>
-          </View>
-          <TouchableOpacity
-            style={styles.callButton}
-            onPress={handleCallContact}
-          >
-            <Ionicons name="call" size={20} color="#34E875" />
-          </TouchableOpacity>
-        </Card>
-      ) : (
-        <Card style={styles.contactCard}>
-          <Typography variant="body" color={Theme.colors.textLight}>
-            No emergency contact added yet.
-          </Typography>
-        </Card>
-      )}
-
-      <View style={styles.sectionHeader}>
-        <Typography variant="h2">My Clinic Info</Typography>
-        <TouchableOpacity
-          onPress={() => {
-            router.push("/facility-linking");
-          }}
-        >
-          <Typography variant="body" style={styles.actionLinkText}>
-            {profile?.clinicName ? "Edit" : "Link Facility"}
-          </Typography>
-        </TouchableOpacity>
-      </View>
-
-      {isEditingClinic ? (
-        <Card style={styles.clinicCard}>
-          <View style={styles.clinicForm}>
-            <View style={styles.inputGroup}>
-              <Typography variant="caption" color={Theme.colors.textLight}>
-                Clinic Name
-              </Typography>
-              <TextInput
-                style={[styles.contactInput, isDark && styles.contactInputDark]}
-                placeholder="Clinic Name"
-                placeholderTextColor={isDark ? "#94A3B8" : "#94A3B8"}
-                value={clinicName}
-                onChangeText={setClinicName}
-              />
-            </View>
-            <View style={styles.inputGroup}>
-              <Typography variant="caption" color={Theme.colors.textLight}>
-                Address
-              </Typography>
-              <TextInput
-                style={[styles.contactInput, isDark && styles.contactInputDark]}
-                placeholder="Address"
-                placeholderTextColor={isDark ? "#94A3B8" : "#94A3B8"}
-                value={clinicAddress}
-                onChangeText={setClinicAddress}
-              />
-            </View>
-            <View style={styles.inputGroup}>
-              <Typography variant="caption" color={Theme.colors.textLight}>
-                Phone (optional)
-              </Typography>
-              <TextInput
-                style={[styles.contactInput, isDark && styles.contactInputDark]}
-                placeholder="Phone (optional)"
-                placeholderTextColor={isDark ? "#94A3B8" : "#94A3B8"}
-                keyboardType="phone-pad"
-                value={clinicPhone}
-                onChangeText={setClinicPhone}
-              />
-            </View>
-            <View style={styles.contactActions}>
-              <Button
-                title="Cancel"
-                variant="outline"
-                containerStyle={styles.cancelButton}
-                textStyle={isDark ? { color: "#94A3B8" } : {}}
-                onPress={() => setIsEditingClinic(false)}
-                disabled={isSavingClinic}
-              />
-              <Button
-                title={isSavingClinic ? "Saving..." : "Save"}
-                variant="secondary"
-                containerStyle={styles.saveContactButton}
-                onPress={handleSaveClinic}
-                disabled={isSavingClinic}
-              />
-            </View>
-          </View>
-        </Card>
-      ) : profile?.clinicName ? (
-        <Card style={styles.clinicCard}>
-          <View style={styles.clinicHeader}>
-            <View style={[styles.clinicIcon, { backgroundColor: "#FFEBEE" }]}>
-              <Ionicons name="medical" size={20} color="#A82A31" />
-            </View>
-            <View style={styles.clinicContent}>
-              <Typography variant="h3">{profile.clinicName}</Typography>
-              <Typography variant="caption" color={Theme.colors.textLight}>
-                {profile.clinicAddress || "No address provided"}
-              </Typography>
-              {profile.clinicPhone && (
-                <Typography variant="caption" color={Theme.colors.textLight}>
-                  Phone: {profile.clinicPhone}
-                </Typography>
-              )}
-            </View>
-          </View>
-
-          <View style={styles.clinicActions}>
-            <Button
-              title="Call Clinic"
-              variant="outline"
-              containerStyle={styles.clinicActionButton}
-              icon={<Ionicons name="call-outline" size={18} />}
-              onPress={handleCallClinic}
-              disabled={!profile.clinicPhone}
-            />
-            <Button
-              title="Directions"
-              variant="outline"
-              containerStyle={styles.clinicActionButton}
-              icon={<Ionicons name="navigate-outline" size={18} />}
-              onPress={handleGetDirections}
-              disabled={!profile.clinicAddress}
-            />
-          </View>
-        </Card>
-      ) : (
-        <Card style={styles.clinicCard}>
-          <Typography variant="body" color={Theme.colors.textLight}>
-            No clinic information added yet.
-          </Typography>
-        </Card>
-      )}
-      <View style={styles.sectionHeader}>
-        <Typography variant="h2">My Pregnancy Journey</Typography>
-      </View>
-
-      <View style={styles.quickActionsContainer}>
-        <TouchableOpacity
-          style={[styles.quickActionCard, isDark && styles.quickActionCardDark]}
-          activeOpacity={0.8}
-          onPress={() => router.push("/fetal-development")}
-        >
-          <View
-            style={[styles.quickActionIcon, { backgroundColor: "#E8F5E9" }]}
-          >
-            <Ionicons name="heart-outline" size={28} color="#34E875" />
-          </View>
-
-          <View style={{ flex: 1 }}>
-            <Typography variant="h3">Baby Development</Typography>
-
-            <Typography variant="caption">
-              Week {calculatedPregnancyWeeks || profile?.pregnancyWeeks}
-            </Typography>
-
-            <Typography variant="caption" color={Theme.colors.textLight}>
-              Track your baby's growth and see what is happening this week.
-            </Typography>
-          </View>
-
-          <Ionicons
-            name="chevron-forward"
-            size={22}
-            color={Theme.colors.textLight}
-          />
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.quickActionCard, isDark && styles.quickActionCardDark]}
-          activeOpacity={0.8}
-          onPress={() => router.push("/my-health-records")}
-        >
-          <View
-            style={[styles.quickActionIcon, { backgroundColor: "#FFF3E0" }]}
-          >
-            <Ionicons name="document-text-outline" size={28} color="#FF9800" />
-          </View>
-
-          <View style={{ flex: 1 }}>
-            <Typography variant="h3">My Health Records</Typography>
-
-            <Typography variant="caption">
-              {priorityData?.priority === "EMERGENCY"
-                ? "1 urgent recommendation"
-                : "Your records are up to date"}
-            </Typography>
-
-            <Typography variant="caption" color={Theme.colors.textLight}>
-              View your blood pressure readings, symptoms, ANC visits and
-              pregnancy history.
-            </Typography>
-          </View>
-
-          <Ionicons
-            name="chevron-forward"
-            size={22}
-            color={Theme.colors.textLight}
-          />
-        </TouchableOpacity>
-      </View>
-      <View style={styles.sectionHeader}>
-        <Typography variant="h2">Reminders</Typography>
-      </View>
-      <Card style={styles.clinicCard}>
-        <View
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "space-between",
-          }}
-        >
-          <View style={{ flex: 1 }}>
-            <Typography variant="body" style={{ fontWeight: "bold" }}>
-              Daily BP Reminder
-            </Typography>
-            <Typography variant="caption" color={Theme.colors.textLight}>
-              We'll remind you daily. (24h format)
-            </Typography>
-          </View>
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              backgroundColor: isDark ? "#13261E" : "#F8FAFC",
-              padding: 8,
-              borderRadius: 8,
-            }}
-          >
-            <TextInput
-              value={reminderTime}
-              onChangeText={setReminderTime}
-              onBlur={() => handleUpdateReminder()}
-              onSubmitEditing={() => handleUpdateReminder()}
-              placeholder="09:00"
-              style={{
-                color: Theme.colors.primary,
-                fontWeight: "bold",
-                fontSize: 18,
-                marginRight: 8,
-                opacity: isUpdatingReminder ? 0.5 : 1,
-              }}
-              maxLength={5}
-              keyboardType="numbers-and-punctuation"
-              returnKeyType="done"
-            />
-            <Ionicons
-              name="time-outline"
-              size={20}
-              color={Theme.colors.primary}
-            />
-          </View>
-        </View>
-      </Card>
-
-      <View style={styles.sectionHeader}>
-        <Typography variant="h2">Appearance</Typography>
-      </View>
-      <Card style={styles.clinicCard}>
-        <View style={styles.themeRow}>
-          <TouchableOpacity
-            style={[
-              styles.themeOption,
-              isDark && { backgroundColor: "#13261E", borderColor: "#2A3B34" },
-              themePreference === "system" &&
-                (isDark
-                  ? styles.themeOptionActiveDark
-                  : styles.themeOptionActive),
-            ]}
-            onPress={() => setThemePreference("system")}
-          >
-            <Typography variant="body">System</Typography>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[
-              styles.themeOption,
-              isDark && { backgroundColor: "#13261E", borderColor: "#2A3B34" },
-              themePreference === "light" &&
-                (isDark
-                  ? styles.themeOptionActiveDark
-                  : styles.themeOptionActive),
-            ]}
-            onPress={() => setThemePreference("light")}
-          >
-            <Typography variant="body">Light</Typography>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[
-              styles.themeOption,
-              isDark && { backgroundColor: "#13261E", borderColor: "#2A3B34" },
-              themePreference === "dark" &&
-                (isDark
-                  ? styles.themeOptionActiveDark
-                  : styles.themeOptionActive),
-            ]}
-            onPress={() => setThemePreference("dark")}
-          >
-            <Typography variant="body">Dark</Typography>
-          </TouchableOpacity>
-        </View>
-      </Card>
-      <View style={{ marginTop: 16 }}>
-        <TouchableOpacity style={styles.logoutButton} onPress={logout}>
-          <Typography variant="body" style={{ color: "#FFFFFF" }}>
-            Logout
-          </Typography>
-        </TouchableOpacity>
-      </View>
-    </Screen>
+    <Pressable
+      onPress={onPress}
+      accessibilityRole={role}
+      accessibilityState={role === "radio" ? { checked: on } : { selected: on }}
+      style={{
+        minHeight: 44,
+        paddingHorizontal: 16,
+        borderRadius: 999,
+        borderWidth: 1.5,
+        justifyContent: "center",
+        borderColor: on ? t.green : t.borderStrong,
+        backgroundColor: on ? t.green : t.surface,
+      }}
+    >
+      <Text style={{ fontFamily: FONT.medium, fontSize: 15, color: on ? "#fff" : t.ink2 }}>{label}</Text>
+    </Pressable>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    paddingHorizontal: Theme.spacing.m,
-    paddingTop: Theme.spacing.s,
-  },
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: Theme.spacing.l,
-  },
-  iconButton: {
-    padding: 4,
-  },
-  profileInfo: {
-    alignItems: "center",
-    marginBottom: Theme.spacing.l,
-  },
-  avatarContainer: {
-    position: "relative",
-    marginBottom: Theme.spacing.m,
-  },
-  avatarOutline: {
-    padding: 4,
-    borderRadius: 60,
-    borderWidth: 1,
-    borderColor: "#E6E1D9",
-    backgroundColor: Theme.colors.white,
-  },
-  avatarPlaceholder: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: "#F7FAFC",
-    justifyContent: "center",
-    alignItems: "center",
-    overflow: "hidden",
-  },
-  editAvatarButton: {
-    position: "absolute",
-    bottom: 0,
-    right: 0,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: "#34E875",
-    justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 3,
-    borderColor: Theme.colors.white,
-  },
-  badgeRow: {
-    flexDirection: "row",
-    marginTop: Theme.spacing.m,
-    gap: Theme.spacing.s,
-  },
-  profileBadge: {
-    borderWidth: 1,
-    borderColor: Theme.colors.border,
-  },
-  statusCard: {
-    marginBottom: Theme.spacing.xl,
-    padding: Theme.spacing.m,
-  },
-  statusRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: Theme.spacing.m,
-  },
-  statusCheckContainer: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: "#E8F5E9",
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: Theme.spacing.m,
-  },
-  statusTextContainer: {
-    flex: 1,
-  },
-  statusTitle: {
-    marginBottom: 2,
-    fontWeight: "bold",
-  },
-  historyButton: {
-    backgroundColor: "#34E875",
-    height: 50,
-  },
-  emergencyButton: {
-    backgroundColor: Theme.colors.emergency,
-    height: 50,
-  },
-  sectionHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: Theme.spacing.m,
-  },
-  actionLinkText: {
-    color: "#34E875",
-    fontWeight: "600",
-  },
-  contactCard: {
-    marginBottom: Theme.spacing.m,
-    padding: Theme.spacing.m,
-  },
-  contactInfo: {
-    flexDirection: "row",
-    alignItems: "center",
-    flex: 1,
-  },
-  contactIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: Theme.spacing.m,
-  },
-  contactContent: {
-    flex: 1,
-  },
-  callButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "#E8F5E9",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  relationshipChip: {
-    marginBottom: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    backgroundColor: "#F1F5F9",
-    marginRight: 8,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  relationshipChipActive: {
-    backgroundColor: "#E8F5E9",
-    borderWidth: 1,
-    borderColor: "#34E875",
-  },
-  relationshipChipActiveDark: {
-    backgroundColor: "#1B3A26",
-    borderColor: "#34E875",
-  },
-  contactInput: {
-    backgroundColor: "#F8FAFC",
-    padding: 12,
-    borderRadius: 12,
-    marginTop: 12,
+function Field({ label, children, hint }: { label: string; children: React.ReactNode; hint?: string }) {
+  const t = useTokens();
+  return (
+    <View style={{ gap: 8 }}>
+      <Text style={{ fontFamily: FONT.semibold, fontSize: 15, color: t.ink }}>{label}</Text>
+      {children}
+      {hint ? <T variant="small">{hint}</T> : null}
+    </View>
+  );
+}
+
+function LinkRow({ icon, title, subtitle, onPress, last }: { icon: keyof typeof Ionicons.glyphMap; title: string; subtitle?: string; onPress: () => void; last?: boolean }) {
+  const t = useTokens();
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="link"
+      style={({ pressed }) => ({
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 14,
+        minHeight: 56,
+        paddingVertical: 10,
+        borderBottomWidth: last ? 0 : 1,
+        borderBottomColor: t.border,
+        opacity: pressed ? 0.7 : 1,
+      })}
+    >
+      <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: t.surface2, alignItems: "center", justifyContent: "center" }}>
+        <Ionicons name={icon} size={20} color={t.ink2} />
+      </View>
+      <View style={{ flex: 1 }}>
+        <Text style={{ fontFamily: FONT.semibold, fontSize: 16, color: t.ink }}>{title}</Text>
+        {subtitle ? <T variant="small">{subtitle}</T> : null}
+      </View>
+      <Ionicons name="chevron-forward" size={20} color={t.muted} />
+    </Pressable>
+  );
+}
+
+function EditButton({ label, onPress }: { label: string; onPress: () => void }) {
+  const t = useTokens();
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      style={{ width: 44, height: 44, borderRadius: 22, borderWidth: 1, borderColor: t.border, alignItems: "center", justifyContent: "center", backgroundColor: t.surface }}
+    >
+      <Ionicons name="pencil" size={18} color={t.ink} />
+    </Pressable>
+  );
+}
+
+export default function ProfileScreen() {
+  const router = useRouter();
+  const t = useTokens();
+  const { profile, isLoadingProfile, isErrorProfile, updateProfile, pregnancyTimeline } = useUserProfile() as any;
+  const { preference, setPreference } = useAppTheme();
+  const { logout } = useAuth() as any;
+  const { showToast } = useToast();
+
+  const [editing, setEditing] = useState<Editing>(null);
+  const [saving, setSaving] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [confirmLogout, setConfirmLogout] = useState(false);
+  const [facility, setFacility] = useState<{ linked: boolean; facilityName?: string } | null>(null);
+
+  const [rel, setRel] = useState<Relationship | null>(null);
+  const [phone, setPhone] = useState("");
+  const [weeks, setWeeks] = useState("");
+  const [first, setFirst] = useState(false);
+  const [conds, setConds] = useState<string[]>([]);
+  const [clinicName, setClinicName] = useState("");
+  const [clinicPhone, setClinicPhone] = useState("");
+  const [clinicAddress, setClinicAddress] = useState("");
+  const [reminder, setReminder] = useState("09:00");
+
+  useEffect(() => {
+    if (!isLoadingProfile && !isErrorProfile && profile === null) router.replace("/profile-setup");
+  }, [profile, isLoadingProfile, isErrorProfile, router]);
+
+  useEffect(() => {
+    apiClient
+      .get("/facilities/link-status")
+      .then((r) => setFacility(r.data))
+      .catch(() => setFacility(null));
+  }, []);
+
+  useEffect(() => {
+    if (profile?.reminderTime) setReminder(profile.reminderTime);
+  }, [profile?.reminderTime]);
+
+  const inputStyle = {
+    fontFamily: FONT.regular,
     fontSize: 16,
-    borderWidth: 1,
-    borderColor: "#E6E1D9",
-  },
-  contactInputDark: {
-    backgroundColor: "#13261E",
-    borderColor: "#2A3B34",
-    color: "#FFFFFF",
-  },
-  saveContactButton: {
-    height: 40,
-    width: "50%",
-  },
-  cancelButton: {
-    height: 40,
-    width: "50%",
-  },
-  contactHeaderRow: {
-    marginBottom: Theme.spacing.s,
-  },
-  contactSubtitle: {
-    marginTop: 4,
-  },
-  relationshipRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    marginTop: Theme.spacing.s,
-    marginBottom: Theme.spacing.m,
-    gap: 8,
-  },
-  contactFieldGroup: {
-    marginBottom: Theme.spacing.m,
-  },
-  fieldLabel: {
-    marginBottom: 4,
-  },
-  contactActions: {
-    flexDirection: "row",
-    justifyContent: "center",
-    gap: 12,
-    marginTop: 8,
-  },
-  clinicCard: {
-    padding: Theme.spacing.m,
-    marginBottom: Theme.spacing.xl,
-  },
-  clinicHeader: {
-    flexDirection: "row",
-    marginBottom: Theme.spacing.m,
-  },
-  clinicIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: Theme.spacing.m,
-  },
-  clinicContent: {
-    flex: 1,
-  },
-  clinicActions: {
-    flexDirection: "row",
-    gap: Theme.spacing.m,
-  },
-  settingRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "#F3F4F6",
-  },
-  settingRowDark: {
-    borderBottomColor: "#2A3B34",
-  },
-  themeRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    gap: Theme.spacing.s,
-    marginTop: Theme.spacing.s,
-  },
-  themeOption: {
-    flex: 1,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  themeOptionActive: {
-    borderColor: "#34E875",
-    backgroundColor: "#E8F5E9",
-  },
-  themeOptionActiveDark: {
-    borderColor: "#34E875",
-    backgroundColor: "#1B3A26",
-  },
-  logoutButton: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: 999,
-    backgroundColor: Theme.colors.primary,
-    alignItems: "center",
-  },
-  clinicActionButton: {
-    flex: 1,
-    height: 44,
-  },
-  clinicForm: {
-    gap: 12,
-  },
-  inputGroup: {
-    marginBottom: 8,
-  },
-  quickActionsContainer: {
-    marginBottom: Theme.spacing.xl,
-    gap: 14,
-  },
+    color: t.ink,
+    backgroundColor: t.surface,
+    borderWidth: 1.5,
+    borderColor: t.borderStrong,
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    minHeight: 48,
+  };
 
-  quickActionCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 18,
-    borderRadius: 20,
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1,
-    borderColor: "#E6E1D9",
-  },
+  const open = (what: Editing) => {
+    setFormError(null);
+    if (what === "contact") {
+      setRel(profile?.emergencyContactRelationship ?? null);
+      setPhone(profile?.emergencyContactPhone ?? "");
+    }
+    if (what === "pregnancy") {
+      setWeeks(String(pregnancyTimeline?.currentWeek ?? profile?.pregnancyWeeks ?? ""));
+      setFirst(Boolean(profile?.firstPregnancy));
+      setConds((profile?.knownConditions ?? []).filter((c: string) => c !== "NONE"));
+    }
+    if (what === "clinic") {
+      setClinicName(profile?.clinicName ?? "");
+      setClinicPhone(profile?.clinicPhone ?? "");
+      setClinicAddress(profile?.clinicAddress ?? "");
+    }
+    setEditing(what);
+  };
 
-  quickActionCardDark: {
-    backgroundColor: "#13261E",
-    borderColor: "#2A3B34",
-  },
+  const save = async (data: Record<string, unknown>, done: string) => {
+    setSaving(true);
+    setFormError(null);
+    try {
+      await updateProfile(data);
+      setEditing(null);
+      showToast({ type: "success", message: done });
+    } catch {
+      setFormError("We couldn't save that. Check your internet and try again.");
+    } finally {
+      setSaving(false);
+    }
+  };
 
-  quickActionIcon: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 16,
-  },
-});
+  const saveContact = () => {
+    if (!rel) return setFormError("Please choose who this person is.");
+    if (!isValidNigerianPhone(phone)) return setFormError("Please enter a full phone number, for example 0803 123 4567.");
+    save({ emergencyContactRelationship: rel, emergencyContactPhone: phone.trim() }, "Emergency contact saved.");
+  };
+
+  const savePregnancy = () => {
+    const w = Number(weeks);
+    if (weeks === "" || Number.isNaN(w) || w < 0 || w > 42) return setFormError("Please enter weeks between 0 and 42.");
+    save({ pregnancyWeeks: Math.round(w), firstPregnancy: first, knownConditions: conds.length ? conds : ["NONE"] }, "Pregnancy details saved.");
+  };
+
+  const saveClinic = () => {
+    if (clinicPhone.trim() && !isValidNigerianPhone(clinicPhone)) return setFormError("Please enter the clinic's full phone number.");
+    save({ clinicName: clinicName.trim(), clinicPhone: clinicPhone.trim(), clinicAddress: clinicAddress.trim() }, "Clinic details saved.");
+  };
+
+  const saveReminder = async (on: boolean, time = reminder) => {
+    let tm = time.trim();
+    if (/^\d:[0-5]\d$/.test(tm)) tm = `0${tm}`;
+    if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(tm)) {
+      showToast({ type: "info", message: "Please use 24-hour time, for example 20:30." });
+      return;
+    }
+    setSaving(true);
+    try {
+      if (on) {
+        const [h, m] = tm.split(":").map(Number);
+        await TokenStorage.saveReminderTime(tm);
+        await notificationService.scheduleDailyBPReminder(h, m);
+      }
+      await updateProfile({ reminderTime: tm, notifyReminders: on });
+      setReminder(tm);
+      showToast({ type: "success", message: on ? `Daily reminder set for ${tm}.` : "Daily reminder turned off." });
+    } catch {
+      showToast({ type: "error", message: "We couldn't save your reminder. Please try again." });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const Actions = ({ onSave }: { onSave: () => void }) => (
+    <View style={{ flexDirection: "row", gap: 10 }}>
+      <View style={{ flex: 1 }}>
+        <Button block onPress={onSave} loading={saving} disabled={saving}>
+          Save
+        </Button>
+      </View>
+      <View style={{ flex: 1 }}>
+        <Button block variant="secondary" onPress={() => setEditing(null)}>
+          Cancel
+        </Button>
+      </View>
+    </View>
+  );
+
+  if (isLoadingProfile || !profile) {
+    return (
+      <Page>
+        <AppHeader title="Profile" />
+        <Skeleton height={140} />
+        <Skeleton height={120} />
+        <Skeleton height={200} />
+      </Page>
+    );
+  }
+
+  const tl = pregnancyTimeline?.isValid ? pregnancyTimeline : null;
+  const conditions: string[] = (profile.knownConditions ?? []).filter((c: string) => c !== "NONE");
+  const remindersOn = profile.notifyReminders !== false;
+
+  return (
+    <Page>
+      <AppHeader title="Profile" subtitle="Your details and settings" />
+
+      {/* Pregnancy */}
+      <Card>
+        {editing === "pregnancy" ? (
+          <View style={{ gap: 16 }}>
+            <T variant="h2">Pregnancy details</T>
+            <Field label="Weeks pregnant today">
+              <TextInput
+                accessibilityLabel="Weeks pregnant today"
+                keyboardType="number-pad"
+                maxLength={2}
+                value={weeks}
+                onChangeText={(v) => setWeeks(v.replace(/[^0-9]/g, ""))}
+                style={[inputStyle, { width: 120 }]}
+              />
+            </Field>
+            <Field label="First pregnancy?">
+              <View style={{ flexDirection: "row", gap: 8 }}>
+                <Chip role="radio" on={first} label="Yes" onPress={() => setFirst(true)} />
+                <Chip role="radio" on={!first} label="No" onPress={() => setFirst(false)} />
+              </View>
+            </Field>
+            <Field label="Health conditions">
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+                {CONDITION_OPTIONS.map((c) => (
+                  <Chip
+                    key={c.value}
+                    on={conds.includes(c.value)}
+                    label={c.label}
+                    onPress={() => setConds((x) => (x.includes(c.value) ? x.filter((y) => y !== c.value) : [...x, c.value]))}
+                  />
+                ))}
+              </View>
+            </Field>
+            {formError ? <Banner tone="red">{formError}</Banner> : null}
+            <Actions onSave={savePregnancy} />
+          </View>
+        ) : (
+          <>
+            <View style={{ flexDirection: "row", justifyContent: "space-between", gap: 12 }}>
+              <View style={{ flex: 1, gap: 4 }}>
+                <T variant="label">Your pregnancy</T>
+                <Text style={{ fontFamily: FONT.bold, fontSize: 19, color: t.ink }}>
+                  {`${tl ? tl.currentWeek : profile.pregnancyWeeks} weeks`}
+                  {tl ? <Text style={{ fontFamily: FONT.regular, fontSize: 14, color: t.muted }}>{` · ${tl.trimesterLabel}`}</Text> : null}
+                </Text>
+                {tl ? (
+                  <T variant="small">
+                    {`Due around ${new Date(tl.estimatedDueDate).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })}`}
+                  </T>
+                ) : null}
+              </View>
+              <EditButton label="Edit pregnancy details" onPress={() => open("pregnancy")} />
+            </View>
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 12 }}>
+              <Pill>{profile.firstPregnancy ? "First pregnancy" : "Been pregnant before"}</Pill>
+              {conditions.map((c) => (
+                <Pill key={c} tone="amber">
+                  {conditionLabel(c)}
+                </Pill>
+              ))}
+            </View>
+          </>
+        )}
+      </Card>
+
+      {/* Emergency contact */}
+      <SectionHeader title="Emergency contact" />
+      <Card>
+        {editing === "contact" ? (
+          <View style={{ gap: 16 }}>
+            <Field label="Who is this person?">
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+                {RELATIONSHIP_OPTIONS.map((r) => (
+                  <Chip key={r.value} role="radio" on={rel === r.value} label={r.label} onPress={() => setRel(r.value)} />
+                ))}
+              </View>
+            </Field>
+            <Field label="Phone number" hint="Use a number with WhatsApp if possible. We also send an SMS.">
+              <TextInput
+                accessibilityLabel="Emergency contact phone number"
+                keyboardType="phone-pad"
+                autoComplete="tel"
+                placeholder="0803 123 4567"
+                placeholderTextColor={t.muted}
+                value={phone}
+                onChangeText={setPhone}
+                style={inputStyle}
+              />
+            </Field>
+            {formError ? <Banner tone="red">{formError}</Banner> : null}
+            <Actions onSave={saveContact} />
+          </View>
+        ) : profile.emergencyContactPhone ? (
+          <>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
+              <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: t.surface2, alignItems: "center", justifyContent: "center" }}>
+                <Ionicons name="person-outline" size={20} color={t.ink2} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontFamily: FONT.semibold, fontSize: 16, color: t.ink }}>{relLabel(profile.emergencyContactRelationship)}</Text>
+                <T variant="small">{profile.emergencyContactPhone}</T>
+              </View>
+              <EditButton label="Edit emergency contact" onPress={() => open("contact")} />
+            </View>
+            <T variant="small" style={{ marginTop: 10 }}>
+              Gets a WhatsApp message and an SMS when you press the emergency button.
+            </T>
+          </>
+        ) : (
+          <View style={{ gap: 12 }}>
+            <Banner tone="amber">No emergency contact yet. The emergency button can only alert your clinic.</Banner>
+            <Button onPress={() => open("contact")}>Add emergency contact</Button>
+          </View>
+        )}
+      </Card>
+
+      {/* Clinic */}
+      <SectionHeader title="Your clinic" />
+      <Card>
+        <LinkRow
+          icon="business-outline"
+          title={facility?.linked ? facility.facilityName ?? "Your clinic" : "Not linked to a clinic"}
+          subtitle={facility?.linked ? "Sees your readings and gets your alerts" : "Link so your midwife can see your readings"}
+          onPress={() => router.push("/facility-linking")}
+          last
+        />
+        {editing === "clinic" ? (
+          <View style={{ gap: 16, marginTop: 12 }}>
+            <T variant="small">If your clinic isn't on MaternAlert yet, save its details here so you have them in an emergency.</T>
+            <Field label="Clinic name">
+              <TextInput accessibilityLabel="Clinic name" value={clinicName} onChangeText={setClinicName} maxLength={120} style={inputStyle} />
+            </Field>
+            <Field label="Clinic phone">
+              <TextInput accessibilityLabel="Clinic phone" keyboardType="phone-pad" value={clinicPhone} onChangeText={setClinicPhone} style={inputStyle} />
+            </Field>
+            <Field label="Address">
+              <TextInput accessibilityLabel="Clinic address" value={clinicAddress} onChangeText={setClinicAddress} maxLength={200} style={inputStyle} />
+            </Field>
+            {formError ? <Banner tone="red">{formError}</Banner> : null}
+            <Actions onSave={saveClinic} />
+          </View>
+        ) : profile.clinicName || profile.clinicPhone ? (
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginTop: 12 }}>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontFamily: FONT.semibold, fontSize: 16, color: t.ink }}>{profile.clinicName || "My clinic"}</Text>
+              <T variant="small">{[profile.clinicPhone, profile.clinicAddress].filter(Boolean).join(" · ")}</T>
+            </View>
+            {profile.clinicPhone ? (
+              <Button size="sm" variant="secondary" href={`tel:${profile.clinicPhone}`} icon={(c) => <Ionicons name="call-outline" size={16} color={c} />}>
+                Call
+              </Button>
+            ) : null}
+            <EditButton label="Edit clinic details" onPress={() => open("clinic")} />
+          </View>
+        ) : !facility?.linked ? (
+          <Pressable onPress={() => open("clinic")} accessibilityRole="button" style={{ minHeight: 44, justifyContent: "center", marginTop: 4 }}>
+            <Text style={{ fontFamily: FONT.semibold, fontSize: 15, color: t.greenInk }}>Or save your clinic's phone number</Text>
+          </Pressable>
+        ) : null}
+      </Card>
+
+      {/* Reminders */}
+      <SectionHeader title="Reminders" />
+      <Card>
+        <Field label="Daily blood pressure reminder" hint={remindersOn ? `On · every day at ${profile.reminderTime ?? reminder}` : "Off"}>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+            {REMINDER_PRESETS.map((p) => (
+              <Chip key={p} role="radio" on={remindersOn && reminder === p} label={p} onPress={() => saveReminder(true, p)} />
+            ))}
+          </View>
+          <View style={{ flexDirection: "row", gap: 10 }}>
+            <TextInput
+              accessibilityLabel="Reminder time, 24-hour, for example 20:30"
+              keyboardType="numbers-and-punctuation"
+              maxLength={5}
+              value={reminder}
+              onChangeText={setReminder}
+              style={[inputStyle, { flex: 1 }]}
+            />
+            <Button onPress={() => saveReminder(true)} loading={saving}>
+              {remindersOn ? "Update" : "Turn on"}
+            </Button>
+          </View>
+        </Field>
+        {remindersOn ? (
+          <Pressable onPress={() => saveReminder(false)} accessibilityRole="button" style={{ minHeight: 44, justifyContent: "center", marginTop: 4 }}>
+            <Text style={{ fontFamily: FONT.semibold, fontSize: 15, color: t.greenInk }}>Turn off daily reminder</Text>
+          </Pressable>
+        ) : null}
+      </Card>
+
+      {/* Appearance */}
+      <SectionHeader title="Appearance" />
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }} accessibilityRole="radiogroup">
+        {(
+          [
+            ["light", "Light"],
+            ["dark", "Dark"],
+            ["system", "Same as phone"],
+          ] as const
+        ).map(([v, l]) => (
+          <Chip key={v} role="radio" on={preference === v} label={l} onPress={() => setPreference(v)} />
+        ))}
+      </View>
+
+      {/* More */}
+      <SectionHeader title="More" />
+      <Card>
+        <LinkRow icon="document-text-outline" title="Health records" subtitle="Scans, visits and notes from your clinic" onPress={() => router.push("/my-health-records")} />
+        <LinkRow icon="calendar-outline" title="Appointments" onPress={() => router.push("/appointments")} />
+        <LinkRow icon="notifications-outline" title="Notifications" onPress={() => router.push("/notifications")} />
+        <LinkRow icon="happy-outline" title="Your baby week by week" onPress={() => router.push("/fetal-development")} />
+        <LinkRow icon="book-outline" title="Learn" onPress={() => router.push("/(tabs)/education")} />
+        <LinkRow icon="help-buoy-outline" title="Get help" subtitle="support@maternalert.com.ng" onPress={() => Linking.openURL("mailto:support@maternalert.com.ng")} />
+        <LinkRow icon="shield-checkmark-outline" title="Privacy policy" onPress={() => Linking.openURL("https://maternalert.com.ng/privacy")} last />
+      </Card>
+
+      {confirmLogout ? (
+        <Card flat>
+          <T>Sign out? You won't get reminders on this phone until you sign in again.</T>
+          <View style={{ flexDirection: "row", gap: 10, marginTop: 14 }}>
+            <View style={{ flex: 1 }}>
+              <Button block variant="danger" onPress={() => logout()}>
+                Sign out
+              </Button>
+            </View>
+            <View style={{ flex: 1 }}>
+              <Button block variant="secondary" onPress={() => setConfirmLogout(false)}>
+                Cancel
+              </Button>
+            </View>
+          </View>
+        </Card>
+      ) : (
+        <Button block variant="secondary" onPress={() => setConfirmLogout(true)} icon={(c) => <Ionicons name="log-out-outline" size={18} color={c} />}>
+          Sign out
+        </Button>
+      )}
+    </Page>
+  );
+}
