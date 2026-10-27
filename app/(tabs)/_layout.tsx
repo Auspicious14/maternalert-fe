@@ -1,166 +1,70 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
 import React from "react";
-import { StyleSheet, View } from "react-native";
-import Theme from "../../constants/theme";
-import { useColorScheme } from "../../hooks/use-color-scheme";
+import { View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+import { FONT, useTokens } from "../../components/ds";
+
+// Same tabs as maternalert-web/src/components/navigation/WebButtonNavigation.tsx
+// (Home, Readings, Learn, Profile, with a mint pill behind the active icon).
+
+const TABS: { name: string; title: string; icon: keyof typeof Ionicons.glyphMap; iconActive: keyof typeof Ionicons.glyphMap }[] = [
+  { name: "index", title: "Home", icon: "home-outline", iconActive: "home" },
+  { name: "tracking", title: "Readings", icon: "pulse-outline", iconActive: "pulse" },
+  { name: "education", title: "Learn", icon: "book-outline", iconActive: "book" },
+  { name: "profile", title: "Profile", icon: "person-outline", iconActive: "person" },
+];
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
+  const t = useTokens();
+  const insets = useSafeAreaInsets();
+  const bottom = Math.max(insets.bottom, 8);
 
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarStyle: [
-          styles.tabBar,
-          {
-            backgroundColor: isDark ? Theme.colors.darkBg : Theme.colors.white,
-            borderTopColor: isDark
-              ? Theme.colors.borderDark
-              : Theme.colors.border,
-          },
-        ],
         tabBarShowLabel: true,
-        tabBarActiveTintColor: isDark ? Theme.colors.white : Theme.colors.text,
-        tabBarInactiveTintColor: Theme.colors.inactiveTab,
-        tabBarLabelStyle: styles.tabBarLabel,
+        tabBarActiveTintColor: t.greenInk,
+        tabBarInactiveTintColor: t.muted,
+        tabBarStyle: {
+          backgroundColor: t.surface,
+          borderTopColor: t.border,
+          borderTopWidth: 1,
+          height: 64 + bottom,
+          paddingTop: 8,
+          paddingBottom: bottom,
+          elevation: 0,
+          shadowOpacity: 0,
+        },
+        tabBarLabelStyle: { fontFamily: FONT.semibold, fontSize: 12, marginTop: 2 },
       }}
     >
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: "Home",
-          tabBarIcon: ({ focused, color }) => (
-            <View
-              style={[
-                styles.iconContainer,
-                focused &&
-                  (isDark
-                    ? styles.activeIconContainerDark
-                    : styles.activeIconContainerLight),
-              ]}
-            >
-              <Ionicons
-                name={focused ? "home" : "home-outline"}
-                size={24}
-                color={color}
-              />
-            </View>
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="tracking"
-        options={{
-          title: "Tracking",
-          tabBarIcon: ({ focused, color }) => (
-            <View
-              style={[
-                styles.iconContainer,
-                focused &&
-                  (isDark
-                    ? styles.activeIconContainerDark
-                    : styles.activeIconContainerLight),
-              ]}
-            >
-              <Ionicons
-                name={focused ? "stats-chart" : "stats-chart-outline"}
-                size={24}
-                color={color}
-              />
-            </View>
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="education"
-        options={{
-          title: "Education",
-          tabBarIcon: ({ focused, color }) => (
-            <View
-              style={[
-                styles.iconContainer,
-                focused &&
-                  (isDark
-                    ? styles.activeIconContainerDark
-                    : styles.activeIconContainerLight),
-              ]}
-            >
-              <Ionicons
-                name={focused ? "book" : "book-outline"}
-                size={24}
-                color={color}
-              />
-            </View>
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="profile"
-        options={{
-          title: "Profile",
-          tabBarIcon: ({ focused, color }) => (
-            <View
-              style={[
-                styles.iconContainer,
-                focused &&
-                  (isDark
-                    ? styles.activeIconContainerDark
-                    : styles.activeIconContainerLight),
-              ]}
-            >
-              <Ionicons
-                name={focused ? "person" : "person-outline"}
-                size={24}
-                color={color}
-              />
-            </View>
-          ),
-        }}
-      />
+      {TABS.map((tab) => (
+        <Tabs.Screen
+          key={tab.name}
+          name={tab.name}
+          options={{
+            title: tab.title,
+            tabBarAccessibilityLabel: tab.title,
+            tabBarIcon: ({ focused, color }) => (
+              <View
+                style={{
+                  width: 56,
+                  height: 30,
+                  borderRadius: 15,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  backgroundColor: focused ? t.mint : "transparent",
+                }}
+              >
+                <Ionicons name={focused ? tab.iconActive : tab.icon} size={22} color={color} />
+              </View>
+            ),
+          }}
+        />
+      ))}
     </Tabs>
   );
 }
-
-const styles = StyleSheet.create({
-  tabBar: {
-    height: 85,
-    paddingBottom: 25,
-    paddingTop: 10,
-    borderTopLeftRadius: Theme.borderRadius.large,
-    borderTopRightRadius: Theme.borderRadius.large,
-    borderTopWidth: 1,
-    elevation: 10,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-  },
-  tabBarLabel: {
-    fontFamily: Theme.typography.fontFamilies.regular,
-    fontSize: 12,
-  },
-  iconContainer: {
-    width: 60,
-    height: 32,
-    borderRadius: 16,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  activeIconContainer: {
-    backgroundColor: Theme.colors.secondary,
-  },
-  activeIconContainerLight: {
-    backgroundColor: Theme.colors.secondary,
-  },
-  activeIconContainerDark: {
-    backgroundColor: "rgba(14, 124, 90, 0.2)",
-    borderWidth: 1,
-    borderColor: Theme.colors.primary,
-  },
-  label: {
-    marginTop: 4,
-  },
-});

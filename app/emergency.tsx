@@ -1,390 +1,171 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
-import {
-  ActivityIndicator,
-  Alert,
-  Linking,
-  SafeAreaView,
-  TouchableOpacity,
-  View,
-} from "react-native";
-import { Screen } from "../components/shared/Screen";
-import { Typography } from "../components/shared/Typography";
-import Theme from "../constants/theme";
-import { useColorScheme } from "../hooks/use-color-scheme";
+import { ActivityIndicator, Pressable, Text, View } from "react-native";
+
+import { AppHeader, Banner, Button, Card, FONT, Page, Row, T, useTokens } from "../components/ds";
 import { useHealthData } from "../hooks/useHealthData";
 import { useUserProfile } from "../hooks/useUserProfile";
 import {
   ALERT_SENT_MESSAGE,
+  EMERGENCY_LINE,
   showEmergencyFallback,
+  textNumber,
   triggerEmergencyAlert,
 } from "../services/emergencyAlert";
 
+// Same screen as maternalert-web/src/app/(patient)/emergency/page.tsx
+
 type AlertState = "idle" | "sending" | "sent" | "failed";
+
+const RELATIONSHIP: Record<string, string> = {
+  MIDWIFE: "Your midwife",
+  PARTNER: "Your partner",
+  FAMILY_MEMBER: "Family member",
+  OTHER: "Emergency contact",
+};
 
 export default function EmergencyScreen() {
   const router = useRouter();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
+  const t = useTokens();
   const { profile } = useUserProfile();
   const { latestBP } = useHealthData();
-
   const [alertState, setAlertState] = useState<AlertState>("idle");
 
+  const contactPhone = profile?.emergencyContactPhone ?? null;
   const contactName = profile?.emergencyContactRelationship
-    ? profile.emergencyContactRelationship.replace(/_/g, " ")
-    : "Emergency Contact";
+    ? RELATIONSHIP[profile.emergencyContactRelationship] ?? "Emergency contact"
+    : "Emergency contact";
 
-  const textColor = isDark ? "text-white" : "text-text";
-  const subTextColor = isDark ? "text-white/50" : "text-gray-500";
-
-  // ── SEND ALERT (WhatsApp + SMS to contact & facility) ───────────────────
- async function handleSendAlert() {
-  setAlertState("sending");
-  const ok = await triggerEmergencyAlert();
-  if (ok) {
-    setAlertState("sent");
-  } else {
-    // "failed" state still lets her tap Send again from the screen.
-    setAlertState("failed");
-    showEmergencyFallback(profile?.emergencyContactPhone, () =>
-      router.push("/(tabs)/profile"),
-    );
-  }
-}
-
-  // ── DIRECT PHONE CALL (fallback) ─────────────────────────────────────────
-  function handleDirectCall() {
-    if (profile?.emergencyContactPhone) {
-      Linking.openURL(`tel:${profile.emergencyContactPhone}`);
+  async function handleSendAlert() {
+    if (alertState === "sending") return;
+    setAlertState("sending");
+    const ok = await triggerEmergencyAlert();
+    if (ok) {
+      setAlertState("sent");
     } else {
-      Alert.alert(
-        "No emergency contact set",
-        "Please add an emergency contact in your profile.",
-        [
-          {
-            text: "Go to Profile",
-            onPress: () => router.push("/(tabs)/profile"),
-          },
-          { text: "Cancel", style: "cancel" },
-        ],
-      );
+      // "failed" keeps the button available for a retry.
+      setAlertState("failed");
+      showEmergencyFallback(contactPhone, () => router.push("/(tabs)/profile"));
     }
   }
 
+  const sent = alertState === "sent";
+  const sosColor = sent ? t.green : t.red;
+  const ringColor = sent ? t.mint : t.redBg;
+
   return (
-    <SafeAreaView
-      style={{
-        flex: 1,
-        backgroundColor: isDark ? Theme.colors.darkBg : Theme.colors.background,
-      }}
-    >
-      <Screen
-        backgroundColor={
-          isDark ? Theme.colors.darkBg : Theme.colors.background
-        }
-      >
-        {/* ── Header ── */}
-        <View className="flex-row justify-between items-center mb-10 px-6 pt-4">
-          <View className="flex-row items-center gap-2">
-            <Ionicons
-              name="warning"
-              size={24}
-              color={Theme.colors.emergency}
-            />
-            <Typography
-              variant="h3"
-              weight="bold"
-              className={`${isDark ? "text-white/80" : "text-gray-700"} tracking-widest text-base`}
-            >
-              EMERGENCY ALERT
-            </Typography>
-          </View>
-          <View className="w-3.5 h-3.5 rounded-full bg-primary shadow-[0_0_10px_#0E7C5A]" />
-        </View>
+    <Page>
+      <AppHeader title="Emergency help" onBack={() => router.back()} />
 
-        <View className="flex-1 items-center justify-center pb-10 px-6">
-          {/* ── Current BP ── */}
-          <View className="items-center mb-8">
-            <Typography
-              variant="caption"
-              className={`${subTextColor} tracking-widest mb-2`}
-            >
-              CURRENT BP READING
-            </Typography>
-            <View className="flex-row items-center">
-              <Typography
-                variant="h1"
-                className="text-[80px] text-emergency font-black"
-              >
-                {latestBP ? latestBP.systolic : "--"}
-              </Typography>
-              <Typography
-                variant="h1"
-                className="text-[60px] text-emergency/30 mx-1 font-light"
-              >
-                /
-              </Typography>
-              <Typography
-                variant="h1"
-                className="text-[80px] text-emergency font-black"
-              >
-                {latestBP ? latestBP.diastolic : "--"}
-              </Typography>
-            </View>
-            <View className="flex-row items-center gap-1.5 border border-emergency/30 py-1.5 px-4 rounded-[20px] mt-4 bg-emergency/5">
-              <Ionicons
-                name="stats-chart"
-                size={14}
-                color={Theme.colors.emergency}
-              />
-              <Typography
-                variant="caption"
-                weight="bold"
-                className="text-emergency tracking-widest uppercase"
-              >
-                {latestBP ? "Latest Reading" : "No Recent Reading"}
-              </Typography>
-            </View>
-          </View>
-
-          {/* ── Emergency Contact ── */}
-          <View className="items-center mb-8">
-            <View
-              className={`w-28 h-28 rounded-full border-2 ${isDark ? "border-emergency/40" : "border-emergency/20"} justify-center items-center mb-3`}
-            >
-              <View
-                className={`w-[108px] h-[108px] rounded-full border-2 border-emergency overflow-hidden ${isDark ? "bg-white/10" : "bg-gray-50"} items-center justify-center`}
-              >
-                <Ionicons
-                  name="person"
-                  size={60}
-                  color={isDark ? "white" : Theme.colors.emergency}
-                />
-              </View>
-            </View>
-            <Typography
-              variant="h1"
-              className={`${textColor} text-2xl font-black text-center capitalize`}
-            >
-              {contactName.toLowerCase()}
-            </Typography>
-            {profile?.emergencyContactPhone && (
-              <Typography
-                variant="body"
-                className={`${isDark ? "text-white/60" : "text-gray-600"} mt-1`}
-              >
-                {profile.emergencyContactPhone}
-              </Typography>
+      <View style={{ alignItems: "center", gap: 18, paddingTop: 12, paddingBottom: 4 }}>
+        <View style={{ padding: 12, borderRadius: 999, backgroundColor: ringColor }}>
+          <Pressable
+            onPress={handleSendAlert}
+            disabled={alertState === "sending"}
+            accessibilityRole="button"
+            accessibilityLabel={sent ? "Alert sent" : "Send emergency alert"}
+            accessibilityHint="Sends a message to your emergency contact and your clinic"
+            style={({ pressed }) => ({
+              width: 200,
+              height: 200,
+              borderRadius: 100,
+              backgroundColor: pressed && !sent ? t.redPress : sosColor,
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 8,
+            })}
+          >
+            {alertState === "sending" ? (
+              <ActivityIndicator color="#FFFFFF" size="large" />
+            ) : (
+              <Ionicons name={sent ? "checkmark-circle-outline" : "alert-circle-outline"} size={52} color="#FFFFFF" />
             )}
-          </View>
-
-          {/* ── ALERT STATE: sent ── */}
-          {alertState === "sent" ? (
-            <View className="w-full items-center mb-6">
-              <View
-                style={{
-                  backgroundColor: "#DCFCE7",
-                  borderRadius: 20,
-                  padding: 20,
-                  width: "100%",
-                  alignItems: "center",
-                  marginBottom: 12,
-                }}
-              >
-                <Ionicons
-                  name="checkmark-circle"
-                  size={40}
-                  color="#16A34A"
-                  style={{ marginBottom: 8 }}
-                />
-                <Typography
-                  variant="h3"
-                  weight="bold"
-                  style={{ color: "#14532D", textAlign: "center" }}
-                >
-                  Alert Sent Successfully
-                </Typography>
-                <Typography
-                  variant="caption"
-                  style={{
-                    color: "#0A5C43",
-                    textAlign: "center",
-                    marginTop: 4,
-                    lineHeight: 18,
-                  }}
-                >
-                  {ALERT_SENT_MESSAGE}
-                </Typography>
-              </View>
-
-              {/* Still show call button after alert is sent */}
-              <TouchableOpacity
-                className="w-full h-16 rounded-[32px] flex-row items-center justify-center gap-3 border border-emergency/30 bg-emergency/5"
-                onPress={handleDirectCall}
-              >
-                <Ionicons
-                  name="call"
-                  size={22}
-                  color={Theme.colors.emergency}
-                />
-                <Typography
-                  variant="h3"
-                  weight="bold"
-                  className="text-emergency"
-                >
-                  Also Call Directly
-                </Typography>
-              </TouchableOpacity>
-            </View>
-          ) : (
-            <>
-              {/* ── PRIMARY: Send Alert (WhatsApp + SMS) ── */}
-              <TouchableOpacity
-                className="bg-emergency w-full h-20 rounded-[40px] flex-row items-center justify-center gap-4 mb-4 shadow-lg shadow-emergency/40"
-                activeOpacity={0.8}
-                onPress={handleSendAlert}
-                disabled={alertState === "sending"}
-                style={{ opacity: alertState === "sending" ? 0.8 : 1 }}
-              >
-                {alertState === "sending" ? (
-                  <>
-                    <ActivityIndicator color="#fff" size="large" />
-                    <Typography
-                      variant="h1"
-                      weight="bold"
-                      className="text-white text-[22px]"
-                    >
-                      SENDING ALERT...
-                    </Typography>
-                  </>
-                ) : (
-                  <>
-                    <Ionicons name="warning" size={32} color="white" />
-                    <Typography
-                      variant="h1"
-                      weight="bold"
-                      className="text-white text-[26px]"
-                    >
-                      SEND ALERT
-                    </Typography>
-                  </>
-                )}
-              </TouchableOpacity>
-
-              {/* What this does */}
-              {alertState === "idle" && (
-                <View className="flex-row items-center gap-4 mb-6 px-2">
-                  {[
-                    { icon: "logo-whatsapp", label: "WhatsApp\nContact" },
-                    { icon: "chatbubble", label: "SMS\nFallback" },
-                    { icon: "medkit", label: "Alerts\nFacility" },
-                  ].map((item, i) => (
-                    <View key={i} className="flex-1 items-center">
-                      <View
-                        className={`w-10 h-10 rounded-full ${isDark ? "bg-white/10" : "bg-gray-100"} items-center justify-center mb-1.5`}
-                      >
-                        <Ionicons
-                          name={item.icon as any}
-                          size={18}
-                          color={Theme.colors.emergency}
-                        />
-                      </View>
-                      <Typography
-                        variant="caption"
-                        className={`${subTextColor} text-center text-[10px] leading-3`}
-                      >
-                        {item.label}
-                      </Typography>
-                    </View>
-                  ))}
-                </View>
-              )}
-
-              {/* ── Divider ── */}
-              <View className="flex-row items-center w-full gap-4 mb-4">
-                <View
-                  className={`flex-1 h-[1px] ${isDark ? "bg-white/10" : "bg-gray-200"}`}
-                />
-                <Typography
-                  variant="caption"
-                  className={`${subTextColor} tracking-widest`}
-                >
-                  OR
-                </Typography>
-                <View
-                  className={`flex-1 h-[1px] ${isDark ? "bg-white/10" : "bg-gray-200"}`}
-                />
-              </View>
-
-              {/* ── SECONDARY: Direct Call ── */}
-              <TouchableOpacity
-                className={`flex-row items-center w-full ${isDark ? "bg-white/5 border-white/10" : "bg-gray-50 border-gray-100"} rounded-[30px] p-4 border mb-3`}
-                onPress={handleDirectCall}
-              >
-                <View className="w-11 h-11 rounded-xl bg-emergency/15 justify-center items-center mr-4">
-                  <Ionicons
-                    name="call"
-                    size={22}
-                    color={Theme.colors.emergency}
-                  />
-                </View>
-                <View className="flex-1">
-                  <Typography
-                    variant="h3"
-                    weight="bold"
-                    className={`${textColor} text-base`}
-                  >
-                    {profile?.emergencyContactPhone
-                      ? "Call Contact Directly"
-                      : "Add Emergency Contact"}
-                  </Typography>
-                  <Typography
-                    variant="caption"
-                    className={`${subTextColor} text-xs mt-0.5`}
-                  >
-                    {profile?.emergencyContactPhone
-                      ? profile.emergencyContactPhone
-                      : "Tap to set up in profile"}
-                  </Typography>
-                </View>
-                <Ionicons
-                  name="chevron-forward"
-                  size={20}
-                  color={isDark ? "rgba(255,255,255,0.3)" : "rgba(0,0,0,0.2)"}
-                />
-              </TouchableOpacity>
-
-              {/* ── TERTIARY: Find Clinic ── */}
-              <TouchableOpacity
-                className={`flex-row items-center w-full ${isDark ? "bg-white/5 border-white/10" : "bg-gray-50 border-gray-100"} rounded-[30px] p-4 border`}
-                onPress={() => router.push("/clinic-finder")}
-              >
-                <View className="w-11 h-11 rounded-xl bg-emergency/15 justify-center items-center mr-4">
-                  <Ionicons
-                    name="add-circle"
-                    size={24}
-                    color={Theme.colors.emergency}
-                  />
-                </View>
-                <Typography
-                  variant="h2"
-                  weight="bold"
-                  className={`flex-1 ${textColor} text-base`}
-                >
-                  Find Local Clinic
-                </Typography>
-                <Ionicons
-                  name="chevron-forward"
-                  size={20}
-                  color={isDark ? "rgba(255,255,255,0.3)" : "rgba(0,0,0,0.2)"}
-                />
-              </TouchableOpacity>
-            </>
-          )}
+            <Text style={{ fontFamily: FONT.bold, fontSize: 20, color: "#FFFFFF" }}>
+              {alertState === "sending" ? "Sending…" : sent ? "Alert sent" : "Send alert"}
+            </Text>
+            {!sent && alertState !== "sending" ? (
+              <Text style={{ fontFamily: FONT.medium, fontSize: 14, color: "#FFFFFF", opacity: 0.9 }}>Tap once</Text>
+            ) : null}
+          </Pressable>
         </View>
-      </Screen>
-    </SafeAreaView>
+        <T style={{ textAlign: "center", maxWidth: 420 }}>
+          {sent
+            ? ALERT_SENT_MESSAGE
+            : "Sends a WhatsApp or text message to your emergency contact and your clinic, saying you need help now."}
+        </T>
+      </View>
+
+      {alertState === "failed" ? (
+        <Banner tone="red">
+          The alert couldn't be sent. Call or text your contact below, or call {EMERGENCY_LINE}.
+        </Banner>
+      ) : null}
+
+      <Card>
+        <T variant="h2" style={{ marginBottom: 4 }}>
+          Call for help yourself
+        </T>
+        {contactPhone ? (
+          <>
+            <Row icon="person-outline" title={contactName} subtitle={contactPhone} last />
+            <View style={{ flexDirection: "row", gap: 10, marginTop: 6 }}>
+              <View style={{ flex: 1 }}>
+                <Button block href={`tel:${contactPhone}`} icon={(c) => <Ionicons name="call-outline" size={18} color={c} />}>
+                  Call
+                </Button>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Button
+                  block
+                  variant="secondary"
+                  onPress={() => textNumber(contactPhone)}
+                  icon={(c) => <Ionicons name="chatbubble-outline" size={18} color={c} />}
+                >
+                  Text
+                </Button>
+              </View>
+            </View>
+          </>
+        ) : (
+          <View style={{ gap: 12, marginTop: 8 }}>
+            <T>You haven't added an emergency contact yet.</T>
+            <Button variant="secondary" href="/(tabs)/profile">
+              Add an emergency contact
+            </Button>
+          </View>
+        )}
+        <View style={{ marginTop: 12 }}>
+          <Button
+            variant="danger"
+            block
+            href={`tel:${EMERGENCY_LINE}`}
+            icon={(c) => <Ionicons name="call-outline" size={18} color={c} />}
+          >
+            {`Call ${EMERGENCY_LINE} (emergency line)`}
+          </Button>
+        </View>
+      </Card>
+
+      <Card flat>
+        <Row
+          icon="location-outline"
+          title="Nearest health facility"
+          subtitle="Directions and phone numbers"
+          last
+          trailing={
+            <Button size="sm" variant="secondary" href="/clinic-finder">
+              Open
+            </Button>
+          }
+        />
+      </Card>
+
+      {latestBP ? (
+        <T variant="small" style={{ textAlign: "center" }}>
+          Your last blood pressure: {latestBP.systolic}/{latestBP.diastolic} mmHg. Show this to the health worker.
+        </T>
+      ) : null}
+    </Page>
   );
 }

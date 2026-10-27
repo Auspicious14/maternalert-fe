@@ -25,21 +25,21 @@ export const getTierInfo = (tier: Tier): TierInfo => {
         tier: 1,
         label: "ROUTINE",
         color: Colors.primary,
-        response: "Your BP looks normal. Keep logging daily.",
+        response: "Your blood pressure looks normal. Keep checking it every day.",
       };
     case 2:
       return {
         tier: 2,
         label: "MONITOR",
         color: Colors.accent,
-        response: "Your BP is slightly elevated. Rest, stay hydrated, and recheck in 4 hours.",
+        response: "Rest for a while and drink some water, then check again in about 4 hours.",
       };
     case 3:
       return {
         tier: 3,
         label: "URGENT",
         color: "#EA580C", // Darker orange so URGENT is visibly different from MONITOR
-        response: "Your BP is high. Contact your clinic within 24 hours. Do not ignore this.",
+        response: "Contact your clinic today. Don't wait for your next appointment.",
         actionLabel: "Call Clinic",
         actionRoute: "/clinic-finder",
       };
@@ -48,7 +48,7 @@ export const getTierInfo = (tier: Tier): TierInfo => {
         tier: 4,
         label: "CRITICAL",
         color: Colors.emergency,
-        response: "DANGER. Seek urgent medical care immediately.",
+        response: "Go to a health facility now. Very high blood pressure in pregnancy needs care straight away.",
         actionLabel: "Emergency Contacts",
         actionRoute: "/emergency",
       };

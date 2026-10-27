@@ -1,21 +1,14 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
-import {
-  SafeAreaView,
-  ScrollView,
-  TextInput,
-  TouchableOpacity,
-  View,
-  Text,
-} from "react-native";
-import { Screen } from "../components/shared/Screen";
-import { Typography } from "../components/shared/Typography";
+import { Pressable, Text, TextInput, View } from "react-native";
+
+import { AppHeader, Banner, Button, FONT, Page, T, useTokens } from "../components/ds";
 import { useToast } from "../components/ui/ToastProvider";
-import Theme from "../constants/theme";
-import { useColorScheme } from "../hooks/use-color-scheme";
 import { useHealthData } from "../hooks/useHealthData";
 import { useMonitoringData } from "../hooks/useMonitoringData";
+
+// Same screen as maternalert-web/src/app/(patient)/symptom-checker/page.tsx
 
 const SYMPTOMS = [
   {
@@ -316,12 +309,139 @@ const OFFLINE_DANGER_MESSAGE =
   "We could not reach our server, but one or more of your symptoms can be a danger sign in pregnancy. Go to the nearest health facility now or call your emergency contact.";
 
 
+const ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
+  HEADACHE: "flash-outline",
+  VAGINAL_DISCHARGE: "water-outline",
+  ABDOMINAL_PAIN: "body-outline",
+  VAGINAL_BLEEDING: "water",
+  NAUSEA_VOMITING: "restaurant-outline",
+  URINARY_SYMPTOMS: "beaker-outline",
+  FEVER: "thermometer-outline",
+  REDUCED_FETAL_MOVEMENT: "happy-outline",
+  DIFFICULTY_BREATHING: "cloud-outline",
+  CHEST_PAIN: "heart-dislike-outline",
+  PALPITATIONS: "pulse-outline",
+  FAINTING: "warning-outline",
+  ABNORMAL_BODY_MOVEMENT: "flash",
+  CONFUSION: "help-circle-outline",
+  SUDDEN_SWELLING: "footsteps-outline",
+  PERSISTENT_ITCHING: "hand-left-outline",
+  BLURRED_VISION: "eye-outline",
+  MALARIA: "bug-outline",
+  ANOREXIA: "restaurant-outline",
+  OTHER: "create-outline",
+};
+
+type SymptomDef = {
+  id: SymptomId;
+  title: string;
+  subtitle?: string;
+  icon?: string;
+  groups?: { name: string; options: { id: string; label: string }[] }[];
+};
+
+// These live outside the screen so they keep their identity between renders
+// (defining them inside would remount the text inputs and drop the keyboard
+// after every keystroke).
+
+function Chip({ on, label, onPress }: { on: boolean; label: string; onPress: () => void }) {
+  const t = useTokens();
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityState={{ selected: on }}
+      style={{
+        minHeight: 44,
+        paddingHorizontal: 16,
+        borderRadius: 999,
+        borderWidth: 1.5,
+        justifyContent: "center",
+        borderColor: on ? t.green : t.borderStrong,
+        backgroundColor: on ? t.green : t.surface,
+      }}
+    >
+      <Text style={{ fontFamily: FONT.medium, fontSize: 15, color: on ? "#FFFFFF" : t.ink2 }}>{label}</Text>
+    </Pressable>
+  );
+}
+
+function SymTile({ sym, danger, on, onPress }: { sym: SymptomDef; danger: boolean; on: boolean; onPress: () => void }) {
+  const t = useTokens();
+  const accent = danger ? t.red : t.green;
+  const icon = ICONS[sym.id] ?? (sym.icon as keyof typeof Ionicons.glyphMap) ?? "medkit-outline";
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityState={{ selected: on }}
+      accessibilityLabel={sym.subtitle ? `${sym.title}. ${sym.subtitle}` : sym.title}
+      style={{
+        flexBasis: "47%",
+        flexGrow: 1,
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 12,
+        padding: 12,
+        minHeight: 64,
+        borderRadius: 16,
+        borderWidth: 1.5,
+        borderColor: on ? accent : t.border,
+        backgroundColor: on ? (danger ? t.redBg : t.mint) : t.surface,
+      }}
+    >
+      <View
+        style={{
+          width: 36,
+          height: 36,
+          borderRadius: 10,
+          alignItems: "center",
+          justifyContent: "center",
+          backgroundColor: on ? accent : danger ? t.redBg : t.surface2,
+        }}
+      >
+        <Ionicons name={icon} size={20} color={on ? "#FFFFFF" : danger ? t.redInk : t.ink2} />
+      </View>
+      <View style={{ flex: 1 }}>
+        <Text style={{ fontFamily: FONT.semibold, fontSize: 15, lineHeight: 19, color: t.ink }}>
+          {sym.title.replace(/\s*\/\s*/g, " / ")}
+        </Text>
+        {sym.subtitle ? (
+          <Text style={{ fontFamily: FONT.regular, fontSize: 13, lineHeight: 17, color: t.muted }}>{sym.subtitle}</Text>
+        ) : null}
+      </View>
+    </Pressable>
+  );
+}
+
+function Detail({ children }: { children: React.ReactNode }) {
+  const t = useTokens();
+  return (
+    <View style={{ backgroundColor: t.surface, borderColor: t.border, borderWidth: 1, borderRadius: 20, padding: 16, gap: 14 }}>
+      {children}
+    </View>
+  );
+}
+
+function YesNo({ value, set, label }: { value: boolean | null; set: (v: boolean | null) => void; label: string }) {
+  return (
+    <View style={{ gap: 8 }}>
+      <T variant="title" style={{ fontSize: 15 }}>
+        {label}
+      </T>
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+        <Chip on={value === true} label="Yes" onPress={() => set(value === true ? null : true)} />
+        <Chip on={value === false} label="No" onPress={() => set(value === false ? null : false)} />
+      </View>
+    </View>
+  );
+}
+
 export default function SymptomCheckerScreen() {
   const router = useRouter();
   const { addSymptom, isAddingSymptom } = useHealthData();
   const { revalidateMonitoring } = useMonitoringData();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
+  const t = useTokens();
   const { showToast } = useToast();
 
   const [selected, setSelected] = useState<SymptomId[]>([]);
@@ -336,12 +456,6 @@ export default function SymptomCheckerScreen() {
   const [onset, setOnset] = useState<string>("");
   const [hadBefore, setHadBefore] = useState<boolean | null>(null);
   const [medsTaken, setMedsTaken] = useState<boolean | null>(null);
-
-  const textColor = isDark ? "#FFFFFF" : "#0F241C";
-  const subTextColor = isDark ? "#94A3B8" : "#5B6B64";
-  const cardBg = isDark ? "#020617" : "#FFFFFF";
-  const borderColor = isDark ? "rgba(255,255,255,0.1)" : "#F1F5F9";
-  const subCardBg = isDark ? "#0F172A" : "#F8FAFC";
 
   const toggleSymptom = (id: SymptomId) => {
     if (selected.includes(id)) {
@@ -451,220 +565,211 @@ export default function SymptomCheckerScreen() {
     }
   };
 
-  const renderSubOptions = (symptom: any) => {
-    if (!selected.includes(symptom.id as SymptomId)) return null;
-    if (!("groups" in symptom) || !symptom.groups) return null;
 
-    return (
-      <View
-        style={{ backgroundColor: subCardBg, borderColor: borderColor }}
-        className="rounded-[24px] p-4 border mt-1 ml-4"
-      >
-        {symptom.groups.map((group: any) => (
-          <View key={group.name} className="mb-4">
-            <Typography variant="caption" weight="bold" style={{ color: textColor }} className="mb-2">
-              {group.name}
-            </Typography>
-            <View className="flex-row flex-wrap gap-2">
-              {group.options.map((opt: any) => {
-                const isSelected = (subOptions[symptom.id] ?? []).includes(opt.id);
-                return (
-                  <TouchableOpacity
+  const all = SYMPTOMS as unknown as SymptomDef[];
+  const dangerSymptoms = all.filter((sym) => LOCAL_RED_FLAGS.includes(sym.id));
+  const otherSymptoms = all.filter((sym) => !LOCAL_RED_FLAGS.includes(sym.id));
+  const anyDanger = hasLocalRedFlag(selected, subOptions);
+  const withDetails = all.filter((sym) => selected.includes(sym.id) && sym.groups && sym.groups.length > 0);
+  const hasOther = selected.includes("OTHER" as SymptomId);
+
+  const inputStyle = {
+    fontFamily: FONT.regular,
+    fontSize: 16,
+    color: t.ink,
+    backgroundColor: t.surface,
+    borderColor: t.borderStrong,
+    borderWidth: 1.5,
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    minHeight: 48,
+  };
+
+  return (
+    <Page>
+      <AppHeader title="How are you feeling?" subtitle="Tap everything you feel right now" onBack={() => router.back()} />
+
+      <View style={{ gap: 10 }}>
+        <T variant="h2" accessibilityRole="header">
+          Danger signs
+        </T>
+        <T variant="small">If you have any of these, go to a health facility now, even before you finish here.</T>
+        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
+          {dangerSymptoms.map((sym) => (
+            <SymTile key={sym.id} sym={sym} danger on={selected.includes(sym.id)} onPress={() => toggleSymptom(sym.id)} />
+          ))}
+        </View>
+      </View>
+
+      {anyDanger ? (
+        <View style={{ gap: 10 }}>
+          <Banner tone="red" icon="warning-outline">
+            This can be serious. Please go to a health facility now.
+          </Banner>
+          <Button variant="danger" block onPress={() => router.push("/emergency")}>
+            Send an emergency alert
+          </Button>
+        </View>
+      ) : null}
+
+      <View style={{ gap: 10 }}>
+        <T variant="h2" accessibilityRole="header" style={{ marginTop: 8 }}>
+          Other symptoms
+        </T>
+        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
+          {otherSymptoms.map((sym) => (
+            <SymTile key={sym.id} sym={sym} danger={false} on={selected.includes(sym.id)} onPress={() => toggleSymptom(sym.id)} />
+          ))}
+        </View>
+      </View>
+
+      {hasOther ? (
+        <Detail>
+          <T variant="title" style={{ fontSize: 15 }}>
+            Describe what you feel
+          </T>
+          <TextInput
+            accessibilityLabel="Describe what you feel"
+            value={otherSymptom}
+            onChangeText={setOtherSymptom}
+            maxLength={80}
+            multiline
+            placeholder="For example: feeling dizzy when I stand up"
+            placeholderTextColor={t.muted}
+            style={[inputStyle, { minHeight: 80, textAlignVertical: "top" }]}
+          />
+          <T variant="small" style={{ fontSize: 13 }}>
+            {otherSymptom.length}/80
+          </T>
+        </Detail>
+      ) : null}
+
+      {withDetails.map((sym) => (
+        <Detail key={sym.id}>
+          <T variant="h2" style={{ fontSize: 17 }}>
+            {sym.title}: tell us more
+          </T>
+          {sym.groups!.map((group) => (
+            <View key={group.name} style={{ gap: 8 }}>
+              <T variant="title" style={{ fontSize: 15 }}>
+                {group.name}
+              </T>
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+                {group.options.map((opt) => (
+                  <Chip
                     key={opt.id}
-                    onPress={() => toggleSubOption(symptom.id, opt.id)}
+                    on={(subOptions[sym.id] ?? []).includes(opt.id)}
+                    label={opt.label}
+                    onPress={() => toggleSubOption(sym.id, opt.id)}
+                  />
+                ))}
+              </View>
+            </View>
+          ))}
+        </Detail>
+      ))}
+
+      {selected.length > 0 ? (
+        <Detail>
+          <T variant="h2" style={{ fontSize: 17 }}>
+            A few more details (optional)
+          </T>
+          <View style={{ gap: 8 }}>
+            <T variant="title" style={{ fontSize: 15 }}>
+              How bad is it? 1 = mild, 10 = worst
+            </T>
+            <View style={{ flexDirection: "row", gap: 4 }}>
+              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => {
+                const on = severity === n;
+                return (
+                  <Pressable
+                    key={n}
+                    onPress={() => setSeverity(on ? 0 : n)}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Severity ${n}`}
+                    accessibilityState={{ selected: on }}
                     style={{
-                      backgroundColor: isSelected ? Theme.colors.primary : "transparent",
-                      borderColor: isSelected ? Theme.colors.primary : borderColor,
+                      flex: 1,
+                      minHeight: 44,
+                      borderRadius: 999,
+                      borderWidth: 1.5,
+                      alignItems: "center",
+                      justifyContent: "center",
+                      borderColor: on ? t.green : t.borderStrong,
+                      backgroundColor: on ? t.green : t.surface,
                     }}
-                    className="border rounded-full px-3 py-1.5"
                   >
-                    <Typography
-                      variant="caption"
-                      style={{ color: isSelected ? "white" : subTextColor }}
-                    >
-                      {opt.label}
-                    </Typography>
-                  </TouchableOpacity>
+                    <Text style={{ fontFamily: FONT.semibold, fontSize: 14, color: on ? "#FFFFFF" : t.ink2 }}>{n}</Text>
+                  </Pressable>
                 );
               })}
             </View>
           </View>
-        ))}
-      </View>
-    );
-  };
-
-  return (
-    <SafeAreaView className="flex-1" style={{ backgroundColor: isDark ? Theme.colors.darkBg : "#FBF7F2" }}>
-      <Screen backgroundColor={isDark ? Theme.colors.darkBg : "#FBF7F2"} scrollable>
-        <View className="flex-row items-center justify-between px-6 pt-4 mb-4">
-          <TouchableOpacity onPress={() => router.back()}>
-            <Ionicons name="arrow-back" size={28} color={textColor} />
-          </TouchableOpacity>
-          <Typography variant="h2" weight="bold" className="text-[22px]">
-            Report Symptoms
-          </Typography>
-          <View className="w-7" />
-        </View>
-
-        <View className="px-6 pb-20">
-          <Typography variant="body" style={{ color: subTextColor }} className="mb-6">
-            Select all symptoms you are currently experiencing:
-          </Typography>
-
-          {SYMPTOMS.map((symptom) => {
-            const isSelected = selected.includes(symptom.id as SymptomId);
-            return (
-              <View key={symptom.id} className="mb-3">
-                <TouchableOpacity
-                  onPress={() => toggleSymptom(symptom.id as SymptomId)}
-                  style={{
-                    backgroundColor: isSelected ? Theme.colors.primary + "10" : cardBg,
-                    borderColor: isSelected ? Theme.colors.primary : borderColor,
-                  }}
-                  className="rounded-[24px] p-4 flex-row items-center border"
-                >
-                  <View
-                    style={{ backgroundColor: isSelected ? Theme.colors.primary : isDark ? "#1E293B" : "#F1F5F9" }}
-                    className="w-12 h-12 rounded-full flex items-center justify-center mr-4"
-                  >
-                    <Ionicons name={symptom.icon as any} size={24} color={isSelected ? "white" : Theme.colors.primary} />
-                  </View>
-                  <View className="flex-1">
-                    <Typography variant="h3" weight="bold" style={{ color: textColor }}>
-                      {symptom.title}
-                    </Typography>
-                    {(symptom as any).subtitle && (
-                      <Typography variant="caption" style={{ color: subTextColor }} className="mt-0.5">
-                        {(symptom as any).subtitle}
-                      </Typography>
-                    )}
-                  </View>
-                  <View
-                    style={{
-                      borderColor: isSelected ? Theme.colors.primary : borderColor,
-                      backgroundColor: isSelected ? Theme.colors.primary : "transparent",
-                    }}
-                    className="w-6 h-6 rounded-full border items-center justify-center"
-                  >
-                    {isSelected && <Ionicons name="checkmark" size={16} color="white" />}
-                  </View>
-                </TouchableOpacity>
-
-                {isSelected && symptom.id === "OTHER" && (
-                  <View style={{ backgroundColor: subCardBg, borderColor }} className="rounded-[24px] p-4 border mt-1 ml-4">
-                    <TextInput
-                      placeholder="Please describe..."
-                      placeholderTextColor={subTextColor}
-                      value={otherSymptom}
-                      onChangeText={setOtherSymptom}
-                      style={{ color: textColor, minHeight: 40 }}
-                      multiline
-                    />
-                  </View>
-                )}
-                {renderSubOptions(symptom)}
-              </View>
-            );
-          })}
-
-          {selected.length > 0 && (
-            <View className="mt-8 mb-4 border-t pt-6" style={{ borderColor }}>
-              <Typography variant="h3" weight="bold" style={{ color: textColor }} className="mb-4">
-                Additional Details
-              </Typography>
-              
-              <Typography variant="caption" style={{ color: subTextColor }} className="mb-2">Severity (0-10)</Typography>
-              <View className="flex-row justify-between mb-6 bg-gray-100 rounded-full overflow-hidden p-1" style={{ backgroundColor: isDark ? "#1E293B" : "#F1F5F9" }}>
-                {[1,2,3,4,5,6,7,8,9,10].map(num => (
-                  <TouchableOpacity 
-                    key={num} 
-                    onPress={() => setSeverity(num)}
-                    className="flex-1 py-2 items-center rounded-full"
-                    style={{ backgroundColor: severity === num ? Theme.colors.primary : "transparent" }}
-                  >
-                    <Typography variant="caption" weight="bold" style={{ color: severity === num ? "white" : subTextColor }}>{num}</Typography>
-                  </TouchableOpacity>
-                ))}
-              </View>
-
-              <Typography variant="caption" style={{ color: subTextColor }} className="mb-2">Is it getting better or worse?</Typography>
-              <View className="flex-row gap-2 mb-6">
-                {["BETTER", "WORSE", "UNCHANGED"].map(opt => (
-                  <TouchableOpacity
-                    key={opt}
-                    onPress={() => setTrend(opt)}
-                    className="flex-1 border rounded-full py-2 items-center"
-                    style={{ 
-                      borderColor: trend === opt ? Theme.colors.primary : borderColor,
-                      backgroundColor: trend === opt ? Theme.colors.primary + "10" : "transparent"
-                    }}
-                  >
-                    <Typography variant="caption" style={{ color: trend === opt ? Theme.colors.primary : subTextColor }}>
-                      {opt.charAt(0) + opt.slice(1).toLowerCase()}
-                    </Typography>
-                  </TouchableOpacity>
-                ))}
-              </View>
-
-              <Typography variant="caption" style={{ color: subTextColor }} className="mb-2">How long has it lasted?</Typography>
-              <TextInput
-                placeholder="e.g. 2 hours, 3 days"
-                placeholderTextColor={subTextColor}
-                value={duration}
-                onChangeText={setDuration}
-                className="border rounded-2xl px-4 py-3 mb-6"
-                style={{ borderColor, color: textColor }}
-              />
-
-              <Typography variant="caption" style={{ color: subTextColor }} className="mb-2">When did it start?</Typography>
-              <TextInput
-                placeholder="e.g. Today morning, yesterday"
-                placeholderTextColor={subTextColor}
-                value={onset}
-                onChangeText={setOnset}
-                className="border rounded-2xl px-4 py-3 mb-6"
-                style={{ borderColor, color: textColor }}
-              />
-
-              <View className="flex-row items-center justify-between mb-4">
-                <Typography variant="caption" style={{ color: textColor }}>Has this happened before?</Typography>
-                <View className="flex-row gap-2">
-                  <TouchableOpacity onPress={() => setHadBefore(true)} className="px-4 py-2 border rounded-full" style={{ borderColor: hadBefore === true ? Theme.colors.primary : borderColor, backgroundColor: hadBefore === true ? Theme.colors.primary + "10" : "transparent" }}>
-                    <Typography variant="caption" style={{ color: hadBefore === true ? Theme.colors.primary : subTextColor }}>Yes</Typography>
-                  </TouchableOpacity>
-                  <TouchableOpacity onPress={() => setHadBefore(false)} className="px-4 py-2 border rounded-full" style={{ borderColor: hadBefore === false ? Theme.colors.primary : borderColor, backgroundColor: hadBefore === false ? Theme.colors.primary + "10" : "transparent" }}>
-                    <Typography variant="caption" style={{ color: hadBefore === false ? Theme.colors.primary : subTextColor }}>No</Typography>
-                  </TouchableOpacity>
-                </View>
-              </View>
-
-              <View className="flex-row items-center justify-between mb-8">
-                <Typography variant="caption" style={{ color: textColor }}>Any medication taken?</Typography>
-                <View className="flex-row gap-2">
-                  <TouchableOpacity onPress={() => setMedsTaken(true)} className="px-4 py-2 border rounded-full" style={{ borderColor: medsTaken === true ? Theme.colors.primary : borderColor, backgroundColor: medsTaken === true ? Theme.colors.primary + "10" : "transparent" }}>
-                    <Typography variant="caption" style={{ color: medsTaken === true ? Theme.colors.primary : subTextColor }}>Yes</Typography>
-                  </TouchableOpacity>
-                  <TouchableOpacity onPress={() => setMedsTaken(false)} className="px-4 py-2 border rounded-full" style={{ borderColor: medsTaken === false ? Theme.colors.primary : borderColor, backgroundColor: medsTaken === false ? Theme.colors.primary + "10" : "transparent" }}>
-                    <Typography variant="caption" style={{ color: medsTaken === false ? Theme.colors.primary : subTextColor }}>No</Typography>
-                  </TouchableOpacity>
-                </View>
-              </View>
-
-              <TouchableOpacity
-                onPress={handleSubmit}
-                disabled={isAddingSymptom}
-                className={`w-full py-4 rounded-full flex-row items-center justify-center ${isAddingSymptom ? "opacity-50" : ""}`}
-                style={{ backgroundColor: Theme.colors.primary }}
-              >
-                <Typography variant="h3" weight="bold" className="text-white">
-                  {isAddingSymptom ? "Submitting..." : "Submit Symptoms"}
-                </Typography>
-              </TouchableOpacity>
+          <View style={{ gap: 8 }}>
+            <T variant="title" style={{ fontSize: 15 }}>
+              Is it getting better or worse?
+            </T>
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+              {[
+                { id: "BETTER", label: "Better" },
+                { id: "WORSE", label: "Worse" },
+                { id: "UNCHANGED", label: "Same" },
+              ].map((o) => (
+                <Chip key={o.id} on={trend === o.id} label={o.label} onPress={() => setTrend(trend === o.id ? "" : o.id)} />
+              ))}
             </View>
-          )}
-        </View>
-      </Screen>
-    </SafeAreaView>
+          </View>
+          <View style={{ gap: 8 }}>
+            <T variant="title" style={{ fontSize: 15 }}>
+              How long has it lasted?
+            </T>
+            <TextInput
+              accessibilityLabel="How long has it lasted?"
+              value={duration}
+              onChangeText={setDuration}
+              maxLength={80}
+              placeholder="e.g. 2 hours, 3 days"
+              placeholderTextColor={t.muted}
+              style={inputStyle}
+            />
+          </View>
+          <View style={{ gap: 8 }}>
+            <T variant="title" style={{ fontSize: 15 }}>
+              When did it start?
+            </T>
+            <TextInput
+              accessibilityLabel="When did it start?"
+              value={onset}
+              onChangeText={setOnset}
+              maxLength={80}
+              placeholder="e.g. this morning, yesterday"
+              placeholderTextColor={t.muted}
+              style={inputStyle}
+            />
+          </View>
+          <YesNo value={hadBefore} set={setHadBefore} label="Has this happened before?" />
+          <YesNo value={medsTaken} set={setMedsTaken} label="Have you taken any medicine for it?" />
+        </Detail>
+      ) : null}
+
+      <Button
+        size="lg"
+        block
+        onPress={handleSubmit}
+        loading={isAddingSymptom}
+        disabled={selected.length === 0 || (hasOther && !otherSymptom.trim())}
+      >
+        {isAddingSymptom
+          ? "Sending…"
+          : selected.length === 0
+            ? "Choose at least one symptom"
+            : `Send ${selected.length} symptom${selected.length === 1 ? "" : "s"}`}
+      </Button>
+
+      <Banner tone="green" icon="information-circle-outline">
+        Your answers go to your linked clinic. This is not a diagnosis.
+      </Banner>
+    </Page>
   );
 }

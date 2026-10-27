@@ -1,479 +1,325 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
-import React, { useEffect, useState } from "react";
-import {
-    Alert,
-    SafeAreaView,
-    ScrollView,
-    TextInput,
-    TouchableOpacity,
-    View,
-} from "react-native";
-import { Button } from "../components/shared/Button";
-import { Screen } from "../components/shared/Screen";
-import { Typography } from "../components/shared/Typography";
-import { useToast } from "../components/ui/ToastProvider";
-import Theme from "../constants/theme";
-import { useColorScheme } from "../hooks/use-color-scheme";
-import { useHealthData } from "../hooks/useHealthData";
-
 import * as Notifications from "expo-notifications";
+import { useRouter } from "expo-router";
+import React, { useMemo, useRef, useState } from "react";
+import { Modal, Pressable, Text, TextInput, View } from "react-native";
+
+import {
+  AppHeader,
+  Banner,
+  Button,
+  Card,
+  FONT,
+  Page,
+  T,
+  useTokens,
+} from "../components/ds";
+import { useToast } from "../components/ui/ToastProvider";
+import { useHealthData } from "../hooks/useHealthData";
 import { useTrends } from "../hooks/useTrends";
 import { getTier, getTierInfo, Tier } from "../services/escalation";
 import { notificationService } from "../services/notifications";
+import { BP_TIPS, readingLabel, readingResultTitle } from "../services/patientCopy";
+
+// Same screen as maternalert-web/src/app/(patient)/bp-entry/page.tsx
 
 function getBPValidationError(systolic: string, diastolic: string): string | null {
   const sys = Number(systolic);
   const dia = Number(diastolic);
-
-  if (!systolic || !diastolic || Number.isNaN(sys) || Number.isNaN(dia)) {
-    return "Enter both BP numbers from your monitor.";
+  if (!systolic.trim() || !diastolic.trim() || Number.isNaN(sys) || Number.isNaN(dia)) {
+    return "Enter both numbers from your BP machine.";
   }
-  if (sys < 60 || sys > 260) {
-    return "Top number should be between 60 and 260.";
-  }
-  if (dia < 40 || dia > 160) {
-    return "Bottom number should be between 40 and 160.";
-  }
-  if (dia >= sys) {
-    return "The top number should be higher than the bottom number.";
-  }
+  if (!Number.isInteger(sys) || !Number.isInteger(dia)) return "Please enter whole numbers only.";
+  if (sys < 60 || sys > 260) return "The top number should be between 60 and 260.";
+  if (dia < 40 || dia > 160) return "The bottom number should be between 40 and 160.";
+  if (dia >= sys) return "The top number should be higher than the bottom number.";
   return null;
 }
 
 export default function BPEntryScreen() {
   const router = useRouter();
+  const t = useTokens();
   const { addBP, isAddingBP } = useHealthData();
   const { analyzeLatestTrends } = useTrends();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
   const { showToast } = useToast();
 
-  // Start empty: pre-filling 120/80 let a mother tap Save without measuring,
-  // recording a fake "normal" reading that hides real risk from her clinic.
+  // Start empty so a reading can't be saved without actually measuring.
   const [systolic, setSystolic] = useState("");
   const [diastolic, setDiastolic] = useState("");
-  const [currentDate, setCurrentDate] = useState(new Date());
+  const [touched, setTouched] = useState(false);
+  const [focus, setFocus] = useState<"sys" | "dia" | null>(null);
+  const [result, setResult] = useState<{ tier: Tier; sys: number; dia: number; saved: boolean | null } | null>(null);
+  const diaRef = useRef<TextInput>(null);
 
-  const [showConfirmation, setShowConfirmation] = useState(false);
-  const [currentTier, setCurrentTier] = useState<Tier | null>(null);
-  const validationError = getBPValidationError(systolic, diastolic);
-
-  useEffect(() => {
-    // Update time every minute
-    const timer = setInterval(() => {
-      setCurrentDate(new Date());
-    }, 60000);
-    return () => clearInterval(timer);
-  }, []);
-
-  const formattedDate = new Intl.DateTimeFormat("en-US", {
-    weekday: "long",
-    hour: "numeric",
-    minute: "numeric",
-    hour12: true,
-  }).format(currentDate);
+  const validationError = useMemo(() => getBPValidationError(systolic, diastolic), [systolic, diastolic]);
+  const showError = touched && systolic !== "" && diastolic !== "" ? validationError : null;
 
   const scheduleTierNotifications = async (tier: Tier) => {
     try {
+      const at = (seconds: number) => ({
+        type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+        seconds,
+      });
       if (tier === 2 || tier === 3) {
-          // Schedule follow-up in 4 hours
-          await notificationService.scheduleNotification(
-            "Follow-up BP Check",
-            "You logged an elevated BP reading earlier. Have you rechecked? Tap to log your new reading.",
-            { type: "FOLLOW_UP" },
-            {
-              type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
-              seconds: 4 * 60 * 60,
-            },
-          );
-
-          // Schedule second stronger notification in 5 hours (1 hour after the first one)
-          await notificationService.scheduleNotification(
-            "Recheck Required",
-            "We haven't heard from you. Please recheck your BP or contact your clinic. Your health matters.",
-            { type: "FOLLOW_UP", level: "urgent" },
-            {
-              type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
-              seconds: 5 * 60 * 60,
-            },
-          );
-        }
-
-        if (tier === 3) {
-          // Urgent notification
-          await notificationService.scheduleNotification(
-            "High BP Reading",
-            "You have had a high BP reading. Please contact your clinic today.",
-            { type: "URGENT_ALERT" },
-            {
-              type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
-              seconds: 1,
-            },
-          );
-        } else if (tier === 4) {
-          // Critical notification
-          await notificationService.scheduleNotification(
-            "DANGER: Seek Help",
-            "Seek urgent medical care immediately. Your BP is critical.",
-            { type: "CRITICAL_ALERT" },
-            {
-              type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
-              seconds: 1,
-            },
-          );
-        }
+        await notificationService.scheduleNotification(
+          "Time to recheck your BP",
+          "Your last reading was high. Please check your blood pressure again now.",
+          { type: "FOLLOW_UP" },
+          at(4 * 60 * 60) as any,
+        );
+        await notificationService.scheduleNotification(
+          "Please recheck your BP",
+          "We haven't seen a new reading. Check your blood pressure or contact your clinic.",
+          { type: "FOLLOW_UP", level: "urgent" },
+          at(5 * 60 * 60) as any,
+        );
+      }
+      if (tier === 3) {
+        await notificationService.scheduleNotification(
+          "Contact your clinic today",
+          "Your blood pressure is high. Don't wait for your next appointment.",
+          { type: "URGENT_ALERT" },
+          at(1) as any,
+        );
+      } else if (tier === 4) {
+        await notificationService.scheduleNotification(
+          "Go to a health facility now",
+          "Your blood pressure is very high. Please get care straight away.",
+          { type: "CRITICAL_ALERT" },
+          at(1) as any,
+        );
+      }
     } catch (error) {
       // Local notifications can fail (e.g. permission denied); the on-screen
-      // warning is still shown, so never let this block the flow.
+      // warning still shows, so never let this block the flow.
       console.error("Failed to schedule BP notifications", error);
     }
   };
 
   const handleSave = async () => {
+    setTouched(true);
     if (validationError) {
       showToast({ type: "error", message: validationError });
       return;
     }
-
     const sys = parseInt(systolic, 10);
     const dia = parseInt(diastolic, 10);
     const tier = getTier(sys, dia);
-    setCurrentTier(tier);
 
     // SAFETY: show the warning and fire local alerts BEFORE talking to the
-    // server. Previously the warning only appeared after a successful save, so
-    // a dangerous reading entered while offline (or while the free-tier server
-    // was asleep) produced only "Failed to save" and no danger warning.
+    // server, so a dangerous reading entered offline still gets advice.
     if (tier !== 1) {
-      setShowConfirmation(true);
+      setResult({ tier, sys, dia, saved: null });
       await scheduleTierNotifications(tier);
     }
 
-    let saved = false;
     try {
       const savedReading = await addBP({ systolic: sys, diastolic: dia });
-      saved = true;
-
       try {
-        await notificationService.handleBPLogged(
-          savedReading?.reading?.recordedAt || savedReading?.recordedAt,
-        );
+        await notificationService.handleBPLogged(savedReading?.reading?.recordedAt || savedReading?.recordedAt);
         const trendAlerts = await analyzeLatestTrends();
-        if (__DEV__ && trendAlerts.length > 0) {
-          console.log("Trend alerts detected:", trendAlerts);
-        }
+        if (__DEV__ && trendAlerts.length > 0) console.log("Trend alerts detected:", trendAlerts);
       } catch (postSaveError) {
         // The reading IS saved; reminders/trend analysis failing is non-fatal.
         console.error("Post-save BP processing failed", postSaveError);
       }
+      if (tier === 1) {
+        showToast({ type: "success", message: "Saved. Your blood pressure looks normal." });
+        router.back();
+        return;
+      }
+      setResult({ tier, sys, dia, saved: true });
     } catch (error) {
       console.error("Failed to save BP reading", error);
-      showToast({
-        type: "error",
-        message:
-          tier === 1
-            ? "Could not save your reading. Check your internet and try again."
-            : "Could not save your reading, so your clinic has not seen it. Follow the advice on screen and contact your clinic directly.",
-      });
-    }
-
-    if (tier === 1 && saved) {
-      showToast({
-        type: "success",
-        message: "Blood pressure logged successfully.",
-      });
-      router.back();
+      if (tier === 1) {
+        showToast({ type: "error", message: "We couldn't save your reading. Check your internet and try again." });
+      } else {
+        setResult({ tier, sys, dia, saved: false });
+      }
     }
   };
 
-  const showHelp = (type: "systolic" | "diastolic") => {
-    Alert.alert(
-      type === "systolic" ? "Systolic Pressure" : "Diastolic Pressure",
-      type === "systolic"
-        ? "The top number. It measures the force your heart exerts on your artery walls each time it beats. Normal is around 90-120."
-        : "The bottom number. It measures the force your heart exerts on your artery walls between beats. Normal is around 60-80.",
-    );
-  };
+  const inputStyle = (which: "sys" | "dia") => ({
+    fontFamily: FONT.bold,
+    fontSize: 44,
+    textAlign: "center" as const,
+    color: t.ink,
+    backgroundColor: focus === which ? t.surface : t.surface2,
+    borderWidth: 2,
+    borderColor: showError ? t.red : focus === which ? t.green : "transparent",
+    borderRadius: 18,
+    minHeight: 84,
+    paddingVertical: 10,
+  });
+
+  const info = result ? getTierInfo(result.tier) : null;
+  const band = result ? (result.tier === 1 ? t.green : result.tier === 2 ? t.amber : t.red) : t.green;
 
   return (
-    <SafeAreaView
-      className="flex-1"
-      style={{ backgroundColor: isDark ? Theme.colors.darkBg : "#FBF7F2" }}
-    >
-      <Screen backgroundColor={isDark ? Theme.colors.darkBg : "#FBF7F2"}>
-        <View className="flex-row items-center justify-between px-6 pt-4 mb-10">
-          <TouchableOpacity
-            onPress={() => router.back()}
-            className="w-11 h-11 justify-center items-center"
-          >
-            <Ionicons
-              name="arrow-back"
-              size={28}
-              color={isDark ? Theme.colors.white : "#0F241C"}
-            />
-          </TouchableOpacity>
-          <Typography variant="h2" weight="bold" className="text-[22px]">
-            Log Blood Pressure
-          </Typography>
-          <View className="w-7" />
-        </View>
+    <>
+      <Page>
+        <AppHeader title="Log blood pressure" subtitle="Takes less than a minute" onBack={() => router.back()} />
 
-        <View className="items-center mb-4">
-          <View
-            className={
-              isDark
-                ? "flex-row items-center gap-2 bg-[#020617] py-3 px-5 rounded-[30px] shadow-sm border border-white/10"
-                : "flex-row items-center gap-2 bg-white py-3 px-5 rounded-[30px] shadow-sm"
-            }
-          >
-            <Ionicons name="calendar" size={18} color={Theme.colors.primary} />
-            <Typography
-              variant="h3"
-              weight="bold"
-              className={
-                isDark ? "text-base text-white" : "text-base text-[#0F241C]"
-              }
-            >
-              {formattedDate}
-            </Typography>
+        <Card>
+          <View style={{ gap: 20 }}>
+            <T>Type the two numbers exactly as they show on your BP machine.</T>
+
+            <View style={{ flexDirection: "row", alignItems: "flex-end", gap: 12 }}>
+              <View style={{ flex: 1, gap: 8 }}>
+                <T variant="title" style={{ fontSize: 15 }} nativeID="bp-sys-label">
+                  Top number
+                </T>
+                <TextInput
+                  accessibilityLabel="Top number, systolic"
+                  accessibilityLabelledBy="bp-sys-label"
+                  keyboardType="number-pad"
+                  returnKeyType="next"
+                  maxLength={3}
+                  value={systolic}
+                  onFocus={() => setFocus("sys")}
+                  onBlur={() => setFocus(null)}
+                  onChangeText={(v) => {
+                    const cleaned = v.replace(/[^0-9]/g, "");
+                    setSystolic(cleaned);
+                    if (cleaned.length === 3) diaRef.current?.focus();
+                  }}
+                  onSubmitEditing={() => diaRef.current?.focus()}
+                  style={inputStyle("sys")}
+                />
+                <T variant="small" style={{ fontSize: 13 }}>
+                  SYS · usually 90–140
+                </T>
+              </View>
+              <Text style={{ fontSize: 44, color: t.muted, paddingBottom: 34 }} accessible={false}>
+                /
+              </Text>
+              <View style={{ flex: 1, gap: 8 }}>
+                <T variant="title" style={{ fontSize: 15 }} nativeID="bp-dia-label">
+                  Bottom number
+                </T>
+                <TextInput
+                  ref={diaRef}
+                  accessibilityLabel="Bottom number, diastolic"
+                  accessibilityLabelledBy="bp-dia-label"
+                  keyboardType="number-pad"
+                  returnKeyType="done"
+                  maxLength={3}
+                  value={diastolic}
+                  onFocus={() => setFocus("dia")}
+                  onBlur={() => setFocus(null)}
+                  onChangeText={(v) => setDiastolic(v.replace(/[^0-9]/g, ""))}
+                  onSubmitEditing={handleSave}
+                  style={inputStyle("dia")}
+                />
+                <T variant="small" style={{ fontSize: 13 }}>
+                  DIA · usually 60–90
+                </T>
+              </View>
+            </View>
+
+            {showError ? (
+              <T color={t.redInk} style={{ fontSize: 14 }} accessibilityRole="alert">
+                {showError}
+              </T>
+            ) : null}
+
+            <Button size="lg" block onPress={handleSave} loading={isAddingBP}>
+              {isAddingBP ? "Saving…" : "Save reading"}
+            </Button>
           </View>
-        </View>
+        </Card>
 
-        <Typography
-          variant="body"
-          className={
-            isDark
-              ? "text-center text-gray-300 mb-10 px-10 leading-6"
-              : "text-center text-gray-500 mb-10 px-10 leading-6"
-          }
-        >
-          Enter the numbers exactly as they appear on your machine.
-        </Typography>
+        <Card flat>
+          <T variant="h2" style={{ marginBottom: 12 }}>
+            For an accurate reading
+          </T>
+          <View style={{ gap: 10 }}>
+            {BP_TIPS.map((tip) => (
+              <View key={tip} style={{ flexDirection: "row", gap: 10 }}>
+                <Ionicons name="checkmark" size={18} color={t.greenInk} style={{ marginTop: 3 }} />
+                <T style={{ flex: 1, fontSize: 15, lineHeight: 22 }}>{tip}</T>
+              </View>
+            ))}
+          </View>
+        </Card>
 
-        <ScrollView
-          contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 40 }}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-          keyboardDismissMode="on-drag"
-          nestedScrollEnabled
-        >
-          <View
-            className={
-              isDark
-                ? "bg-[#13251F] rounded-[24px] p-5 mb-4 border border-primary/30"
-                : "bg-[#EEF6F2] rounded-[24px] p-5 mb-4 border border-[#BBF7D0]"
-            }
-          >
-            <View className="flex-row items-start">
-              <Ionicons name="information-circle" size={22} color={Theme.colors.primary} />
-              <View className="flex-1 ml-3">
-                <Typography variant="h3" weight="bold" className={isDark ? "text-white mb-1" : "text-[#14532D] mb-1"}>
-                  Use a real BP monitor
-                </Typography>
-                <Typography variant="body" className={isDark ? "text-gray-200 leading-5" : "text-[#166534] leading-5"}>
-                  Please enter readings from a BP machine. Guessed numbers can make alerts less accurate.
-                </Typography>
+        <Banner tone="amber" icon="information-circle-outline">
+          No BP machine? Ask at your clinic or a pharmacy. Don't guess the numbers, because a wrong reading can hide
+          a real problem.
+        </Banner>
+      </Page>
+
+      <Modal visible={Boolean(result && info)} transparent animationType="slide" onRequestClose={() => setResult(null)}>
+        {result && info ? (
+          <View style={{ flex: 1, backgroundColor: "rgba(15,36,28,0.55)", justifyContent: "flex-end", padding: 12 }}>
+            <View style={{ backgroundColor: t.surface, borderRadius: 28, overflow: "hidden" }} accessibilityViewIsModal>
+              <View style={{ backgroundColor: band, padding: 22, gap: 6 }}>
+                <Text style={{ fontFamily: FONT.semibold, fontSize: 13, letterSpacing: 0.8, textTransform: "uppercase", color: "#FFFFFF", opacity: 0.85 }}>
+                  {readingLabel(result.tier).text}
+                </Text>
+                <Text style={{ fontFamily: FONT.bold, fontSize: 24, lineHeight: 29, color: "#FFFFFF" }} accessibilityRole="header">
+                  {readingResultTitle(result.tier)}
+                </Text>
+                <Text style={{ fontFamily: FONT.bold, fontSize: 34, color: "#FFFFFF" }}>
+                  {result.sys}/{result.dia}
+                  <Text style={{ fontFamily: FONT.medium, fontSize: 15 }}> mmHg</Text>
+                </Text>
+              </View>
+              <View style={{ padding: 22, gap: 16 }}>
+                <T style={{ fontSize: 17 }}>{info.response}</T>
+                {result.tier >= 3 ? (
+                  <T variant="small">
+                    Go now if you also have a severe headache, blurred vision, pain under the ribs, or fits.
+                  </T>
+                ) : null}
+                {result.tier >= 2 ? <T variant="small">We'll remind you to check again.</T> : null}
+                {result.saved === false ? (
+                  <Banner tone="red">
+                    This reading couldn't be saved, so your clinic hasn't seen it. Contact them directly.
+                  </Banner>
+                ) : null}
+                {result.tier === 4 ? (
+                  <Button
+                    variant="danger"
+                    size="lg"
+                    block
+                    onPress={() => {
+                      setResult(null);
+                      router.push("/emergency");
+                    }}
+                    icon={(c) => <Ionicons name="alert-circle-outline" size={20} color={c} />}
+                  >
+                    Get emergency help
+                  </Button>
+                ) : null}
+                {result.tier === 3 ? (
+                  <Button
+                    size="lg"
+                    block
+                    onPress={() => {
+                      setResult(null);
+                      router.push("/clinic-finder");
+                    }}
+                    icon={(c) => <Ionicons name="location-outline" size={20} color={c} />}
+                  >
+                    Find a clinic
+                  </Button>
+                ) : null}
+                <Button
+                  variant="secondary"
+                  block
+                  onPress={() => {
+                    setResult(null);
+                    router.back();
+                  }}
+                >
+                  Done
+                </Button>
               </View>
             </View>
           </View>
-          {/* Systolic Card */}
-          <View
-            className={
-              isDark
-                ? "bg-[#020617] rounded-[40px] p-6 mb-4 shadow-sm border border-white/10"
-                : "bg-white rounded-[40px] p-6 mb-4 shadow-sm border border-[#F1F5F9]"
-            }
-          >
-            <View className="flex-row justify-between items-center mb-4">
-              <Typography variant="h2" className="text-xl font-black">
-                Systolic (Top)
-              </Typography>
-              <TouchableOpacity
-                style={{}}
-                className="font-sans"
-                onPress={() => showHelp("systolic")}
-              >
-                <Ionicons
-                  name="help-circle"
-                  size={24}
-                  color={Theme.colors.primary}
-                />
-              </TouchableOpacity>
-            </View>
-            <View
-              className={
-                isDark
-                  ? "flex-row items-center bg-[#022C22] rounded-[30px] px-6 h-14 mb-3"
-                  : "flex-row items-center bg-[#E3F2EC] rounded-[30px] px-6 h-14 mb-3"
-              }
-            >
-              <TextInput
-                className={`flex-1 text-[22px] font-bold text-[#0E7C5A]`}
-                value={systolic}
-                onChangeText={(value) => setSystolic(value.replace(/[^0-9]/g, ""))}
-                keyboardType="numeric"
-                placeholderTextColor="#A0AEC0"
-                style={{ fontFamily: "Outfit-Bold" }}
-              />
-              <Typography
-                variant="h3"
-                weight="bold"
-                className="text-[#0E7C5A99]"
-              >
-                mmHg
-              </Typography>
-            </View>
-            <Typography
-              variant="caption"
-              className={
-                isDark
-                  ? "text-gray-400 text-center mt-1"
-                  : "text-gray-500 text-center mt-1"
-              }
-            >
-              Normal range is around 90-120
-            </Typography>
-          </View>
-
-          {/* Diastolic Card */}
-          <View
-            className={
-              isDark
-                ? "bg-[#020617] rounded-[40px] p-6 mb-4 shadow-sm border border-white/10"
-                : "bg-white rounded-[40px] p-6 mb-4 shadow-sm border border-[#F1F5F9]"
-            }
-          >
-            <View className="flex-row justify-between items-center mb-4">
-              <Typography variant="h2" className="text-xl font-black">
-                Diastolic (Bottom)
-              </Typography>
-              <TouchableOpacity onPress={() => showHelp("diastolic")}>
-                <Ionicons
-                  name="help-circle"
-                  size={24}
-                  color={Theme.colors.primary}
-                />
-              </TouchableOpacity>
-            </View>
-            <View
-              className={
-                isDark
-                  ? "flex-row items-center bg-[#022C22] rounded-[30px] px-6 h-14 mb-3"
-                  : "flex-row items-center bg-[#E3F2EC] rounded-[30px] px-6 h-14 mb-3"
-              }
-            >
-              <TextInput
-                className={`flex-1 text-[22px] font-bold text-[#0E7C5A]`}
-                value={diastolic}
-                onChangeText={(value) => setDiastolic(value.replace(/[^0-9]/g, ""))}
-                keyboardType="numeric"
-                placeholderTextColor="#A0AEC0"
-                style={{ fontFamily: "Outfit-Bold" }}
-              />
-              <Typography
-                variant="h3"
-                weight="bold"
-                className="text-[#0E7C5A99]"
-              >
-                mmHg
-              </Typography>
-            </View>
-            <Typography
-              variant="caption"
-              className={
-                isDark
-                  ? "text-gray-400 text-center mt-1"
-                  : "text-gray-500 text-center mt-1"
-              }
-            >
-              Normal range is around 60-80
-            </Typography>
-          </View>
-
-          {validationError && (systolic || diastolic) ? (
-            <Typography variant="caption" className="text-red-500 text-center mb-3">
-              {validationError}
-            </Typography>
-          ) : null}
-
-          <TouchableOpacity
-            className={`w-full bg-primary h-14 rounded-[30px] items-center justify-center mt-4 shadow-lg shadow-primary/30 ${validationError ? "opacity-60" : ""}`}
-            onPress={handleSave}
-            disabled={isAddingBP || Boolean(validationError)}
-          >
-            <Typography variant="h2" weight="bold" className="text-white">
-              {isAddingBP ? "Saving..." : "Save Reading"}
-            </Typography>
-          </TouchableOpacity>
-        </ScrollView>
-      </Screen>
-
-      {showConfirmation && currentTier && (
-        <View
-          className="absolute inset-0 z-50 items-center justify-center p-6"
-          style={{ backgroundColor: "rgba(0,0,0,0.8)" }}
-        >
-          <View
-            className="w-full bg-cardDark rounded-3xl p-8 border"
-            style={{ borderColor: getTierInfo(currentTier).color }}
-          >
-            <View
-              className="w-16 h-16 rounded-full items-center justify-center mb-6 self-center"
-              style={{ backgroundColor: `${getTierInfo(currentTier).color}20` }}
-            >
-              <Ionicons
-                name={
-                  currentTier === 4
-                    ? "alert-circle"
-                    : currentTier === 3
-                      ? "warning"
-                      : "eye"
-                }
-                size={32}
-                color={getTierInfo(currentTier).color}
-              />
-            </View>
-
-            <Typography variant="h1" className="text-white text-center mb-2">
-              {getTierInfo(currentTier).label}
-            </Typography>
-
-            <Typography variant="h2" className="text-white text-center mb-6">
-              {systolic}/{diastolic} mmHg
-            </Typography>
-
-            <Typography
-              variant="body"
-              className="text-gray-300 text-center mb-10 leading-6"
-            >
-              {getTierInfo(currentTier).response}
-            </Typography>
-
-            <View className="gap-4">
-              {getTierInfo(currentTier).actionLabel && (
-                <Button
-                  title={getTierInfo(currentTier).actionLabel!}
-                  onPress={() => {
-                    setShowConfirmation(false);
-                    router.push(getTierInfo(currentTier).actionRoute as any);
-                  }}
-                  variant={currentTier === 4 ? "emergency" : "primary"}
-                />
-              )}
-
-              <Button
-                title="Done"
-                onPress={() => {
-                  setShowConfirmation(false);
-                  router.back();
-                }}
-                variant="secondary"
-              />
-            </View>
-          </View>
-        </View>
-      )}
-    </SafeAreaView>
+        ) : null}
+      </Modal>
+    </>
   );
 }
