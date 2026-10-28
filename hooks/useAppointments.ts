@@ -1,5 +1,6 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import apiClient from "../api/client";
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import apiClient from '../api/client';
+import axios from 'axios';
 
 export interface Appointment {
   id: string;
@@ -19,9 +20,14 @@ export interface Appointment {
 export const useAppointments = () => {
   const queryClient = useQueryClient();
 
-  const { data: appointments, isLoading: isLoadingAppointments } = useQuery<
-    Appointment[]
-  >({
+  const {
+    data: appointments,
+    isLoading: isLoadingAppointments,
+    isError: isAppointmentsError,
+    error: appointmentsError,
+    refetch: refetchAppointments,
+    isFetching: isFetchingAppointments,
+  } = useQuery<Appointment[]>({
     queryKey: ["appointments"],
     queryFn: async () => {
       const response = await apiClient.get("/appointments");
@@ -29,9 +35,17 @@ export const useAppointments = () => {
     },
   });
 
+  const isFacilityLinkRequired =
+    axios.isAxiosError(appointmentsError) &&
+    appointmentsError.response?.status === 400 &&
+    typeof appointmentsError.response?.data?.message === "string" &&
+    appointmentsError.response.data.message
+      .toLowerCase()
+      .includes("link to a facility");
+
   const createAppointmentMutation = useMutation({
     mutationFn: async (appointmentData: {
-      type: "ANC" | "LAB" | "SCAN" | "GENERAL";
+      type?: "ANC" | "LAB" | "SCAN" | "GENERAL";
       title: string;
       dateTime: string;
       location?: string;
@@ -39,7 +53,7 @@ export const useAppointments = () => {
       providerName?: string;
       facilityName?: string;
     }) => {
-      // Patients always create personal appointments
+      // Always use the personal endpoint for patients
       const response = await apiClient.post("/appointments/personal", appointmentData);
       return response.data;
     },
@@ -86,6 +100,9 @@ export const useAppointments = () => {
   return {
     appointments,
     isLoadingAppointments,
+    isAppointmentsError,
+    appointmentsError,
+    isFacilityLinkRequired,
     createAppointment: createAppointmentMutation.mutateAsync,
     isCreatingAppointment: createAppointmentMutation.isPending,
     updateAppointment: updateAppointmentMutation.mutateAsync,
@@ -94,5 +111,7 @@ export const useAppointments = () => {
     isCancelingAppointment: cancelAppointmentMutation.isPending,
     deleteAppointment: deleteAppointmentMutation.mutateAsync,
     isDeletingAppointment: deleteAppointmentMutation.isPending,
+    refetchAppointments,
+    isFetchingAppointments,
   };
 };

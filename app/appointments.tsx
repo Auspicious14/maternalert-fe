@@ -1,291 +1,194 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import React from "react";
-import { FlatList, SafeAreaView, TouchableOpacity, View, Alert } from "react-native";
+import React, { useMemo, useState } from "react";
+import { Pressable, Text, View } from "react-native";
 
-import { Card } from "../components/shared/Card";
-import { Screen } from "../components/shared/Screen";
-import { Typography } from "../components/shared/Typography";
-import { Skeleton } from "../components/ui/Skeleton";
-import Theme from "../constants/theme";
-import { useColorScheme } from "../hooks/use-color-scheme";
+import { AppHeader, Banner, Button, Card, FONT, Page, Pill, SectionHeader, Skeleton, StatusHero, T, useTokens } from "../components/ds";
+import { useToast } from "../components/ui/ToastProvider";
 import { Appointment, useAppointments } from "../hooks/useAppointments";
+import { fmtDay, fmtTime, isUpcoming, statusLabel, typeLabel } from "../services/appointmentCopy";
+
+// Same screen as maternalert-web/src/app/(patient)/appointments/page.tsx
+
+function AppointmentItem({ a, last, onCancel, cancelling }: { a: Appointment; last?: boolean; onCancel?: () => void; cancelling?: boolean }) {
+  const t = useTokens();
+  const [confirm, setConfirm] = useState(false);
+  const d = new Date(a.dateTime);
+  const st = statusLabel(a.status, a.dateTime);
+  const where = a.facilityName || a.location;
+  return (
+    <View style={{ flexDirection: "row", gap: 14, paddingVertical: 14, borderBottomWidth: last ? 0 : 1, borderBottomColor: t.border }}>
+      <View style={{ width: 52, height: 56, borderRadius: 14, backgroundColor: t.mint, alignItems: "center", justifyContent: "center" }}>
+        <Text style={{ fontFamily: FONT.semibold, fontSize: 12, letterSpacing: 0.7, textTransform: "uppercase", color: t.greenInk }}>
+          {d.toLocaleDateString("en-GB", { month: "short" })}
+        </Text>
+        <Text style={{ fontFamily: FONT.bold, fontSize: 22, lineHeight: 24, color: t.greenInk }}>{d.getDate()}</Text>
+      </View>
+      <View style={{ flex: 1, gap: 2 }}>
+        <Text style={{ fontFamily: FONT.semibold, fontSize: 16, color: t.ink }}>{a.title || typeLabel(a.type)}</Text>
+        <T variant="small">{`${fmtDay(a.dateTime)}, ${fmtTime(a.dateTime)}`}</T>
+        {where ? <T variant="small">{where}</T> : null}
+        {a.notes ? <T variant="small" style={{ marginTop: 2 }}>{a.notes}</T> : null}
+        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 6 }}>
+          <Pill tone={st.tone}>{st.text}</Pill>
+          <Pill>{a.appointmentSource === "FACILITY" ? "From your clinic" : "Added by you"}</Pill>
+        </View>
+        {onCancel ? (
+          confirm ? (
+            <View style={{ flexDirection: "row", gap: 10, marginTop: 10 }}>
+              <View style={{ flex: 1 }}>
+                <Button size="sm" block variant="danger" onPress={onCancel} loading={cancelling}>
+                  Cancel it
+                </Button>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Button size="sm" block variant="secondary" onPress={() => setConfirm(false)}>
+                  Keep it
+                </Button>
+              </View>
+            </View>
+          ) : (
+            <Pressable onPress={() => setConfirm(true)} accessibilityRole="button" style={{ minHeight: 40, justifyContent: "center", alignSelf: "flex-start" }}>
+              <Text style={{ fontFamily: FONT.semibold, fontSize: 15, color: t.greenInk }}>Cancel appointment</Text>
+            </Pressable>
+          )
+        ) : null}
+      </View>
+    </View>
+  );
+}
 
 export default function AppointmentsScreen() {
   const router = useRouter();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
-  const { appointments, isLoadingAppointments, cancelAppointment } = useAppointments();
-  ;
+  const { showToast } = useToast();
+  const {
+    appointments,
+    isLoadingAppointments,
+    isAppointmentsError,
+    isFacilityLinkRequired,
+    refetchAppointments,
+    cancelAppointment,
+    isCancelingAppointment,
+  } = useAppointments();
+  const [showPast, setShowPast] = useState(false);
 
-  const getAppointmentIcon = (type: string) => {
-    switch (type) {
-      case "ANC":
-        return "medical";
-      case "LAB":
-        return "flask-outline";
-      case "SCAN":
-        return "scan-outline";
-      default:
-        return "calendar";
+  const { upcoming, past } = useMemo(() => {
+    const list = [...(appointments ?? [])];
+    return {
+      upcoming: list.filter(isUpcoming).sort((a, b) => +new Date(a.dateTime) - +new Date(b.dateTime)),
+      past: list.filter((a) => !isUpcoming(a)).sort((a, b) => +new Date(b.dateTime) - +new Date(a.dateTime)),
+    };
+  }, [appointments]);
+
+  const cancel = async (id: string) => {
+    try {
+      await cancelAppointment(id);
+      showToast({ type: "success", message: "Appointment cancelled." });
+    } catch {
+      showToast({ type: "error", message: "We couldn't cancel it. Please try again." });
     }
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString(undefined, {
-      weekday: "short",
-      month: "short",
-      day: "numeric",
-    });
-  };
-
-  const formatTime = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleTimeString(undefined, {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "SCHEDULED":
-        return Theme.colors.primary;
-      case "COMPLETED":
-        return "#34E875";
-      case "MISSED":
-        return Theme.colors.emergency;
-      default:
-        return Theme.colors.textLight;
-    }
-  };
-
-  
-  const handleCancel = (id: string) => {
-    Alert.alert(
-      "Cancel Appointment",
-      "Are you sure you want to cancel this appointment?",
-      [
-        { text: "No", style: "cancel" },
-        { text: "Yes", onPress: () => cancelAppointment(id), style: "destructive" }
-      ]
-    );
-  };
-
-  const renderItem = ({ item }: { item: Appointment }) => (
-    <Card
-      className={`mb-4 rounded-[24px] ${isDark ? "bg-[#020617] border-white/10" : "bg-white border-[#F1F5F9]"} p-5`}
-    >
-      <View className="flex-row items-start gap-4">
-        <View
-          className={`w-12 h-12 rounded-full flex items-center justify-center ${isDark ? "bg-white/10" : "bg-[#F0F7FF]"}`}
-        >
-          <Ionicons
-            name={getAppointmentIcon(item.type) as any}
-            size={24}
-            color={Theme.colors.primary}
-          />
-        </View>
-
-        <View className="flex-1">
-          <View className="flex-row items-center justify-between">
-            <Typography variant="h3" weight="bold" className="text-[16px]">
-              {item.title}
-            </Typography>
-            <View
-              className="px-3 py-1 rounded-full"
-              style={{ backgroundColor: `${getStatusColor(item.status)}20` }}
-            >
-              <Typography
-                variant="caption"
-                weight="bold"
-                style={{ color: getStatusColor(item.status) }}
-              >
-                {item.status}
-              </Typography>
-            </View>
-            <View
-              className="px-3 py-1 rounded-full ml-2"
-              style={{ backgroundColor: item.appointmentSource === 'FACILITY' ? '#E0E7FF' : '#F3E8FF' }}
-            >
-              <Typography
-                variant="caption"
-                weight="bold"
-                style={{ color: item.appointmentSource === 'FACILITY' ? '#4338CA' : '#7E22CE' }}
-              >
-                {item.appointmentSource}
-              </Typography>
-            </View>
-
-          </View>
-
-          <View className="flex-row items-center gap-2 mt-2">
-            <Ionicons
-              name="calendar-outline"
-              size={16}
-              color={Theme.colors.textLight}
-            />
-            <Typography
-              variant="body"
-              className="text-[14px]"
-              style={{ color: Theme.colors.textLight }}
-            >
-              {formatDate(item.dateTime)}
-            </Typography>
-          </View>
-
-          <View className="flex-row items-center gap-2 mt-1">
-            <Ionicons
-              name="time-outline"
-              size={16}
-              color={Theme.colors.textLight}
-            />
-            <Typography
-              variant="body"
-              className="text-[14px]"
-              style={{ color: Theme.colors.textLight }}
-            >
-              {formatTime(item.dateTime)}
-            </Typography>
-          </View>
-
-          {item.location && (
-            <View className="flex-row items-center gap-2 mt-1">
-              <Ionicons
-                name="location-outline"
-                size={16}
-                color={Theme.colors.textLight}
-              />
-              <Typography
-                variant="body"
-                className="text-[14px]"
-                style={{ color: Theme.colors.textLight }}
-              >
-                {item.location}
-              </Typography>
-            </View>
-          )}
-        
-          {item.appointmentSource === 'PATIENT' && item.status === 'SCHEDULED' && (
-            <TouchableOpacity onPress={() => handleCancel(item.id)} className="mt-4 p-2 bg-red-100 rounded-xl flex-row items-center justify-center gap-2 border border-red-200">
-                <Ionicons name="close-circle-outline" size={18} color="#EF4444" />
-                <Typography variant="body" weight="bold" style={{ color: '#EF4444' }}>Cancel Appointment</Typography>
-            </TouchableOpacity>
-          )}
-
-        </View>
-      </View>
-    </Card>
-  );
-
-  const renderSkeleton = () => (
-    <View className="px-10">
-      {[1, 2, 3].map((i) => (
-        <Skeleton
-          key={i}
-          height={120}
-          borderRadius={24}
-          style={{ marginBottom: 12 }}
-          variant={isDark ? "dark" : "light"}
-        />
-      ))}
-    </View>
-  );
+  const next = upcoming[0];
 
   return (
-    <SafeAreaView
-      className="flex-1"
-      style={{ backgroundColor: isDark ? Theme.colors.darkBg : "#FBF7F2" }}
-    >
-      <Screen backgroundColor={isDark ? Theme.colors.darkBg : "#FBF7F2"}>
-        <View className="flex-row items-center justify-between px-6 pt-4 mb-8">
-          <TouchableOpacity onPress={() => router.back()}>
-            <Ionicons
-              name="arrow-back"
-              size={28}
-              color={isDark ? Theme.colors.white : "#0F241C"}
-            />
-          </TouchableOpacity>
-          <Typography variant="h2" weight="bold" className="text-[22px]">
-            My Appointments
-          </Typography>
-          <TouchableOpacity onPress={() => router.push("/appointment-create")}>
-            <Ionicons name="add" size={28} color={Theme.colors.primary} />
-          </TouchableOpacity>
-        </View>
+    <Page>
+      <AppHeader
+        title="Appointments"
+        onBack={() => router.back()}
+        actions={
+          <Button size="sm" href="/appointment-create" icon={(c) => <Ionicons name="add" size={18} color={c} />}>
+            Add
+          </Button>
+        }
+      />
 
-        {isLoadingAppointments ? (
-          renderSkeleton()
-        ) : appointments?.length === 0 ? (
-          <View className="px-10 flex items-center justify-center flex-1">
-            <View
-              className={`w-20 h-20 rounded-full flex items-center justify-center mb-4 ${isDark ? "bg-white/10" : "bg-[#F0F7FF]"}`}
-            >
-              <Ionicons
-                name="calendar-outline"
-                size={40}
-                color={Theme.colors.primary}
-              />
-            </View>
-            <Typography variant="h3" weight="bold" className="text-[20px] mb-2">
-              No appointments yet
-            </Typography>
-            <Typography
-              variant="body"
-              className={
-                isDark
-                  ? "text-gray-400 text-center"
-                  : "text-gray-500 text-center"
-              }
-            >
-              Schedule your first ANC, lab, or scan appointment!
-            </Typography>
-            
-            <TouchableOpacity 
-              onPress={() => router.push("/appointment-create")}
-              className="mt-6 bg-primary px-6 py-3 rounded-full flex-row items-center gap-2 shadow-sm"
-            >
-              <Ionicons name="add" size={20} color="white" />
-              <Typography variant="body" weight="bold" className="text-white">
-                Add Appointment
-              </Typography>
-            </TouchableOpacity>
+      {isLoadingAppointments ? (
+        <View style={{ gap: 12 }}>
+          <Skeleton height={130} />
+          <Skeleton height={200} />
+        </View>
+      ) : isFacilityLinkRequired ? (
+        <Card>
+          <T variant="h2">Link your clinic to see appointments</T>
+          <T style={{ marginTop: 8, marginBottom: 14 }}>
+            Your clinic's appointments appear here once you're linked. You can still add your own reminders.
+          </T>
+          <View style={{ gap: 10 }}>
+            <Button block href="/facility-linking">
+              Link my clinic
+            </Button>
+            <Button block variant="secondary" href="/appointment-create">
+              Add my own
+            </Button>
           </View>
-        ) : (
-          <FlatList
-            data={appointments}
-            keyExtractor={(item) => item.id}
-            renderItem={renderItem}
-            contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 100 }}
-            showsVerticalScrollIndicator={false}
-          />
-        )}
-        {/* Floating Action Button */}
-        {appointments && appointments.length > 0 && (
-          <TouchableOpacity
-            onPress={() => router.push("/appointment-create")}
-            style={{
-              position: "absolute",
-              bottom: 24,
-              right: 24,
-              width: 56,
-              height: 56,
-              borderRadius: 28,
-              backgroundColor: Theme.colors.primary,
-              justifyContent: "center",
-              alignItems: "center",
-              shadowColor: "#000",
-              shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: 0.3,
-              shadowRadius: 4,
-              elevation: 5,
-            }}
-          >
-            <Ionicons name="add" size={32} color="white" />
-          </TouchableOpacity>
-        )}
-      </Screen>
-    </SafeAreaView>
+        </Card>
+      ) : isAppointmentsError ? (
+        <View style={{ gap: 10 }}>
+          <Banner tone="amber">We couldn't load your appointments. Check your internet and try again.</Banner>
+          <Button variant="secondary" onPress={() => refetchAppointments()}>
+            Try again
+          </Button>
+        </View>
+      ) : (
+        <>
+          {next ? (
+            <StatusHero
+              tone="green"
+              kicker={`Next appointment · ${statusLabel(next.status, next.dateTime).text}`}
+              title={next.title || typeLabel(next.type)}
+              message={`${fmtDay(next.dateTime)} at ${fmtTime(next.dateTime)}${
+                next.facilityName || next.location ? ` · ${next.facilityName || next.location}` : ""
+              }. Bring your antenatal card. If you can't go, tell your clinic so they can rebook you.`}
+              icon="calendar-outline"
+            />
+          ) : (
+            <Card>
+              <T variant="h2">No upcoming appointments</T>
+              <T style={{ marginTop: 8, marginBottom: 14 }}>
+                Add your next antenatal visit, scan or test so we can remind you the day before.
+              </T>
+              <Button href="/appointment-create" icon={(c) => <Ionicons name="add" size={18} color={c} />}>
+                Add an appointment
+              </Button>
+            </Card>
+          )}
+
+          {upcoming.length ? (
+            <>
+              <SectionHeader title="Coming up" />
+              <Card>
+                {upcoming.map((a, i) => (
+                  <AppointmentItem
+                    key={a.id}
+                    a={a}
+                    last={i === upcoming.length - 1}
+                    cancelling={isCancelingAppointment}
+                    onCancel={a.appointmentSource === "PATIENT" ? () => cancel(a.id) : undefined}
+                  />
+                ))}
+              </Card>
+            </>
+          ) : null}
+
+          {past.length ? (
+            showPast ? (
+              <>
+                <SectionHeader title="Past" />
+                <Card>
+                  {past.map((a, i) => (
+                    <AppointmentItem key={a.id} a={a} last={i === past.length - 1} />
+                  ))}
+                </Card>
+              </>
+            ) : (
+              <Button variant="secondary" block onPress={() => setShowPast(true)}>
+                {`Show past appointments (${past.length})`}
+              </Button>
+            )
+          ) : null}
+        </>
+      )}
+    </Page>
   );
 }

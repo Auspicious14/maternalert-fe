@@ -1,211 +1,194 @@
-import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
-import {
-    SafeAreaView,
-    TextInput,
-    TouchableOpacity,
-    View
-} from "react-native";
-import { Button } from "../components/shared/Button";
-import { Screen } from "../components/shared/Screen";
-import { Typography } from "../components/shared/Typography";
-import { useToast } from "../components/ui/ToastProvider";
-import Theme from "../constants/theme";
-import { useColorScheme } from "../hooks/use-color-scheme";
-import { useAppointments } from "../hooks/useAppointments";
+import { Pressable, Text, TextInput, View } from "react-native";
 
-type AppointmentType = "ANC" | "LAB" | "SCAN" | "GENERAL";
+import { AppHeader, Banner, Button, Card, FONT, Page, T, useTokens } from "../components/ds";
+import { useToast } from "../components/ui/ToastProvider";
+import { useAppointments } from "../hooks/useAppointments";
+import { APPOINTMENT_TYPES, AppointmentType, localToIso } from "../services/appointmentCopy";
+
+// Same screen as maternalert-web/src/app/(patient)/appointment-create/page.tsx
+// No native date/time picker is installed, so: quick choices + typed values.
+
+const pad = (n: number) => String(n).padStart(2, "0");
+const isoDay = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const inDays = (n: number) => isoDay(new Date(Date.now() + n * 86_400_000));
+const DATE_PRESETS = [
+  { label: "Tomorrow", days: 1 },
+  { label: "In 1 week", days: 7 },
+  { label: "In 2 weeks", days: 14 },
+  { label: "In 4 weeks", days: 28 },
+];
+const TIME_PRESETS = ["08:00", "09:00", "10:00", "12:00", "14:00"];
+
+/** "03/11/2026" -> "2026-11-03" */
+function dmyToIso(v: string): string {
+  const m = v.trim().match(/^(\d{1,2})[/.\- ](\d{1,2})[/.\- ](\d{4})$/);
+  return m ? `${m[3]}-${m[2].padStart(2, "0")}-${m[1].padStart(2, "0")}` : "";
+}
+const isoToDmy = (v: string) => (v ? v.split("-").reverse().join("/") : "");
+
+function Chip({ on, label, onPress }: { on: boolean; label: string; onPress: () => void }) {
+  const t = useTokens();
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="radio"
+      accessibilityState={{ checked: on }}
+      style={{
+        minHeight: 44,
+        paddingHorizontal: 16,
+        borderRadius: 999,
+        borderWidth: 1.5,
+        justifyContent: "center",
+        borderColor: on ? t.green : t.borderStrong,
+        backgroundColor: on ? t.green : t.surface,
+      }}
+    >
+      <Text style={{ fontFamily: FONT.medium, fontSize: 15, color: on ? "#fff" : t.ink2 }}>{label}</Text>
+    </Pressable>
+  );
+}
+
+function Label({ children }: { children: string }) {
+  const t = useTokens();
+  return <Text style={{ fontFamily: FONT.semibold, fontSize: 15, color: t.ink }}>{children}</Text>;
+}
 
 export default function AppointmentCreateScreen() {
   const router = useRouter();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
-  const { createAppointment, isCreatingAppointment } = useAppointments();
+  const t = useTokens();
   const { showToast } = useToast();
+  const { createAppointment, isCreatingAppointment } = useAppointments();
 
   const [type, setType] = useState<AppointmentType>("ANC");
-  const [title, setTitle] = useState("");
-  const [dateTime, setDateTime] = useState(
-    new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().slice(0, 16),
-  );
-  const [location, setLocation] = useState("");
+  const [title, setTitle] = useState("Antenatal visit");
+  const [date, setDate] = useState(isoToDmy(inDays(1)));
+  const [time, setTime] = useState("09:00");
+  const [place, setPlace] = useState("");
   const [notes, setNotes] = useState("");
-  const [providerName, setProviderName] = useState("");
-  const [facilityName, setFacilityName] = useState("");
+  const [error, setError] = useState<string | null>(null);
 
-  const handleCreate = async () => {
-    if (!title.trim()) {
-      showToast({ type: "error", message: "Please enter appointment title" });
-      return;
-    }
+  const input = {
+    fontFamily: FONT.regular,
+    fontSize: 16,
+    color: t.ink,
+    backgroundColor: t.surface,
+    borderWidth: 1.5,
+    borderColor: t.borderStrong,
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    minHeight: 48,
+  };
 
+  const chooseType = (v: AppointmentType) => {
+    const prev = APPOINTMENT_TYPES.find((x) => x.value === type)?.defaultTitle;
+    setType(v);
+    if (!title.trim() || title === prev) setTitle(APPOINTMENT_TYPES.find((x) => x.value === v)?.defaultTitle ?? "");
+  };
+
+  const save = async () => {
+    const iso = localToIso(dmyToIso(date), time.trim());
+    if (!title.trim()) return setError("Please give the appointment a name, for example “Antenatal visit”.");
+    if (!iso) return setError("Please enter the date like 03/11/2026 and the time like 09:30.");
+    if (new Date(iso).getTime() < Date.now() - 60_000) return setError("That date and time has already passed.");
+    setError(null);
     try {
-      await createAppointment({
-        type,
-        title: title.trim(),
-        dateTime,
-        location: location.trim() || undefined,
-        notes: notes.trim() || undefined,
-        providerName: providerName.trim() || undefined,
-        facilityName: facilityName.trim() || undefined,
-      });
-      showToast({ type: "success", message: "Appointment scheduled!" });
-      router.back();
-    } catch (error) {
-      console.error("Failed to create appointment:", error);
-      showToast({ type: "error", message: "Failed to schedule appointment" });
+      await createAppointment({ type, title: title.trim(), dateTime: iso, location: place.trim() || undefined, notes: notes.trim() || undefined });
+      showToast({ type: "success", message: "Appointment added. We'll remind you the day before." });
+      router.replace("/appointments");
+    } catch {
+      setError("We couldn't save the appointment. Check your internet and try again.");
     }
   };
 
-  const typeOptions: { type: AppointmentType; label: string; icon: string }[] =
-    [
-      { type: "ANC", label: "ANC Visit", icon: "medical" },
-      { type: "LAB", label: "Lab Test", icon: "flask-outline" },
-      { type: "SCAN", label: "Scan", icon: "scan-outline" },
-      { type: "GENERAL", label: "General", icon: "calendar-outline" },
-    ];
-
   return (
-    <SafeAreaView
-      className="flex-1"
-      style={{ backgroundColor: isDark ? Theme.colors.darkBg : "#FBF7F2" }}
-    >
-      <Screen backgroundColor={isDark ? Theme.colors.darkBg : "#FBF7F2"}>
-        <View className="px-6 pt-4 mb-8 flex-row items-center">
-          <TouchableOpacity onPress={() => router.back()}>
-            <Ionicons
-              name="arrow-back"
-              size={28}
-              color={isDark ? Theme.colors.white : "#0F241C"}
-            />
-          </TouchableOpacity>
-          <Typography variant="h2" weight="bold" className="text-[22px] ml-4">
-            New Appointment
-          </Typography>
-        </View>
-
-        <View className="px-10">
-          <Typography
-            variant="caption"
-            className={isDark ? "text-gray-400 mb-2" : "text-gray-500 mb-2"}
-          >
-            Appointment Type
-          </Typography>
-          <View className="flex-row gap-3 mb-6">
-            {typeOptions.map((option) => (
-              <TouchableOpacity
-                key={option.type}
-                className={`flex-1 p-4 rounded-[20px] border ${
-                  type === option.type
-                    ? "border-primary bg-primary/10"
-                    : isDark
-                      ? "border-white/10 bg-[#020617]"
-                      : "border-[#F1F5F9] bg-white"
-                }`}
-                onPress={() => setType(option.type)}
-              >
-                <Ionicons
-                  name={option.icon as any}
-                  size={24}
-                  color={
-                    type === option.type
-                      ? Theme.colors.primary
-                      : Theme.colors.textLight
-                  }
-                />
-                <Typography
-                  variant="body"
-                  weight="bold"
-                  className="mt-2"
-                  style={{
-                    color:
-                      type === option.type
-                        ? Theme.colors.primary
-                        : Theme.colors.textLight,
-                  }}
-                >
-                  {option.label}
-                </Typography>
-              </TouchableOpacity>
-            ))}
+    <Page>
+      <AppHeader title="Add an appointment" onBack={() => router.back()} />
+      <Card>
+        <View style={{ gap: 18 }}>
+          <View style={{ gap: 8 }}>
+            <Label>What is it?</Label>
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+              {APPOINTMENT_TYPES.map((o) => (
+                <Chip key={o.value} on={type === o.value} label={o.label} onPress={() => chooseType(o.value)} />
+              ))}
+            </View>
           </View>
-
-          <View className="mb-6">
-            <Typography
-              variant="caption"
-              className={isDark ? "text-gray-400 mb-2" : "text-gray-500 mb-2"}
-            >
-              Title
-            </Typography>
+          <View style={{ gap: 8 }}>
+            <Label>Name</Label>
+            <TextInput accessibilityLabel="Appointment name" value={title} onChangeText={setTitle} maxLength={100} style={input} />
+          </View>
+          <View style={{ gap: 8 }}>
+            <Label>Date</Label>
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+              {DATE_PRESETS.map((p) => (
+                <Chip key={p.label} on={date === isoToDmy(inDays(p.days))} label={p.label} onPress={() => setDate(isoToDmy(inDays(p.days)))} />
+              ))}
+            </View>
             <TextInput
-              className={`px-4 py-3 rounded-[16px] border ${isDark ? "bg-[#020617] border-white/10 text-white" : "bg-white border-[#F1F5F9] text-[#0F241C]"}`}
-              placeholder="e.g. Routine ANC Checkup"
-              placeholderTextColor={isDark ? "#94A3B8" : "#94A3B8"}
-              value={title}
-              onChangeText={setTitle}
+              accessibilityLabel="Date, day month year"
+              keyboardType="numbers-and-punctuation"
+              placeholder="DD/MM/YYYY"
+              placeholderTextColor={t.muted}
+              value={date}
+              onChangeText={setDate}
+              maxLength={10}
+              style={input}
             />
           </View>
-
-          <View className="mb-6">
-            <Typography
-              variant="caption"
-              className={isDark ? "text-gray-400 mb-2" : "text-gray-500 mb-2"}
-            >
-              Date & Time
-            </Typography>
+          <View style={{ gap: 8 }}>
+            <Label>Time</Label>
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+              {TIME_PRESETS.map((p) => (
+                <Chip key={p} on={time === p} label={p} onPress={() => setTime(p)} />
+              ))}
+            </View>
             <TextInput
-              className={`px-4 py-3 rounded-[16px] border ${isDark ? "bg-[#020617] border-white/10 text-white" : "bg-white border-[#F1F5F9] text-[#0F241C]"}`}
-              value={dateTime}
-              onChangeText={setDateTime}
-              placeholder="YYYY-MM-DDTHH:MM"
-              placeholderTextColor={isDark ? "#94A3B8" : "#94A3B8"}
+              accessibilityLabel="Time, 24-hour, for example 14:30"
+              keyboardType="numbers-and-punctuation"
+              placeholder="HH:MM"
+              placeholderTextColor={t.muted}
+              value={time}
+              onChangeText={setTime}
+              maxLength={5}
+              style={input}
             />
           </View>
-
-          <View className="mb-6">
-            <Typography
-              variant="caption"
-              className={isDark ? "text-gray-400 mb-2" : "text-gray-500 mb-2"}
-            >
-              Location (Optional)
-            </Typography>
+          <View style={{ gap: 8 }}>
+            <Label>Where (optional)</Label>
             <TextInput
-              className={`px-4 py-3 rounded-[16px] border ${isDark ? "bg-[#020617] border-white/10 text-white" : "bg-white border-[#F1F5F9] text-[#0F241C]"}`}
-              placeholder="Clinic or hospital name"
-              placeholderTextColor={isDark ? "#94A3B8" : "#94A3B8"}
-              value={location}
-              onChangeText={setLocation}
+              accessibilityLabel="Where"
+              placeholder="e.g. General Hospital, ANC clinic"
+              placeholderTextColor={t.muted}
+              value={place}
+              onChangeText={setPlace}
+              maxLength={150}
+              style={input}
             />
           </View>
-
-          <View className="mb-8">
-            <Typography
-              variant="caption"
-              className={isDark ? "text-gray-400 mb-2" : "text-gray-500 mb-2"}
-            >
-              Notes (Optional)
-            </Typography>
+          <View style={{ gap: 8 }}>
+            <Label>Notes (optional)</Label>
             <TextInput
-              className={`px-4 py-3 rounded-[16px] border min-h-[100px] ${isDark ? "bg-[#020617] border-white/10 text-white" : "bg-white border-[#F1F5F9] text-[#0F241C]"}`}
-              placeholder="Any additional notes..."
-              placeholderTextColor={isDark ? "#94A3B8" : "#94A3B8"}
+              accessibilityLabel="Notes"
+              placeholder="e.g. Bring urine sample, go fasting"
+              placeholderTextColor={t.muted}
               value={notes}
               onChangeText={setNotes}
+              maxLength={300}
               multiline
+              style={[input, { minHeight: 88, paddingTop: 12, textAlignVertical: "top" }]}
             />
           </View>
-
-          <Button
-            title={
-              isCreatingAppointment ? "Scheduling..." : "Schedule Appointment"
-            }
-            className="h-[70px] rounded-[35px]"
-            onPress={handleCreate}
-            disabled={isCreatingAppointment}
-          />
+          {error ? <Banner tone="red">{error}</Banner> : null}
+          <Button size="lg" block onPress={save} loading={isCreatingAppointment} disabled={isCreatingAppointment}>
+            Save appointment
+          </Button>
+          <T variant="small" style={{ textAlign: "center" }}>
+            Times are in your phone's time zone.
+          </T>
         </View>
-      </Screen>
-    </SafeAreaView>
+      </Card>
+    </Page>
   );
 }

@@ -1,185 +1,153 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import React from "react";
-import { FlatList, TouchableOpacity, View } from "react-native";
-import { Screen } from "../components/shared/Screen";
-import { Typography } from "../components/shared/Typography";
-import { Skeleton } from "../components/ui/Skeleton";
-import Theme from "../constants/theme";
-import { useColorScheme } from "../hooks/use-color-scheme";
+import React, { useMemo, useState } from "react";
+import { Pressable, Text, View } from "react-native";
+
+import { AppHeader, Banner, Button, Card, FONT, Page, Skeleton, T, timeAgo, useTokens } from "../components/ds";
 import { Notification, useNotifications } from "../hooks/useNotifications";
+import { notificationMeta } from "../services/appointmentCopy";
+
+// Same screen as maternalert-web/src/app/(patient)/notifications/page.tsx
+
+const ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
+  CARE_PRIORITY: "warning-outline",
+  BP_ALERT: "pulse-outline",
+  SYMPTOM_ALERT: "medkit-outline",
+  REMINDER: "alarm-outline",
+  ANC_REMINDER: "calendar-outline",
+  EDUCATIONAL: "book-outline",
+};
+
+// Web routes -> app routes
+const APP_ROUTE: Record<string, string> = {
+  "/home": "/(tabs)",
+  "/tracking": "/(tabs)/tracking",
+  "/education": "/(tabs)/education",
+};
+
+function dayGroup(iso: string): string {
+  const start = (x: Date) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+  const diff = Math.round((start(new Date()) - start(new Date(iso))) / 86_400_000);
+  if (diff <= 0) return "Today";
+  if (diff === 1) return "Yesterday";
+  if (diff < 7) return "This week";
+  return "Earlier";
+}
 
 export default function NotificationsScreen() {
   const router = useRouter();
-  const { notifications, isLoading, markAsRead } = useNotifications();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
+  const t = useTokens();
+  const { notifications, isLoading, error, refetch, markAsRead, unreadCount } = useNotifications();
+  const [marking, setMarking] = useState(false);
 
-  const handleNotificationPress = async (item: Notification) => {
-    if (!item.read) {
-      await markAsRead(item.id);
+  const groups = useMemo(() => {
+    const sorted = [...notifications].sort((a, b) => +new Date(b.createdAt) - +new Date(a.createdAt));
+    const out: { label: string; items: Notification[] }[] = [];
+    for (const n of sorted) {
+      const g = dayGroup(n.createdAt);
+      if (!out.length || out[out.length - 1].label !== g) out.push({ label: g, items: [] });
+      out[out.length - 1].items.push(n);
     }
-    // Navigate if needed based on type
-    if (item.type === "CARE_PRIORITY" || item.type === "SYMPTOM_ALERT") {
-      router.push("/symptom-results");
-    } else if (item.type === "BP_ALERT") {
-      router.push("/(tabs)/tracking");
-    } else if (item.type === "ANC_REMINDER" || item.type === "REMINDER") {
-      router.push("/appointments");
-    }
+    return out;
+  }, [notifications]);
+
+  const open = (n: Notification) => {
+    if (!n.read) markAsRead(n.id).catch(() => undefined);
+    const route = notificationMeta(n.type).route;
+    router.push((APP_ROUTE[route] ?? route) as any);
   };
 
-  const getIconAndColor = (type: Notification["type"]) => {
-    switch (type) {
-      case "CARE_PRIORITY":
-        return {
-          name: "warning",
-          color: "#EF4444",
-          bg: isDark ? "rgba(239, 68, 68, 0.2)" : "bg-red-100",
-        };
-      case "BP_ALERT":
-        return {
-          name: "medical",
-          color: "#F97316",
-          bg: isDark ? "rgba(249, 115, 22, 0.2)" : "bg-orange-100",
-        };
-      case "SYMPTOM_ALERT":
-        return {
-          name: "medkit",
-          color: "#EAB308",
-          bg: isDark ? "rgba(234, 179, 8, 0.2)" : "bg-yellow-100",
-        };
-      case "ANC_REMINDER":
-      case "REMINDER":
-      default:
-        return {
-          name: "alarm",
-          color: "#9333EA",
-          bg: isDark ? "rgba(147, 51, 234, 0.2)" : "bg-purple-100",
-        };
+  const markAll = async () => {
+    setMarking(true);
+    try {
+      await Promise.all(notifications.filter((n) => !n.read).map((n) => markAsRead(n.id)));
+    } catch {
+      // list refreshes on its own
+    } finally {
+      setMarking(false);
     }
   };
-  console.log({ notifications });
-  const renderItem = ({ item }: { item: Notification }) => {
-    const { name, color, bg } = getIconAndColor(item.type);
 
-    return (
-      <TouchableOpacity
-        onPress={() => handleNotificationPress(item)}
-        style={{
-          backgroundColor: item.read
-            ? isDark
-              ? Theme.colors.cardDark
-              : "white"
-            : isDark
-              ? "#1E293B"
-              : "#EFF6FF",
-          borderColor: isDark ? Theme.colors.borderDark : "#F1F5F9",
-        }}
-        className="p-4 mb-3 rounded-2xl border"
-      >
-        <View className="flex-row items-start gap-3">
-          <View
-            style={isDark ? { backgroundColor: bg } : undefined}
-            className={`w-10 h-10 rounded-full justify-center items-center ${!isDark ? bg : ""}`}
-          >
-            <Ionicons name={name as any} size={20} color={color} />
-          </View>
-          <View className="flex-1">
-            <View className="flex-row justify-between items-start">
-              <Typography variant="h3" className="mb-1 flex-1 mr-2">
-                {item.title}
-              </Typography>
-              {!item.read && (
-                <View className="w-2 h-2 rounded-full bg-blue-500 mt-2" />
-              )}
-            </View>
-            <Typography
-              variant="body"
-              className={isDark ? "text-gray-400" : "text-gray-500"}
-              style={{ lineHeight: 20 }}
-            >
-              {item.message}
-            </Typography>
-            <Typography
-              variant="caption"
-              className={isDark ? "text-gray-500" : "text-gray-400"}
-              style={{ marginTop: 8 }}
-            >
-              {new Date(item.createdAt).toLocaleDateString(undefined, {
-                weekday: "short",
-                month: "short",
-                day: "numeric",
-                hour: "2-digit",
-                minute: "2-digit",
-              })}
-            </Typography>
-          </View>
-        </View>
-      </TouchableOpacity>
-    );
-  };
-
-  const headerIconColor = isDark ? "#FFFFFF" : "#1F2937";
-  const headerIconBg = isDark ? Theme.colors.cardDark : "white";
+  const toneColors = (tone: string) =>
+    tone === "red" ? [t.redBg, t.redInk] : tone === "amber" ? [t.amberBg, t.amberInk] : tone === "green" ? [t.mint, t.greenInk] : [t.surface2, t.ink2];
 
   return (
-    <Screen scrollable={false}>
-      {/* Header */}
-      <View className="flex-row items-center justify-between px-4 py-4 mb-2">
-        <TouchableOpacity
-          onPress={() => router.back()}
-          style={{ backgroundColor: headerIconBg }}
-          className="w-10 h-10 justify-center items-center rounded-full shadow-sm"
-        >
-          <Ionicons name="arrow-back" size={24} color={headerIconColor} />
-        </TouchableOpacity>
-        <Typography variant="h2" className="text-xl">
-          Notifications
-        </Typography>
-        <View className="w-10" />
-      </View>
+    <Page>
+      <AppHeader
+        title="Notifications"
+        subtitle={unreadCount ? `${unreadCount} unread` : undefined}
+        onBack={() => router.back()}
+        actions={
+          unreadCount ? (
+            <Button size="sm" variant="secondary" onPress={markAll} loading={marking}>
+              Mark all read
+            </Button>
+          ) : null
+        }
+      />
 
-      {/* List */}
       {isLoading ? (
-        <View className="px-4 mt-4 gap-4">
-          <Skeleton
-            height={100}
-            borderRadius={16}
-            variant={isDark ? "dark" : "light"}
-          />
-          <Skeleton
-            height={100}
-            borderRadius={16}
-            variant={isDark ? "dark" : "light"}
-          />
-          <Skeleton
-            height={100}
-            borderRadius={16}
-            variant={isDark ? "dark" : "light"}
-          />
+        <View style={{ gap: 12 }}>
+          <Skeleton height={80} />
+          <Skeleton height={80} />
+          <Skeleton height={80} />
         </View>
+      ) : error ? (
+        <View style={{ gap: 10 }}>
+          <Banner tone="amber">We couldn't load notifications.</Banner>
+          <Button variant="secondary" onPress={() => refetch()}>
+            Try again
+          </Button>
+        </View>
+      ) : notifications.length === 0 ? (
+        <Card>
+          <T variant="h2">No notifications yet</T>
+          <T style={{ marginTop: 8 }}>Reminders, blood pressure alerts and messages from your clinic will show here.</T>
+        </Card>
       ) : (
-        <FlatList
-          data={notifications}
-          renderItem={renderItem}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={{ padding: 16 }}
-          showsVerticalScrollIndicator={false}
-          ListEmptyComponent={
-            <View className="items-center justify-center mt-20">
-              <Ionicons
-                name="notifications-off-outline"
-                size={48}
-                color="#9CA3AF"
-              />
-              <Typography variant="body" className="text-gray-400 mt-4">
-                No notifications yet
-              </Typography>
-            </View>
-          }
-        />
+        groups.map((g) => (
+          <View key={g.label} style={{ gap: 8 }}>
+            <T variant="label">{g.label}</T>
+            <Card>
+              {g.items.map((n, i) => {
+                const meta = notificationMeta(n.type);
+                const [bg, fg] = toneColors(meta.tone);
+                return (
+                  <Pressable
+                    key={n.id}
+                    onPress={() => open(n)}
+                    accessibilityRole="button"
+                    accessibilityLabel={`${n.read ? "" : "Unread. "}${n.title}. ${n.message}`}
+                    style={({ pressed }) => ({
+                      flexDirection: "row",
+                      gap: 14,
+                      paddingVertical: 14,
+                      paddingTop: i === 0 ? 0 : 14,
+                      paddingBottom: i === g.items.length - 1 ? 0 : 14,
+                      borderBottomWidth: i === g.items.length - 1 ? 0 : 1,
+                      borderBottomColor: t.border,
+                      opacity: pressed ? 0.7 : 1,
+                    })}
+                  >
+                    <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: bg, alignItems: "center", justifyContent: "center" }}>
+                      <Ionicons name={ICONS[n.type] ?? "notifications-outline"} size={20} color={fg} />
+                    </View>
+                    <View style={{ flex: 1, gap: 2 }}>
+                      <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                        {!n.read ? <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: t.green }} /> : null}
+                        <Text style={{ flex: 1, fontFamily: n.read ? FONT.medium : FONT.bold, fontSize: 16, color: t.ink }}>{n.title}</Text>
+                      </View>
+                      <T variant="small">{n.message}</T>
+                      <T variant="small" style={{ marginTop: 2 }}>{`${meta.label} · ${timeAgo(n.createdAt)}`}</T>
+                    </View>
+                    <Ionicons name="chevron-forward" size={20} color={t.muted} />
+                  </Pressable>
+                );
+              })}
+            </Card>
+          </View>
+        ))
       )}
-    </Screen>
+    </Page>
   );
 }
