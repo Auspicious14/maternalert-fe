@@ -1,111 +1,72 @@
-import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
-import { TouchableOpacity, View, Image } from "react-native";
-import { Button } from "../components/shared/Button";
-import { Input } from "../components/shared/Input";
-import { Screen } from "../components/shared/Screen";
-import { Typography } from "../components/shared/Typography";
-import Theme from "../constants/theme";
+import { View } from "react-native";
+
+import { AuthShell, Banner, Button, TextField } from "../components/ds";
 import { useAuth } from "../hooks/useAuth";
-import { useColorScheme } from "../hooks/use-color-scheme";
+import { loginIdentifier } from "../schemas/auth";
+
+// Same screen as maternalert-web/src/app/(patient)/forgot-password/page.tsx
 
 export default function ForgotPasswordScreen() {
   const router = useRouter();
   const { forgotPassword, isForgotLoading } = useAuth();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
-  const [email, setEmail] = useState("");
-  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [value, setValue] = useState("");
+  const [sent, setSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleForgot = async () => {
-    if (!email) {
-      setError("Please enter your email address.");
-      return;
-    }
+  const submit = async () => {
+    const v = value.trim();
+    const ok = v.includes("@") ? /^\S+@\S+\.\S+$/.test(v) : v.replace(/\D/g, "").length >= 10;
+    if (!ok) return setError("Enter your phone number (e.g. 0803 123 4567) or email address.");
     setError(null);
     try {
-      await forgotPassword({ email });
-      setIsSubmitted(true);
-    } catch (err: any) {
-      console.error("Forgot password failed", err);
-      setError("An error occurred. Please try again.");
+      await forgotPassword(loginIdentifier(v));
+      setSent(true);
+    } catch {
+      setError("We couldn't send it. Check your internet and try again.");
     }
   };
 
-  const iconColor = isDark ? "#FFFFFF" : "#0F241C";
-
-  if (isSubmitted) {
+  if (sent) {
+    const byPhone = !value.includes("@");
     return (
-      <Screen safe={true} scrollable={true}>
-        <View className="px-10 pt-20 items-center">
-          <View className="w-20 h-20 bg-primary/10 rounded-full items-center justify-center mb-6">
-            <Ionicons name="mail-unread-outline" size={40} color={Theme.colors.primary} />
-          </View>
-          <Typography variant="h1" className="text-center mb-4">Check Your Email</Typography>
-          <Typography variant="body" className="text-center mb-10">
-            If an account exists for {email}, you will receive a password reset link shortly.
-          </Typography>
-          <Button 
-            title="Back to Login" 
-            onPress={() => router.replace("/login")} 
-            className="w-full"
-          />
-        </View>
-      </Screen>
+      <AuthShell title={byPhone ? "Check your messages" : "Check your email"}>
+        <Banner tone="green" icon="chatbox-ellipses-outline">
+          {byPhone
+            ? "If this number has a MaternAlert account, we've sent an SMS with a link to choose a new password. It works for 1 hour."
+            : "If this email has a MaternAlert account, we've sent a link to choose a new password. It works for 1 hour."}
+        </Banner>
+        <Button size="lg" block onPress={() => router.replace("/login")}>
+          Back to sign in
+        </Button>
+      </AuthShell>
     );
   }
 
   return (
-    <Screen safe={true} scrollable={true}>
-      <View className="px-6 pt-4">
-        <TouchableOpacity
-          onPress={() => router.back()}
-          className="w-11 h-11 justify-center items-center"
-        >
-          <Ionicons name="arrow-back" size={28} color={iconColor} />
-        </TouchableOpacity>
-      </View>
-
-      <View className="px-10 pt-5">
-        <View className="items-center">
-          <Image
-            source={require("../assets/images/maternalert-logo.png")}
-            className="w-32 h-32"
-            resizeMode="cover"
-          />
-        </View>
-
-        <Typography
-          variant="h1"
-          className="text-[32px] font-black mb-2 text-center"
-        >
-          Forgot Password
-        </Typography>
-        <Typography variant="body" className="mb-10 text-center">
-          Enter your email address and we&apos;ll send you a link to reset your password.
-        </Typography>
-
-        <View className="gap-4 mb-8">
-          <Input
-            label="Email Address"
-            placeholder="example@email.com"
-            value={email}
-            onChangeText={setEmail}
-            error={error || undefined}
-            keyboardType="email-address"
-            autoCapitalize="none"
-          />
-        </View>
-
-        <Button
-          title={isForgotLoading ? "Sending..." : "Send Reset Link"}
-          onPress={handleForgot}
-          disabled={isForgotLoading || !email}
-          className="mb-6"
+    <AuthShell
+      title="Forgot your password?"
+      subtitle="Enter the phone number or email you use for MaternAlert. We'll send you a link to choose a new password."
+      onBack={() => router.back()}
+    >
+      <View style={{ gap: 16 }}>
+        <TextField
+          label="Phone number or email"
+          placeholder="0803 123 4567"
+          autoCapitalize="none"
+          autoComplete="username"
+          textContentType="username"
+          returnKeyType="send"
+          onSubmitEditing={submit}
+          value={value}
+          onChangeText={setValue}
+          error={error ?? undefined}
         />
+        <Button size="lg" block onPress={submit} loading={isForgotLoading} disabled={isForgotLoading || !value.trim()}>
+          Send me a link
+        </Button>
       </View>
-    </Screen>
+    </AuthShell>
   );
 }

@@ -381,6 +381,23 @@ export const PCM: Record<string, string> = {
   "Please enter a full phone number, for example 0803 123 4567.": "Abeg put full phone number, like 0803 123 4567.",
   "Please choose who this person is.": "Abeg choose who this person be.",
   "We couldn't save your profile. Check your internet and try again.": "We no fit save your profile. Check your network and try again.",
+  // ── Set or reset password ─────────────────────────────────────────────────────
+  "Use at least 8 characters.": "Use at least 8 letters or numbers.",
+  "The two passwords are not the same.": "The two passwords no be the same.",
+  "This link is not complete. Open the link from your message again.": "This link no complete. Open the link from your message again.",
+  "This link has expired or was already used. Ask your clinic to send a new one, or tap Forgot password on the sign-in page.": "This link don expire or dem don use am before. Ask your clinic make dem send new one, or press Forgot password for the sign-in page.",
+  "Your password is set": "Your password don set",
+  "Sign in with your phone number and your new password.": "Sign in with your phone number and your new password.",
+  "Sign in": "Sign in",
+  "Welcome to MaternAlert": "Welcome to MaternAlert",
+  "Your clinic has registered you. Choose a password, then sign in with your phone number.": "Your clinic don register you. Choose password, then sign in with your phone number.",
+  "Choose a new password": "Choose new password",
+  "Choose a password you will remember.": "Choose password wey you go remember.",
+  "New password": "New password",
+  "At least 8 characters.": "At least 8 letters or numbers.",
+  "Type it again": "Type am again",
+  "Set my password": "Set my password",
+  "Save new password": "Save new password",
 };
 
 /** English text in, the current language out. Fills {placeholders}. */

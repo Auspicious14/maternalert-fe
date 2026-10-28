@@ -6,7 +6,7 @@ import { Pressable, Text, TextInput, View } from "react-native";
 
 import { AuthShell, Banner, Button, FONT, T, TextField, friendlyApiError, useTokens } from "../components/ds";
 import { useAuth } from "../hooks/useAuth";
-import { LoginFormData, loginSchema } from "../schemas/auth";
+import { LoginFormData, loginIdentifier, loginSchema } from "../schemas/auth";
 
 // Same screen as maternalert-web/src/app/(patient)/login/page.tsx
 
@@ -30,14 +30,14 @@ export default function LoginScreen() {
   // useAuth's onSuccess already sets up the session (tokens, routing).
   const onSubmit = async (payload: LoginFormData) => {
     try {
-      await login({ ...payload, email: payload.email.trim().toLowerCase() });
+      await login({ ...loginIdentifier(payload.email), password: payload.password });
     } catch {
       // shown below from loginError
     }
   };
 
   const apiError = loginError
-    ? friendlyApiError(loginError, { 401: "That email and password don't match. Please try again." })
+    ? friendlyApiError(loginError, { 401: "That phone number or email and password don't match. Please try again." })
     : null;
 
   return (
@@ -52,12 +52,12 @@ export default function LoginScreen() {
           name="email"
           render={({ field: { onChange, onBlur, value } }) => (
             <TextField
-              label="Email address"
-              placeholder="you@example.com"
-              keyboardType="email-address"
+              label="Phone number or email"
+              placeholder="0803 123 4567"
+              keyboardType="default"
               autoCapitalize="none"
-              autoComplete="email"
-              textContentType="emailAddress"
+              autoComplete="username"
+              textContentType="username"
               returnKeyType="next"
               onSubmitEditing={() => passwordRef.current?.focus()}
               value={value}
