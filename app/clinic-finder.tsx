@@ -5,6 +5,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Linking, Pressable, Text, TextInput, View } from "react-native";
 
 import { TokenStorage } from "../api/storage";
+import FacilityMap from "../components/FacilityMap";
 import { AppHeader, Banner, Button, FONT, Page, Pill, Skeleton, T, useTokens } from "../components/ds";
 import {
   ClinicLocation,
@@ -21,7 +22,15 @@ type Coords = { latitude: number; longitude: number };
 type LocState = "idle" | "locating" | "ready" | "denied";
 type Filter = "all" | "hospital" | "clinic";
 
-function FacilityCard({ clinic }: { clinic: ClinicLocation }) {
+function FacilityCard({
+  clinic,
+  selected,
+  onClose,
+}: {
+  clinic: ClinicLocation;
+  selected?: boolean;
+  onClose?: () => void;
+}) {
   const t = useTokens();
   const [wantDetails, setWantDetails] = useState(false);
   const [showHours, setShowHours] = useState(false);
@@ -33,10 +42,10 @@ function FacilityCard({ clinic }: { clinic: ClinicLocation }) {
     <View
       style={{
         backgroundColor: t.surface,
-        borderColor: t.border,
-        borderWidth: 1,
+        borderColor: selected ? t.green : t.border,
+        borderWidth: selected ? 2 : 1,
         borderRadius: 20,
-        padding: 16,
+        padding: selected ? 15 : 16,
         gap: 14,
       }}
     >
@@ -65,6 +74,17 @@ function FacilityCard({ clinic }: { clinic: ClinicLocation }) {
         </View>
         {distance ? (
           <Text style={{ fontFamily: FONT.semibold, fontSize: 14, color: t.ink2, paddingTop: 2 }}>{distance}</Text>
+        ) : null}
+        {onClose ? (
+          <Pressable
+            onPress={onClose}
+            accessibilityRole="button"
+            accessibilityLabel="Close"
+            hitSlop={8}
+            style={{ width: 32, height: 32, alignItems: "center", justifyContent: "center", marginTop: -6, marginRight: -6 }}
+          >
+            <Ionicons name="close" size={20} color={t.muted} />
+          </Pressable>
         ) : null}
       </View>
 
@@ -142,6 +162,9 @@ export default function ClinicFinderScreen() {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<Filter>("all");
   const [showAll, setShowAll] = useState(false);
+  const [showMap, setShowMap] = useState(true);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  useEffect(() => setSelectedId(null), [query, filter]);
 
   const locate = async () => {
     setLocState((prev) => (prev === "ready" ? "ready" : "locating"));
@@ -200,6 +223,26 @@ export default function ClinicFinderScreen() {
   const shown = showAll ? filtered : filtered.slice(0, 8);
   const fromGoogle = all.some((c) => c.source === "google");
   const fromOsm = all.some((c) => c.source === "osm");
+
+  // Google's terms don't allow Google results on a non-Google map, so only
+  // OpenStreetMap / curated places are plotted.
+  const mapPoints = useMemo(
+    () =>
+      filtered
+        .filter((c) => c.source !== "google" && Number.isFinite(c.latitude) && Number.isFinite(c.longitude))
+        .map((c) => ({
+          id: c.id,
+          name: c.name,
+          lat: c.latitude,
+          lng: c.longitude,
+          kind: c.kind === "hospital" ? ("hospital" as const) : ("clinic" as const),
+          distance: formatDistance(c.distanceKm),
+        })),
+    [filtered],
+  );
+  const me = coords ? { lat: coords.latitude, lng: coords.longitude } : null;
+  // The place tapped on the map is shown as a card right under it.
+  const selected = selectedId ? filtered.find((c) => c.id === selectedId) ?? null : null;
 
   const submit = () => {
     if (input.trim().length < 2) return;
@@ -336,6 +379,28 @@ export default function ClinicFinderScreen() {
             );
           })}
         </View>
+      ) : null}
+
+      {mapPoints.length > 0 ? (
+        <>
+          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+            <T variant="small" style={{ flex: 1 }}>
+              {`${mapPoints.length} place${mapPoints.length === 1 ? "" : "s"} on the map. Tap one for details.`}
+            </T>
+            <Button
+              size="sm"
+              variant="secondary"
+              onPress={() => setShowMap((v) => !v)}
+              icon={(c) => <Ionicons name={showMap ? "list-outline" : "map-outline"} size={16} color={c} />}
+            >
+              {showMap ? "Hide map" : "Show map"}
+            </Button>
+          </View>
+          {showMap ? <FacilityMap points={mapPoints} me={me} focusId={selectedId} onSelect={setSelectedId} /> : null}
+          {showMap && selected ? (
+            <FacilityCard key={`sel-${selected.id}`} clinic={selected} selected onClose={() => setSelectedId(null)} />
+          ) : null}
+        </>
       ) : null}
 
       {params && isLoading ? (
