@@ -1,8 +1,15 @@
 import { z } from 'zod';
 
 export const registerSchema = z.object({
+  // Phone number or email, like sign-in. Many mothers have no email.
   email: z
-    .email('Please enter a valid email address'),
+    .string()
+    .trim()
+    .min(1, "Enter your phone number or email address")
+    .refine(
+      (v) => (v.includes("@") ? /^\S+@\S+\.\S+$/.test(v) : v.replace(/\D/g, "").length >= 10),
+      "Enter your phone number (e.g. 0803 123 4567) or email address",
+    ),
   password: z
     .string( 'Password is required' )
     .min(8, 'Password must be at least 8 characters')

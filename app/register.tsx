@@ -7,7 +7,9 @@ import { Linking, Pressable, Text, TextInput, View } from "react-native";
 
 import { AuthShell, Banner, Button, FONT, T, TextField, friendlyApiError, useTokens } from "../components/ds";
 import { useAuth } from "../hooks/useAuth";
-import { RegisterFormData, registerSchema } from "../schemas/auth";
+import { RegisterFormData, loginIdentifier, registerSchema } from "../schemas/auth";
+import { useLang } from "../hooks/useLang";
+import { tx } from "../services/pidgin";
 
 // Same screen as maternalert-web/src/app/(patient)/register/page.tsx
 
@@ -20,6 +22,7 @@ const RULES: { label: string; test: (v: string) => boolean }[] = [
 
 export default function RegisterScreen() {
   const router = useRouter();
+  useLang();
   const t = useTokens();
   const { register, isRegistering, registerError } = useAuth();
   const passwordRef = useRef<TextInput>(null);
@@ -38,7 +41,7 @@ export default function RegisterScreen() {
 
   const onSubmit = async (data: RegisterFormData) => {
     try {
-      await register({ ...data, email: data.email.trim().toLowerCase() });
+      await register({ ...loginIdentifier(data.email), password: data.password });
     } catch {
       // shown below from registerError
     }
@@ -46,30 +49,30 @@ export default function RegisterScreen() {
 
   const apiError = registerError
     ? friendlyApiError(registerError, {
-        409: "This email already has an account. Sign in instead, or use “Forgot password”.",
+        409: tx("This phone number or email already has an account. Sign in instead, or use “Forgot password”."),
       })
     : null;
 
   return (
-    <AuthShell title="Create your account" subtitle="Free for mothers. Takes about 2 minutes." onBack={() => router.back()}>
+    <AuthShell title={tx("Create your account")} subtitle={tx("Free for mothers. Takes about 2 minutes.")} onBack={() => router.back()}>
       <View style={{ gap: 16 }}>
         <Controller
           control={control}
           name="email"
           render={({ field: { onChange, onBlur, value } }) => (
             <TextField
-              label="Email address"
-              placeholder="you@example.com"
-              keyboardType="email-address"
+              label={tx("Phone number or email")}
+              placeholder="0803 123 4567"
+              keyboardType="default"
               autoCapitalize="none"
-              autoComplete="email"
-              textContentType="emailAddress"
+              autoComplete="username"
+              textContentType="username"
               returnKeyType="next"
               onSubmitEditing={() => passwordRef.current?.focus()}
               value={value}
               onChangeText={onChange}
               onBlur={onBlur}
-              error={errors.email?.message}
+              error={(errors.email?.message ? tx(errors.email.message) : undefined)}
             />
           )}
         />
@@ -79,7 +82,7 @@ export default function RegisterScreen() {
           render={({ field: { onChange, onBlur, value } }) => (
             <TextField
               ref={passwordRef}
-              label="Create a password"
+              label={tx("Create a password")}
               password
               autoComplete="password-new"
               textContentType="newPassword"
@@ -89,20 +92,20 @@ export default function RegisterScreen() {
               onChangeText={onChange}
               onBlur={onBlur}
               // The checklist explains the rules; only show the error after submit.
-              error={isSubmitted ? errors.password?.message : undefined}
+              error={isSubmitted ? (errors.password?.message ? tx(errors.password.message) : undefined) : undefined}
               hint={
                 <View style={{ gap: 4 }} accessibilityLabel="Password rules">
                   {RULES.map((r) => {
                     const ok = r.test(password);
                     return (
                       <View
-                        key={r.label}
+                        key={tx(r.label)}
                         style={{ flexDirection: "row", alignItems: "center", gap: 8 }}
                         accessible
-                        accessibilityLabel={`${r.label}, ${ok ? "done" : "needed"}`}
+                        accessibilityLabel={`${tx(r.label)}, ${ok ? "done" : "needed"}`}
                       >
                         <Ionicons name={ok ? "checkmark" : "ellipse-outline"} size={ok ? 16 : 12} color={ok ? t.greenInk : t.muted} />
-                        <Text style={{ fontFamily: FONT.regular, fontSize: 14, color: ok ? t.greenInk : t.muted }}>{r.label}</Text>
+                        <Text style={{ fontFamily: FONT.regular, fontSize: 14, color: ok ? t.greenInk : t.muted }}>{tx(r.label)}</Text>
                       </View>
                     );
                   })}
@@ -115,26 +118,26 @@ export default function RegisterScreen() {
         {apiError ? <Banner tone="red">{apiError}</Banner> : null}
 
         <Button size="lg" block onPress={handleSubmit(onSubmit)} loading={isRegistering} disabled={isRegistering}>
-          {isRegistering ? "Creating account…" : "Continue"}
+          {isRegistering ? tx("Creating account…") : tx("Continue")}
         </Button>
         <T variant="small" style={{ textAlign: "center" }}>
-          By continuing you agree to our{" "}
+          {tx("By continuing you agree to our")}{" "}
           <Text style={{ color: t.greenInk, fontFamily: FONT.semibold }} onPress={() => Linking.openURL("https://maternalert.com.ng/terms")}>
-            Terms
+            {tx("Terms")}
           </Text>{" "}
-          and{" "}
+          {tx("and")}{" "}
           <Text style={{ color: t.greenInk, fontFamily: FONT.semibold }} onPress={() => Linking.openURL("https://maternalert.com.ng/privacy")}>
-            Privacy Policy
+            {tx("Privacy Policy")}
           </Text>
           .
         </T>
       </View>
 
       <View style={{ flexDirection: "row", justifyContent: "center", flexWrap: "wrap", gap: 4 }}>
-        <T>Already have an account?</T>
+        <T>{tx("Already have an account?")}</T>
         <Pressable onPress={() => router.push("/login")} accessibilityRole="link">
           <Text style={{ fontFamily: FONT.semibold, fontSize: 16, color: t.greenInk, textDecorationLine: "underline" }}>
-            Sign in
+            {tx("Sign in")}
           </Text>
         </Pressable>
       </View>

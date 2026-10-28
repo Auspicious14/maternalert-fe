@@ -22,6 +22,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useColorScheme } from "../../hooks/use-color-scheme";
+import { tx } from "../../services/pidgin";
 
 // ── Tokens (same values as patient-ds.css) ──────────────────────────────────
 
@@ -639,11 +640,11 @@ export function friendlyApiError(err: unknown, overrides: Record<number, string>
   const status = e?.response?.status;
   if (status && overrides[status]) return overrides[status];
   if (!e?.response) {
-    return "We couldn't reach MaternAlert. Check your internet. If it's working, wait a minute and try again.";
+    return tx("We couldn't reach MaternAlert. Check your internet. If it's working, wait a minute and try again.");
   }
-  if (status === 429) return "Too many attempts. Please wait a minute and try again.";
-  if (status && status >= 500) return "Something went wrong on our side. Please try again in a minute.";
-  return "That didn't work. Please check your details and try again.";
+  if (status === 429) return tx("Too many attempts. Please wait a minute and try again.");
+  if (status && status >= 500) return tx("Something went wrong on our side. Please try again in a minute.");
+  return tx("That didn't work. Please check your details and try again.");
 }
 
 // ── Numbered steps ──────────────────────────────────────────────────────────

@@ -7,11 +7,14 @@ import { Pressable, Text, TextInput, View } from "react-native";
 import { AuthShell, Banner, Button, FONT, T, TextField, friendlyApiError, useTokens } from "../components/ds";
 import { useAuth } from "../hooks/useAuth";
 import { LoginFormData, loginIdentifier, loginSchema } from "../schemas/auth";
+import { useLang } from "../hooks/useLang";
+import { tx } from "../services/pidgin";
 
 // Same screen as maternalert-web/src/app/(patient)/login/page.tsx
 
 export default function LoginScreen() {
   const router = useRouter();
+  useLang();
   const t = useTokens();
   const { message } = useLocalSearchParams<{ message?: string }>();
   const { login, isLoggingIn, loginError } = useAuth();
@@ -36,14 +39,19 @@ export default function LoginScreen() {
     }
   };
 
+  // Show the server's own reason (e.g. "set your password first", "suspended")
+  // unless it is just a wrong password.
+  const serverMsg = (loginError as { response?: { status?: number; data?: { message?: unknown } } } | null)?.response;
   const apiError = loginError
-    ? friendlyApiError(loginError, { 401: "That phone number or email and password don't match. Please try again." })
+    ? serverMsg?.status === 401 && typeof serverMsg.data?.message === "string" && serverMsg.data.message !== "Invalid credentials"
+      ? serverMsg.data.message
+      : friendlyApiError(loginError, { 401: tx("That phone number or email and password don't match. Please try again.") })
     : null;
 
   return (
-    <AuthShell title="Welcome back" subtitle="Sign in to see your readings and alerts." onBack={() => router.back()}>
+    <AuthShell title={tx("Welcome back")} subtitle={tx("Sign in to see your readings and alerts.")} onBack={() => router.back()}>
       {message === "session_expired" ? (
-        <Banner tone="amber">You were signed out to keep your account safe. Please sign in again.</Banner>
+        <Banner tone="amber">{tx("You were signed out to keep your account safe. Please sign in again.")}</Banner>
       ) : null}
 
       <View style={{ gap: 16 }}>
@@ -52,7 +60,7 @@ export default function LoginScreen() {
           name="email"
           render={({ field: { onChange, onBlur, value } }) => (
             <TextField
-              label="Phone number or email"
+              label={tx("Phone number or email")}
               placeholder="0803 123 4567"
               keyboardType="default"
               autoCapitalize="none"
@@ -63,7 +71,7 @@ export default function LoginScreen() {
               value={value}
               onChangeText={onChange}
               onBlur={onBlur}
-              error={errors.email?.message}
+              error={(errors.email?.message ? tx(errors.email.message) : undefined)}
             />
           )}
         />
@@ -73,7 +81,7 @@ export default function LoginScreen() {
           render={({ field: { onChange, onBlur, value } }) => (
             <TextField
               ref={passwordRef}
-              label="Password"
+              label={tx("Password")}
               password
               autoComplete="password"
               textContentType="password"
@@ -82,7 +90,7 @@ export default function LoginScreen() {
               value={value}
               onChangeText={onChange}
               onBlur={onBlur}
-              error={errors.password?.message}
+              error={(errors.password?.message ? tx(errors.password.message) : undefined)}
             />
           )}
         />
@@ -91,21 +99,21 @@ export default function LoginScreen() {
           accessibilityRole="link"
           style={{ alignSelf: "flex-end", minHeight: 44, justifyContent: "center", marginTop: -8 }}
         >
-          <Text style={{ fontFamily: FONT.semibold, fontSize: 15, color: t.greenInk }}>Forgot password?</Text>
+          <Text style={{ fontFamily: FONT.semibold, fontSize: 15, color: t.greenInk }}>{tx("Forgot password?")}</Text>
         </Pressable>
 
         {apiError ? <Banner tone="red">{apiError}</Banner> : null}
 
         <Button size="lg" block onPress={handleSubmit(onSubmit)} loading={isLoggingIn} disabled={isLoggingIn}>
-          {isLoggingIn ? "Signing in…" : "Sign in"}
+          {isLoggingIn ? tx("Signing in…") : tx("Sign in")}
         </Button>
       </View>
 
       <View style={{ flexDirection: "row", justifyContent: "center", flexWrap: "wrap", gap: 4 }}>
-        <T>New to MaternAlert?</T>
+        <T>{tx("New to MaternAlert?")}</T>
         <Pressable onPress={() => router.push("/register")} accessibilityRole="link">
           <Text style={{ fontFamily: FONT.semibold, fontSize: 16, color: t.greenInk, textDecorationLine: "underline" }}>
-            Create an account
+            {tx("Create an account")}
           </Text>
         </Pressable>
       </View>
