@@ -20,7 +20,7 @@ const CATEGORIES = Object.keys(CATEGORY_LABELS) as EducationCategory[];
 function ArticleCard({ article, onPress }: { article: EducationArticle; onPress: () => void }) {
   const t = useTokens();
   const lang = useLang();
-  const text = lang === "pcm" && article.pcm ? article.pcm : article;
+  const text = (lang !== "en" && article[lang]) || article;
   return (
     <Pressable
       onPress={onPress}

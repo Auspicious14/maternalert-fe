@@ -7,18 +7,19 @@
  * line by line:   tr({ en: "Get help now", pcm: "Find help now now" })
  * Anything not translated yet falls back to English.
  *
- * Pidgin (pcm) is Nigerian Pidgin. Medical wording must be checked by a
- * native speaker who is also a health worker before wide release.
+ * Pidgin (pcm) is Nigerian Pidgin; yo is Yorùbá. Medical wording must be
+ * checked by a native speaker who is also a health worker before wide release.
  */
 
-export type Lang = "en" | "pcm";
+export type Lang = "en" | "pcm" | "yo";
 
 export const LANGUAGES: { code: Lang; name: string; native: string; sample: string }[] = [
   { code: "en", name: "English", native: "English", sample: "Your blood pressure looks normal" },
   { code: "pcm", name: "Pidgin", native: "Naija Pidgin", sample: "Your BP dey normal" },
+  { code: "yo", name: "Yoruba", native: "Yorùbá", sample: "Ìfúnpá rẹ dára" },
 ];
 
-export const isLang = (x: unknown): x is Lang => x === "en" || x === "pcm";
+export const isLang = (x: unknown): x is Lang => x === "en" || x === "pcm" || x === "yo";
 
 let current: Lang = "en";
 const listeners = new Set<() => void>();
@@ -39,7 +40,7 @@ export function subscribeLang(f: () => void): () => void {
 }
 
 /** Pick the text for the current language (falls back to English). */
-export function tr<T>(m: { en: T; pcm?: T }): T {
+export function tr<T>(m: { en: T; pcm?: T; yo?: T }): T {
   const v = m[current];
   return v === undefined ? m.en : v;
 }

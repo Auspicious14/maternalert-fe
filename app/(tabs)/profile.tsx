@@ -539,7 +539,9 @@ export default function ProfileScreen() {
       <T variant="small" style={{ marginTop: -4 }}>
         {lang === "pcm"
           ? "Pidgin dey for the main screens: danger signs, your BP result and emergency. Other screens still dey for English."
-          : "Pidgin covers the main screens: danger signs, BP results and emergency. Other screens stay in English for now."}
+          : lang === "yo"
+            ? "Yorùbá wà fún àwọn ojú-ìwé pàtàkì: àwọn àmì ewu, èsì ìfúnpá rẹ àti pàjáwìrì. Àwọn ojú-ìwé yòókù ṣì wà ní èdè Gẹ̀ẹ́sì."
+            : "Pidgin and Yorùbá cover the main screens: danger signs, BP results and emergency. Other screens stay in English for now."}
       </T>
 
       {/* More */}

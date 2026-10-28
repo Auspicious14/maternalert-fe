@@ -54,7 +54,7 @@ export default function ArticleScreen() {
   }
 
   // Pidgin version when there is one.
-  const text = lang === "pcm" && article.pcm ? article.pcm : article;
+  const text = (lang !== "en" && article[lang]) || article;
   const [y, m] = article.updated.split("-").map(Number);
   const updated = new Date(y, (m || 1) - 1, 1).toLocaleDateString("en-GB", { month: "long", year: "numeric" });
 

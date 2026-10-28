@@ -48,6 +48,8 @@ export interface EducationArticle {
   reviewedBy?: string;
   /** Nigerian Pidgin version, shown when the app language is Pidgin. */
   pcm?: { title: string; summary: string; body: Block[] };
+  /** Yorùbá version, shown when the app language is Yorùbá. */
+  yo?: { title: string; summary: string; body: Block[] };
 }
 
 export const CATEGORY_LABELS: Record<EducationCategory, string> = {
@@ -179,6 +181,51 @@ export const EDUCATION_CONTENT: EducationArticle[] = [
         {
           type: "p",
           text: "If you no sure, go make dem check you. Health workers prefer to see you for nothing pass to see you when e don late.",
+        },
+      ],
+    },
+    yo: {
+      title: "Àwọn àmì ewu nínú oyún: lọ ní báyìí",
+      summary: "Tí o bá ní èyíkéyìí nínú ìwọ̀nyí, lọ sí ilé ìwòsàn lẹ́sẹ̀kẹsẹ̀. Má ṣe dúró láti wò bóyá yóò kọjá.",
+      body: [
+        {
+          type: "alert",
+          tone: "red",
+          text: "Lọ sí ilé ìwòsàn ní báyìí, tàbí pe 112, tí o bá ní àmì èyíkéyìí nísàlẹ̀ yìí. Jẹ́ kí ẹnìkan mú ọ lọ. Má ṣe lọ nìkan tí o bá lè yẹra fún un.",
+        },
+        { type: "h", text: "Lọ ní báyìí tí" },
+        {
+          type: "list",
+          items: [
+            "Ẹ̀jẹ̀ ń jáde láti ojú ara, bó ti wù kí ó kéré tó",
+            "Gìrì (ara ń gbọ̀n), tàbí o dákú",
+            "Ẹ̀fọ́rí tó le gan-an tí kò lọ, pàápàá tí ojú rẹ bá ń ṣú tàbí o ń rí àmì tàbí ìmọ́lẹ̀ tó ń tàn",
+            "Ìrora ní òkè ikùn, lábẹ́ egungun ìhà ní ẹ̀gbẹ́ ọ̀tún, tàbí inú rírun tó le níbikíbi",
+            "Ìṣòro mímí, tàbí ìrora àyà",
+            "Ara gbígbóná, tí ara rẹ kò sì lókun láti dìde lórí ibùsùn",
+            "Omi ìbí rẹ ya (omi ń jò láti ojú ara) kí ìrọbí tó bẹ̀rẹ̀",
+            "Ọmọ inú rẹ kò mì bí ti tẹ́lẹ̀, tàbí ó ti dákẹ́ mímì",
+            "Ojú tàbí ọwọ́ rẹ wú lójijì",
+          ],
+        },
+        { type: "h", text: "Lọ sí kílíníìkì rẹ lónìí tí" },
+        {
+          type: "list",
+          items: [
+            "Ara rẹ gbóná, kódà tí o bá ṣì lè rìn",
+            "Ìrora tàbí jíjó nígbà tí o bá ń tọ̀",
+            "O ń bì tó bẹ́ẹ̀ tí o kò lè mú oúnjẹ tàbí omi dúró",
+            "Omi ojú ara tó ń rùn, tó ń yún ọ, tàbí tó jẹ́ àwọ̀ ewé tàbí eérú",
+            "Ìbànújẹ́ tàbí àìnírètí ń bá ọ fínra ní ọ̀pọ̀ ọjọ́",
+          ],
+        },
+        {
+          type: "p",
+          text: "Ẹsẹ̀ wíwú ní ìrọ̀lẹ́ àti ìtọ̀ léraléra wọ́pọ̀ nínú oyún, wọ́n sì máa ń jẹ́ ohun tó dára. Ṣùgbọ́n wíwú tó dé lójijì, tàbí wíwú ojú àti ọwọ́, kò dára.",
+        },
+        {
+          type: "p",
+          text: "Tí o kò bá dá ọ lójú, lọ kí wọ́n yẹ̀ ọ́ wò. Ó sàn kí àwọn òṣìṣẹ́ ìlera rí ọ láìsí ìṣòro ju kí wọ́n rí ọ nígbà tí ó ti pẹ́ jù.",
         },
       ],
     },

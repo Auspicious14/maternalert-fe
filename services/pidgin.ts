@@ -14,6 +14,7 @@
  * {name} placeholders must stay as they are.
  */
 import { fill, getLang } from "./i18n";
+import { YO } from "./yoruba";
 
 export const PCM: Record<string, string> = {
   // ── Common ────────────────────────────────────────────────────────────────
@@ -292,6 +293,8 @@ export const PCM: Record<string, string> = {
 
 /** English text in, the current language out. Fills {placeholders}. */
 export function tx(en: string, vars?: Record<string, string | number>): string {
-  const s = getLang() === "pcm" ? PCM[en] ?? en : en;
+  const lang = getLang();
+  const dict = lang === "pcm" ? PCM : lang === "yo" ? YO : null;
+  const s = dict ? dict[en] ?? en : en;
   return vars ? fill(s, vars) : s;
 }
