@@ -6,7 +6,9 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { Banner, Button, FONT, IconButton, T, useTokens } from "../components/ds";
 import { useAuthContext } from "../context/AuthContext";
+import { useLang } from "../hooks/useLang";
 import { useUserProfile } from "../hooks/useUserProfile";
+import { tx } from "../services/pidgin";
 import {
   AGE_OPTIONS,
   AgeRange,
@@ -90,6 +92,7 @@ export default function ProfileSetupScreen() {
   const scrollRef = useRef<ScrollView>(null);
 
   const [step, setStep] = useState(0);
+  useLang();
   const [fullName, setFullName] = useState("");
   const [myPhone, setMyPhone] = useState<string>(() => (user?.phone as string | undefined) ?? "");
   useEffect(() => {
@@ -112,25 +115,25 @@ export default function ProfileSetupScreen() {
   const validate = (): string | null => {
     switch (current.id) {
       case "you":
-        if (!isValidName(fullName)) return "Please enter your name.";
-        if (myPhone.trim() && !isValidNigerianPhone(myPhone)) return "Please enter your full phone number, for example 0803 123 4567.";
+        if (!isValidName(fullName)) return tx("Please enter your name.");
+        if (myPhone.trim() && !isValidNigerianPhone(myPhone)) return tx("Please enter your full phone number, for example 0803 123 4567.");
         return null;
       case "age":
-        return ageRange ? null : "Please choose your age range.";
+        return ageRange ? null : tx("Please choose your age range.");
       case "weeks":
         if (weeksNum === null || Number.isNaN(weeksNum)) {
-          return useLmp ? "Please enter the date like 14/03/2026." : "Please enter how many weeks pregnant you are.";
+          return useLmp ? tx("Please enter the date like 14/03/2026.") : tx("Please enter how many weeks pregnant you are.");
         }
-        if (weeksNum < 0 || weeksNum > 42) return "That works out to more than 42 weeks. Please check the date or number.";
+        if (weeksNum < 0 || weeksNum > 42) return tx("That works out to more than 42 weeks. Please check the date or number.");
         return null;
       case "first":
-        return firstPregnancy === null ? "Please choose Yes or No." : null;
+        return firstPregnancy === null ? tx("Please choose Yes or No.") : null;
       case "conditions":
-        return conditions === null ? "Choose any that apply, or “None of these”." : null;
+        return conditions === null ? tx("Choose any that apply, or “None of these”.") : null;
       case "contact":
         if (!phone.trim()) return null;
-        if (!isValidNigerianPhone(phone)) return "Please enter a full phone number, for example 0803 123 4567.";
-        if (!relationship) return "Please choose who this person is.";
+        if (!isValidNigerianPhone(phone)) return tx("Please enter a full phone number, for example 0803 123 4567.");
+        if (!relationship) return tx("Please choose who this person is.");
         return null;
       default:
         return null;
@@ -160,7 +163,7 @@ export default function ProfileSetupScreen() {
       router.replace({ pathname: "/facility-linking", params: { from: "setup" } });
     } catch (err) {
       console.error("[PROFILE_SETUP] Failed to create profile:", err);
-      setError("We couldn't save your profile. Check your internet and try again.");
+      setError(tx("We couldn't save your profile. Check your internet and try again."));
     }
   };
 
@@ -193,7 +196,7 @@ export default function ProfileSetupScreen() {
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
         <ScrollView ref={scrollRef} contentContainerStyle={{ padding: 20, paddingBottom: 48, gap: 18 }} keyboardShouldPersistTaps="handled">
           <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
-            <IconButton label={step > 0 ? "Previous question" : "Go back"} onPress={back}>
+            <IconButton label={step > 0 ? tx("Previous question") : tx("Go back")} onPress={back}>
               <Ionicons name="arrow-back" size={22} color={t.ink} />
             </IconButton>
             <View
@@ -211,21 +214,21 @@ export default function ProfileSetupScreen() {
 
           <View style={{ gap: 8, paddingTop: 4 }}>
             <T variant="h1" accessibilityRole="header">
-              {current.title}
+              {tx(current.title)}
             </T>
-            <T>{current.help}</T>
+            <T>{tx(current.help)}</T>
           </View>
 
           {current.id === "you" ? (
             <View style={{ gap: 16 }}>
               <View style={{ gap: 8 }}>
-                <Text style={{ fontFamily: FONT.semibold, fontSize: 15, color: t.ink }}>Your name</Text>
+                <Text style={{ fontFamily: FONT.semibold, fontSize: 15, color: t.ink }}>{tx("Your name")}</Text>
                 <TextInput
-                  accessibilityLabel="Your name"
+                  accessibilityLabel={tx("Your name")}
                   textContentType="name"
                   autoComplete="name"
                   autoCapitalize="words"
-                  placeholder="For example, Amina Bello"
+                  placeholder={tx("For example, Amina Bello")}
                   placeholderTextColor={t.muted}
                   maxLength={80}
                   value={fullName}
@@ -234,9 +237,9 @@ export default function ProfileSetupScreen() {
                 />
               </View>
               <View style={{ gap: 8 }}>
-                <Text style={{ fontFamily: FONT.semibold, fontSize: 15, color: t.ink }}>Your phone number</Text>
+                <Text style={{ fontFamily: FONT.semibold, fontSize: 15, color: t.ink }}>{tx("Your phone number")}</Text>
                 <TextInput
-                  accessibilityLabel="Your phone number"
+                  accessibilityLabel={tx("Your phone number")}
                   keyboardType="phone-pad"
                   textContentType="telephoneNumber"
                   autoComplete="tel"
@@ -246,7 +249,7 @@ export default function ProfileSetupScreen() {
                   onChangeText={setMyPhone}
                   style={inputStyle}
                 />
-                <T variant="small">So your clinic or family can call you back. Optional, but it helps.</T>
+                <T variant="small">{tx("So your clinic or family can call you back. Optional, but it helps.")}</T>
               </View>
             </View>
           ) : null}
@@ -254,7 +257,7 @@ export default function ProfileSetupScreen() {
           {current.id === "age" ? (
             <View style={{ gap: 10 }}>
               {AGE_OPTIONS.map((o) => (
-                <Choice key={o.value} title={o.label} selected={ageRange === o.value} onPress={() => setAgeRange(o.value)} />
+                <Choice key={o.value} title={tx(o.label)} selected={ageRange === o.value} onPress={() => setAgeRange(o.value)} />
               ))}
             </View>
           ) : null}
@@ -263,12 +266,12 @@ export default function ProfileSetupScreen() {
             <View style={{ gap: 16 }}>
               {!useLmp ? (
                 <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 16 }}>
-                  <IconButton label="One week less" onPress={() => setWeeks(String(Math.max(0, (weeksNum ?? 1) - 1)))}>
+                  <IconButton label={tx("One week less")} onPress={() => setWeeks(String(Math.max(0, (weeksNum ?? 1) - 1)))}>
                     <Ionicons name="remove" size={22} color={t.ink} />
                   </IconButton>
                   <View style={{ alignItems: "center", gap: 6 }}>
                     <TextInput
-                      accessibilityLabel="Weeks pregnant"
+                      accessibilityLabel={tx("Weeks pregnant")}
                       keyboardType="number-pad"
                       maxLength={2}
                       value={weeks}
@@ -288,15 +291,15 @@ export default function ProfileSetupScreen() {
                         borderRadius: 18,
                       }}
                     />
-                    <T variant="small">weeks</T>
+                    <T variant="small">{tx("weeks")}</T>
                   </View>
-                  <IconButton label="One week more" onPress={() => setWeeks(String(Math.min(42, (weeksNum ?? -1) + 1)))}>
+                  <IconButton label={tx("One week more")} onPress={() => setWeeks(String(Math.min(42, (weeksNum ?? -1) + 1)))}>
                     <Ionicons name="add" size={22} color={t.ink} />
                   </IconButton>
                 </View>
               ) : (
                 <View style={{ gap: 8 }}>
-                  <Text style={{ fontFamily: FONT.semibold, fontSize: 15, color: t.ink }}>First day of your last period</Text>
+                  <Text style={{ fontFamily: FONT.semibold, fontSize: 15, color: t.ink }}>{tx("First day of your last period")}</Text>
                   <TextInput
                     accessibilityLabel="First day of your last period, day month year"
                     keyboardType="numbers-and-punctuation"
@@ -308,13 +311,13 @@ export default function ProfileSetupScreen() {
                     style={inputStyle}
                   />
                   {weeksNum !== null && weeksNum >= 0 && weeksNum <= 42 ? (
-                    <T variant="small">{`That makes you about ${weeksNum} weeks pregnant.`}</T>
+                    <T variant="small">{tx("That makes you about {n} weeks pregnant.", { n: weeksNum })}</T>
                   ) : null}
                 </View>
               )}
               <Pressable onPress={() => setUseLmp((v) => !v)} accessibilityRole="button" style={{ minHeight: 44, justifyContent: "center" }}>
                 <Text style={{ fontFamily: FONT.semibold, fontSize: 15, color: t.greenInk }}>
-                  {useLmp ? "I know how many weeks I am" : "Not sure? Use the date of your last period"}
+                  {useLmp ? tx("I know how many weeks I am") : tx("Not sure? Use the date of your last period")}
                 </Text>
               </Pressable>
             </View>
@@ -322,8 +325,8 @@ export default function ProfileSetupScreen() {
 
           {current.id === "first" ? (
             <View style={{ gap: 10 }}>
-              <Choice title="Yes, this is my first" selected={firstPregnancy === true} onPress={() => setFirstPregnancy(true)} />
-              <Choice title="No, I've been pregnant before" selected={firstPregnancy === false} onPress={() => setFirstPregnancy(false)} />
+              <Choice title={tx("Yes, this is my first")} selected={firstPregnancy === true} onPress={() => setFirstPregnancy(true)} />
+              <Choice title={tx("No, I've been pregnant before")} selected={firstPregnancy === false} onPress={() => setFirstPregnancy(false)} />
             </View>
           ) : null}
 
@@ -333,20 +336,20 @@ export default function ProfileSetupScreen() {
                 <Choice
                   key={c.value}
                   multi
-                  title={c.label}
-                  subtitle={c.hint}
+                  title={tx(c.label)}
+                  subtitle={c.hint ? tx(c.hint) : undefined}
                   selected={(conditions ?? []).includes(c.value)}
                   onPress={() => toggleCondition(c.value)}
                 />
               ))}
-              <Choice title="None of these" selected={conditions !== null && conditions.length === 0} onPress={() => setConditions([])} />
+              <Choice title={tx("None of these")} selected={conditions !== null && conditions.length === 0} onPress={() => setConditions([])} />
             </View>
           ) : null}
 
           {current.id === "contact" ? (
             <View style={{ gap: 16 }}>
               <View style={{ gap: 8 }}>
-                <Text style={{ fontFamily: FONT.semibold, fontSize: 15, color: t.ink }}>Who is this person?</Text>
+                <Text style={{ fontFamily: FONT.semibold, fontSize: 15, color: t.ink }}>{tx("Who is this person?")}</Text>
                 <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }} accessibilityRole="radiogroup">
                   {RELATIONSHIP_OPTIONS.map((r) => {
                     const on = relationship === r.value;
@@ -366,16 +369,16 @@ export default function ProfileSetupScreen() {
                           backgroundColor: on ? t.green : t.surface,
                         }}
                       >
-                        <Text style={{ fontFamily: FONT.medium, fontSize: 15, color: on ? "#fff" : t.ink2 }}>{r.label}</Text>
+                        <Text style={{ fontFamily: FONT.medium, fontSize: 15, color: on ? "#fff" : t.ink2 }}>{tx(r.label)}</Text>
                       </Pressable>
                     );
                   })}
                 </View>
               </View>
               <View style={{ gap: 8 }}>
-                <Text style={{ fontFamily: FONT.semibold, fontSize: 15, color: t.ink }}>Their phone number</Text>
+                <Text style={{ fontFamily: FONT.semibold, fontSize: 15, color: t.ink }}>{tx("Their phone number")}</Text>
                 <TextInput
-                  accessibilityLabel="Their phone number"
+                  accessibilityLabel={tx("Their phone number")}
                   keyboardType="phone-pad"
                   textContentType="telephoneNumber"
                   autoComplete="tel"
@@ -385,10 +388,10 @@ export default function ProfileSetupScreen() {
                   onChangeText={setPhone}
                   style={inputStyle}
                 />
-                <T variant="small">Use a number that has WhatsApp if possible. We also send an SMS.</T>
+                <T variant="small">{tx("Use a number that has WhatsApp if possible. We also send an SMS.")}</T>
               </View>
               <Banner tone="amber">
-                Without an emergency contact, the emergency button can only alert your clinic. You can add one later in Profile.
+                {tx("Without an emergency contact, the emergency button can only alert your clinic. You can add one later in Profile.")}
               </Banner>
             </View>
           ) : null}
@@ -397,10 +400,10 @@ export default function ProfileSetupScreen() {
 
           <View style={{ gap: 10, marginTop: 4 }}>
             <Button size="lg" block onPress={next} loading={isCreatingProfile} disabled={isCreatingProfile}>
-              {isCreatingProfile ? "Saving…" : last ? (phone.trim() ? "Save and continue" : "Skip and finish") : "Next"}
+              {isCreatingProfile ? tx("Saving…") : last ? (phone.trim() ? tx("Save and continue") : tx("Skip and finish")) : tx("Next")}
             </Button>
             <T variant="small" style={{ textAlign: "center" }}>
-              Only you and your linked clinic can see this. You can change it later in Profile.
+              {tx("Only you and your linked clinic can see this. You can change it later in Profile.")}
             </T>
           </View>
         </ScrollView>

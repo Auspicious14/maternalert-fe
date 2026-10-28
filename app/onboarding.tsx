@@ -1,147 +1,111 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React from "react";
-import { Dimensions, Image, TouchableOpacity, View } from "react-native";
-import { Screen } from "../components/shared/Screen";
-import { Typography } from "../components/shared/Typography";
-import Theme from "../constants/theme";
-import { useColorScheme } from "../hooks/use-color-scheme";
+import { Image, Linking, Pressable, ScrollView, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-const { height } = Dimensions.get("window");
+import { Button, Card, FONT, LogoMark, Row, T, useTokens } from "../components/ds";
+import { useLang } from "../hooks/useLang";
+import { LANGUAGES } from "../services/i18n";
+import { chooseLang } from "../services/langStorage";
+import { tx } from "../services/pidgin";
+
+// Same screen as maternalert-web/src/app/(patient)/onboarding/page.tsx
 
 export default function OnboardingScreen() {
   const router = useRouter();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
+  const t = useTokens();
+  const lang = useLang();
 
   return (
-    <Screen safe={true} scrollable={true}>
-      <View className="px-6 pb-10">
-        <View className="flex-row justify-end pt-4 mb-4">
-          <TouchableOpacity
-            style={{
-              backgroundColor: isDark ? Theme.colors.cardDark : "white",
-            }}
-            className="flex-row items-center gap-2 py-2 px-4 rounded-full shadow-sm"
-            activeOpacity={0.7}
-          >
-            <Ionicons name="language" size={20} color={Theme.colors.primary} />
-            <Typography variant="body" weight="bold">
-              English
-            </Typography>
-            <Ionicons
-              name="chevron-down"
-              size={16}
-              color={Theme.colors.textLight}
-            />
-          </TouchableOpacity>
+    <SafeAreaView style={{ flex: 1, backgroundColor: t.bg }} edges={["top", "bottom"]}>
+      <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 48, gap: 20, width: "100%", maxWidth: 440, alignSelf: "center" }}>
+        {/* Language first, so everything after it is in her language. */}
+        <View style={{ gap: 8, alignItems: "center" }}>
+          <T variant="label">{tx("Choose your language")}</T>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, justifyContent: "center" }} accessibilityRole="radiogroup">
+            {LANGUAGES.map((l) => {
+              const on = lang === l.code;
+              return (
+                <Pressable
+                  key={l.code}
+                  onPress={() => chooseLang(l.code)}
+                  accessibilityRole="radio"
+                  accessibilityState={{ checked: on }}
+                  style={{
+                    minHeight: 44,
+                    paddingHorizontal: 16,
+                    borderRadius: 999,
+                    borderWidth: 1.5,
+                    justifyContent: "center",
+                    borderColor: on ? t.green : t.borderStrong,
+                    backgroundColor: on ? t.green : t.surface,
+                  }}
+                >
+                  <Text style={{ fontFamily: FONT.medium, fontSize: 15, color: on ? "#FFFFFF" : t.ink2 }}>{l.native}</Text>
+                </Pressable>
+              );
+            })}
+          </View>
         </View>
 
-        <View className="items-center mb-6">
+        <View style={{ alignItems: "center", gap: 8 }}>
+          <LogoMark height={64} />
+          <T variant="h1" accessibilityRole="header" style={{ textAlign: "center" }}>
+            {tx("Safe pregnancy, early warning")}
+          </T>
+          <T style={{ textAlign: "center" }}>{tx("Spot warning signs early and know exactly when to get care.")}</T>
+        </View>
+
+        <View
+          style={{
+            width: "70%",
+            maxWidth: 260,
+            aspectRatio: 1,
+            alignSelf: "center",
+            borderRadius: 32,
+            overflow: "hidden",
+            borderWidth: 1,
+            borderColor: t.border,
+            backgroundColor: "#FFFFFF",
+          }}
+        >
           <Image
-            source={require("../assets/images/maternalert-logo.png")}
-            className="w-24 h-24"
+            source={require("../assets/images/maternal_onboarding_illustration.jpg")}
+            style={{ width: "100%", height: "100%" }}
             resizeMode="contain"
+            accessibilityIgnoresInvertColors
           />
         </View>
 
-        <View className="px-4 mb-6">
-          <Typography
-            variant="h1"
-            weight="black"
-            className="text-center mb-3 text-[32px] leading-[42px]"
-          >
-            Safe Pregnancy{"\n"}Tracking
-          </Typography>
-          <Typography
-            variant="body"
-            className="text-center leading-6 text-base px-2"
-          >
-            Notice warning signs early and know exactly when to seek
-            professional care.
-          </Typography>
+        <Card>
+          <Row icon="pulse-outline" title={tx("Check your blood pressure at home")} subtitle={tx("We tell you what your numbers mean and what to do.")} />
+          <Row icon="warning-outline" title={tx("Know the danger signs")} subtitle={tx("Report how you feel and get clear advice straight away.")} />
+          <Row icon="alert-circle-outline" title={tx("Get help in one tap")} subtitle={tx("Alert your family and your clinic straight away.")} last />
+        </Card>
+
+        <View style={{ gap: 4 }}>
+          <Button size="lg" block onPress={() => router.push("/disclaimer")} icon={(c) => <Ionicons name="arrow-forward" size={20} color={c} />}>
+            {tx("Get started")}
+          </Button>
+          <Pressable onPress={() => router.push("/login")} accessibilityRole="link" style={{ minHeight: 44, justifyContent: "center" }}>
+            <Text style={{ fontFamily: FONT.semibold, fontSize: 15, color: t.greenInk, textAlign: "center" }}>
+              {tx("I already have an account")}
+            </Text>
+          </Pressable>
         </View>
 
-        <View className="items-center mb-10">
-          <View
-            style={{
-              backgroundColor: isDark ? Theme.colors.cardDark : "white",
-              borderColor: isDark ? Theme.colors.borderDark : "#E6E1D9",
-            }}
-            className="w-[85%] aspect-square rounded-[40px] shadow-sm border overflow-hidden items-center justify-center"
-          >
-            <Image
-              source={require("../assets/images/maternal_onboarding_illustration.jpg")}
-              className="w-full h-full"
-              resizeMode="contain"
-            />
-          </View>
-        </View>
-
-        <View className="px-4 mb-10">
-          <View
-            style={{
-              backgroundColor: isDark ? "#1E293B" : "#F0F7FF",
-              borderColor: isDark ? "#334155" : "#DBEAFE",
-            }}
-            className="flex-row p-5 rounded-3xl items-center gap-4 border"
-          >
-            <View
-              style={{
-                backgroundColor: isDark ? Theme.colors.cardDark : "white",
-              }}
-              className="w-12 h-12 rounded-2xl justify-center items-center shadow-sm"
-            >
-              <Ionicons name="shield-checkmark" size={28} color="#3B82F6" />
-            </View>
-            <View className="flex-1">
-              <Typography
-                variant="body"
-                weight="bold"
-                className={`${isDark ? "text-blue-300" : "text-blue-900"} text-[15px] mb-0.5`}
-              >
-                Clinical Guidance
-              </Typography>
-              <Typography
-                variant="caption"
-                className={`${isDark ? "text-blue-400" : "text-blue-800"} leading-[18px] text-xs opacity-80`}
-              >
-                Built on verified clinical safety standards to support your
-                journey.
-              </Typography>
-            </View>
-          </View>
-        </View>
-
-        <View className="px-4 pb-10">
-          <TouchableOpacity
-            className="bg-primary w-full h-16 rounded-[20px] flex-row items-center justify-center gap-3 mb-5 shadow-sm"
-            activeOpacity={0.8}
-            onPress={() => router.push("/disclaimer")}
-          >
-            <Typography variant="h3" weight="bold" className="text-white">
-              Get Started
-            </Typography>
-            <Ionicons name="arrow-forward" size={24} color="#FFFFFF" />
-          </TouchableOpacity>
-
-          <Typography
-            variant="caption"
-            className="text-gray-400 text-center text-[11px] leading-4 px-4"
-          >
-            By continuing, you acknowledge that this app does not replace
-            medical advice. See our{" "}
-            <Typography variant="caption" className="underline">
-              Terms
-            </Typography>{" "}
-            &{" "}
-            <Typography variant="caption" className="underline">
-              Privacy Policy
-            </Typography>
-            .
-          </Typography>
-        </View>
-      </View>
-    </Screen>
+        <T variant="small" style={{ textAlign: "center" }}>
+          {tx("MaternAlert does not replace your doctor or midwife.")}{" "}
+          <Text onPress={() => Linking.openURL("https://maternalert.com.ng/terms")} style={{ color: t.greenInk, fontFamily: FONT.semibold }}>
+            {tx("Terms")}
+          </Text>
+          {" · "}
+          <Text onPress={() => Linking.openURL("https://maternalert.com.ng/privacy")} style={{ color: t.greenInk, fontFamily: FONT.semibold }}>
+            {tx("Privacy")}
+          </Text>
+        </T>
+      </ScrollView>
+    </SafeAreaView>
   );
 }

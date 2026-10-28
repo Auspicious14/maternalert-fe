@@ -1,133 +1,87 @@
-import { useAuthContext } from "@/context/AuthContext";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
-import { SafeAreaView, ScrollView, TouchableOpacity, View } from "react-native";
-import { Button } from "../components/shared/Button";
-import { Typography } from "../components/shared/Typography";
-import Theme from "../constants/theme";
-import { useColorScheme } from "../hooks/use-color-scheme";
+import { Pressable, Text, View } from "react-native";
+
+import { AuthShell, Button, Card, FONT, Row, useTokens } from "../components/ds";
+import { useAuthContext } from "../context/AuthContext";
+import { useLang } from "../hooks/useLang";
+import { EMERGENCY_LINE } from "../services/emergencyAlert";
+import { tx } from "../services/pidgin";
+
+// Same screen as maternalert-web/src/app/(patient)/disclaimer/page.tsx
 
 export default function DisclaimerScreen() {
   const router = useRouter();
-  const [agreed, setAgreed] = useState(false);
-  const colorScheme = useColorScheme();
+  const t = useTokens();
   const { markAsLaunched } = useAuthContext();
+  const [agreed, setAgreed] = useState(false);
+  useLang();
 
-  const isDark = colorScheme === "dark";
-
-  const bgColor = isDark ? Theme.colors.darkBg : "#FBF7F2";
-  const borderColor = isDark ? Theme.colors.borderDark : "#E6E1D9";
-  const iconBgColor = isDark ? "rgba(198, 40, 40, 0.1)" : "#FFEBEE";
-  const checkboxBorderColor = isDark ? Theme.colors.borderDark : "#CBD5E0";
-
-  const handleAccept = async () => {
-    // await TokenStorage.setHasLaunched();
+  const accept = async () => {
     await markAsLaunched();
     router.replace("/register");
   };
 
   return (
-    <SafeAreaView style={{ backgroundColor: bgColor }} className="flex-1">
-      <View className="flex-1 p-6">
+    <AuthShell title={tx("Before you start")} subtitle={tx("Please read these three things.")} onBack={() => router.back()}>
+      <Card>
+        <Row
+          icon="medkit-outline"
+          title={tx("This app does not diagnose.")}
+          subtitle={tx("It follows clinical guidelines to tell you when to get care. A health worker must check you.")}
+        />
+        <Row
+          icon="call-outline"
+          title={tx("In an emergency, don't wait for the app.")}
+          subtitle={tx("Call {line} or go to the nearest hospital straight away.", { line: EMERGENCY_LINE })}
+        />
+        <Row
+          icon="lock-closed-outline"
+          title={tx("Your information is private.")}
+          subtitle={tx("We collect only what we need for your care. Only you and your linked clinic can see it.")}
+          last
+        />
+      </Card>
+
+      <Pressable
+        onPress={() => setAgreed((v) => !v)}
+        accessibilityRole="checkbox"
+        accessibilityState={{ checked: agreed }}
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          gap: 14,
+          padding: 16,
+          minHeight: 60,
+          borderRadius: 16,
+          borderWidth: 1.5,
+          borderColor: agreed ? t.green : t.border,
+          backgroundColor: agreed ? t.mint : t.surface,
+        }}
+      >
         <View
-          style={{ borderBottomColor: borderColor }}
-          className="py-4 items-center border-b mb-6"
+          style={{
+            width: 24,
+            height: 24,
+            borderRadius: 7,
+            borderWidth: 2,
+            borderColor: agreed ? t.green : t.borderStrong,
+            backgroundColor: agreed ? t.green : "transparent",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
         >
-          <Typography variant="h2" weight="bold">
-            Important Notice
-          </Typography>
+          {agreed ? <Ionicons name="checkmark" size={16} color="#FFFFFF" /> : null}
         </View>
+        <Text style={{ flex: 1, fontFamily: FONT.medium, fontSize: 16, lineHeight: 22, color: t.ink }}>
+          {tx("I understand. MaternAlert helps me but does not replace my health worker.")}
+        </Text>
+      </Pressable>
 
-        <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-          <View
-            style={{ backgroundColor: iconBgColor }}
-            className="items-center my-8 w-[100px] h-[100px] rounded-full justify-center self-center"
-          >
-            <Ionicons name="medical" size={60} color="#A82A31" />
-          </View>
-
-          <Typography variant="h1" className="text-center mb-8">
-            Clinical Safety Disclaimer
-          </Typography>
-
-          <View className="gap-8 pb-8">
-            <View className="flex-row gap-4 items-start">
-              <Ionicons name="alert-circle" size={24} color="#A82A31" />
-              <Typography variant="body" className="flex-1 leading-6">
-                <Typography weight="bold">
-                  This app does not provide medical diagnoses.
-                </Typography>{" "}
-                All health checks are automated based on clinical guidelines and
-                must be verified by a medical professional.
-              </Typography>
-            </View>
-
-            <View className="flex-row gap-4 items-start">
-              <Ionicons name="call" size={24} color="#34E875" />
-              <Typography variant="body" className="flex-1 leading-6">
-                In case of a{" "}
-                <Typography weight="bold">medical emergency</Typography>, do not
-                wait for the app to load. Call emergency services or go to the
-                nearest hospital immediately.
-              </Typography>
-            </View>
-
-            <View className="flex-row gap-4 items-start">
-              <Ionicons name="lock-closed" size={24} color="#1565C0" />
-              <Typography variant="body" className="flex-1 leading-6">
-                Your data is stored securely and processed according to strict
-                privacy standards. We minimize the data we collect to only what
-                is necessary for your care.
-              </Typography>
-            </View>
-
-            {/* <View className="flex-row gap-4 items-start"> */}
-            {/* <Ionicons name="bluetooth" size={24} color="#6A1B9A" /> */}
-            {/* <Typography variant="body" className="flex-1 leading-6"> */}
-            {/* This app works offline for educational content, but requires an */}
-            {/* internet connection periodically to sync with the clinical */}
-            {/* backend for accurate assessments. */}
-            {/* </Typography> */}
-            {/* </View> */}
-          </View>
-        </ScrollView>
-
-        <View
-          style={{ borderTopColor: borderColor }}
-          className="pt-6 border-t gap-6"
-        >
-          <TouchableOpacity
-            className="flex-row gap-4 items-center"
-            activeOpacity={0.7}
-            onPress={() => setAgreed(!agreed)}
-          >
-            <View
-              style={{
-                borderColor: agreed
-                  ? Theme.colors.primary
-                  : checkboxBorderColor,
-              }}
-              className={`w-7 h-7 rounded-lg border-2 justify-center items-center ${agreed ? "bg-primary" : ""}`}
-            >
-              {agreed && <Ionicons name="checkmark" size={16} color="white" />}
-            </View>
-            <Typography variant="body" className="flex-1 text-sm leading-5">
-              I have read and I understand the safety disclaimer and terms of
-              use.
-            </Typography>
-          </TouchableOpacity>
-
-          <Button
-            title="I Understand & Accept"
-            variant="primary"
-            size="large"
-            disabled={!agreed}
-            onPress={handleAccept}
-            className="w-full"
-          />
-        </View>
-      </View>
-    </SafeAreaView>
+      <Button size="lg" block disabled={!agreed} onPress={accept}>
+        {tx("Continue")}
+      </Button>
+    </AuthShell>
   );
 }
