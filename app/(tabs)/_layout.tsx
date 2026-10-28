@@ -5,6 +5,7 @@ import { View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { FONT, useTokens } from "../../components/ds";
+import { useOfflineSync } from "../../hooks/useOfflineSync";
 
 // Same tabs as maternalert-web/src/components/navigation/WebButtonNavigation.tsx
 // (Home, Readings, Learn, Profile, with a mint pill behind the active icon).
@@ -19,6 +20,8 @@ const TABS: { name: string; title: string; icon: keyof typeof Ionicons.glyphMap;
 export default function TabLayout() {
   const t = useTokens();
   const insets = useSafeAreaInsets();
+  // Sends blood pressure readings saved while offline.
+  useOfflineSync();
   const bottom = Math.max(insets.bottom, 8);
 
   return (

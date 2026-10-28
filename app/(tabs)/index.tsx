@@ -40,6 +40,7 @@ import {
   showEmergencyFallback,
   triggerEmergencyAlert,
 } from "../../services/emergencyAlert";
+import PendingReadingsBanner from "../../components/PendingReadingsBanner";
 
 // ─── FLOATING EMERGENCY BUTTON ────────────────────────────────────────────────
 // Rendered outside <Screen> so it stays fixed above the tab bar while the
@@ -315,6 +316,8 @@ export default function HomeScreen() {
             </>
           }
         />
+
+        <PendingReadingsBanner />
 
         {/* 1. What matters right now */}
         {isLoadingMonitoringState ? (

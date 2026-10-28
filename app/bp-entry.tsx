@@ -18,6 +18,7 @@ import { useToast } from "../components/ui/ToastProvider";
 import { useHealthData } from "../hooks/useHealthData";
 import { useTrends } from "../hooks/useTrends";
 import { getTier, getTierInfo, Tier } from "../services/escalation";
+import { enqueueReading, isNetworkError } from "../services/offlineQueue";
 import { notificationService } from "../services/notifications";
 import { BP_TIPS, readingLabel, readingResultTitle } from "../services/patientCopy";
 
@@ -48,7 +49,7 @@ export default function BPEntryScreen() {
   const [diastolic, setDiastolic] = useState("");
   const [touched, setTouched] = useState(false);
   const [focus, setFocus] = useState<"sys" | "dia" | null>(null);
-  const [result, setResult] = useState<{ tier: Tier; sys: number; dia: number; saved: boolean | null } | null>(null);
+  const [result, setResult] = useState<{ tier: Tier; sys: number; dia: number; saved: boolean | "queued" | null } | null>(null);
   const diaRef = useRef<TextInput>(null);
 
   const validationError = useMemo(() => getBPValidationError(systolic, diastolic), [systolic, diastolic]);
@@ -113,8 +114,10 @@ export default function BPEntryScreen() {
       await scheduleTierNotifications(tier);
     }
 
+    // Taken now; sent with the reading so a later retry keeps the real time.
+    const takenAt = new Date().toISOString();
     try {
-      const savedReading = await addBP({ systolic: sys, diastolic: dia });
+      const savedReading = await addBP({ systolic: sys, diastolic: dia, recordedAt: takenAt });
       try {
         await notificationService.handleBPLogged(savedReading?.reading?.recordedAt || savedReading?.recordedAt);
         const trendAlerts = await analyzeLatestTrends();
@@ -131,6 +134,17 @@ export default function BPEntryScreen() {
       setResult({ tier, sys, dia, saved: true });
     } catch (error) {
       console.error("Failed to save BP reading", error);
+      if (isNetworkError(error)) {
+        // No connection: keep it on this phone and send it automatically later.
+        await enqueueReading({ systolic: sys, diastolic: dia, recordedAt: takenAt });
+        if (tier === 1) {
+          showToast({ type: "success", message: "No internet. Saved on this phone. It will send automatically when you're back online." });
+          router.back();
+        } else {
+          setResult({ tier, sys, dia, saved: "queued" });
+        }
+        return;
+      }
       if (tier === 1) {
         showToast({ type: "error", message: "We couldn't save your reading. Check your internet and try again." });
       } else {
@@ -273,6 +287,11 @@ export default function BPEntryScreen() {
                   </T>
                 ) : null}
                 {result.tier >= 2 ? <T variant="small">We'll remind you to check again.</T> : null}
+                {result.saved === "queued" ? (
+                  <Banner tone="amber">
+                    No internet, so your clinic hasn't seen this yet. It's saved on this phone and will send automatically. If you need help now, call your clinic.
+                  </Banner>
+                ) : null}
                 {result.saved === false ? (
                   <Banner tone="red">
                     This reading couldn't be saved, so your clinic hasn't seen it. Contact them directly.

@@ -54,7 +54,7 @@ export const useHealthData = () => {
   });
 
   const addBPMutation = useMutation({
-    mutationFn: async (reading: { systolic: number; diastolic: number }) => {
+    mutationFn: async (reading: { systolic: number; diastolic: number; recordedAt?: string }) => {
       const response = await apiClient.post("/blood-pressure", reading);
       return response.data;
     },

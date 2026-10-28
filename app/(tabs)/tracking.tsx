@@ -23,6 +23,7 @@ import { useTrends } from "../../hooks/useTrends";
 import { useUserProfile } from "../../hooks/useUserProfile";
 import { getTier } from "../../services/escalation";
 import { readingLabel } from "../../services/patientCopy";
+import PendingReadingsBanner from "../../components/PendingReadingsBanner";
 
 // Same screen as maternalert-web/src/app/(patient)/tracking/page.tsx
 
@@ -220,6 +221,8 @@ export default function ReadingsScreen() {
           </Button>
         }
       />
+
+      <PendingReadingsBanner />
 
       {isLoadingBP ? (
         <View style={{ gap: 12 }}>
