@@ -25,6 +25,8 @@ export interface MapPoint {
 }
 
 export const TILE_URL = "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
+const OSM_ATTRIBUTION =
+  '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors';
 
 const esc = (s: string) =>
   s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
@@ -33,7 +35,12 @@ export function buildMapHtml(opts: {
   points: MapPoint[];
   me?: { lat: number; lng: number } | null;
   dark?: boolean;
+  /** Override the tile server, e.g. a MapTiler URL with its key. */
+  tileUrl?: string | null;
+  attribution?: string | null;
 }): string {
+  const tileUrl = opts.tileUrl?.trim() || TILE_URL;
+  const attribution = opts.attribution?.trim() || OSM_ATTRIBUTION;
   // JSON inside <script>: escape "<" so a facility name can't close the tag.
   const data = JSON.stringify({
     points: opts.points.map((p) => ({ ...p, name: esc(p.name) })),
@@ -41,6 +48,7 @@ export function buildMapHtml(opts: {
   }).replace(/</g, "\\u003c");
   const bg = opts.dark ? "#13261E" : "#F4EFE8";
   return `<!doctype html><html><head><meta charset="utf-8">
+<meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
 <style>
@@ -48,7 +56,7 @@ html,body,#map{margin:0;height:100%;background:${bg};font-family:Outfit,system-u
 .leaflet-popup-content{margin:10px 12px;font-size:14px;line-height:1.35;color:#0F241C}
 .leaflet-popup-content b{display:block;font-size:15px;margin-bottom:2px}
 .leaflet-container a.ma-dir{display:inline-block;margin-top:6px;color:#0A5C43;font-weight:600}
-#msg{position:absolute;inset:0;display:none;align-items:center;justify-content:center;text-align:center;padding:16px;color:#5B6B64;font-size:14px}
+#msg{position:absolute;inset:0;z-index:1000;background:${bg};display:none;align-items:center;justify-content:center;text-align:center;padding:16px;color:#5B6B64;font-size:14px}
 </style></head><body><div id="map"></div><div id="msg">Map couldn't load. The list below still works.</div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 <script>
@@ -57,7 +65,12 @@ html,body,#map{margin:0;height:100%;background:${bg};font-family:Outfit,system-u
   function send(m){var s=JSON.stringify(m);try{if(window.ReactNativeWebView){window.ReactNativeWebView.postMessage(s)}else{window.parent.postMessage(s,"*")}}catch(e){}}
   if(!window.L){document.getElementById("msg").style.display="flex";return;}
   var map=L.map("map",{zoomControl:true,attributionControl:true});
-  L.tileLayer(${JSON.stringify(TILE_URL)},{maxZoom:19,attribution:'&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors'}).addTo(map);
+  // OpenStreetMap's tile servers refuse requests without a Referer (HTTP 403),
+  // so the page must run with the site's origin (see FacilityMap).
+  var tiles=L.tileLayer(${JSON.stringify(tileUrl)},{maxZoom:19,attribution:${JSON.stringify(attribution)}}).addTo(map);
+  var loaded=0,failed=0;
+  tiles.on("tileload",function(){loaded++;document.getElementById("msg").style.display="none"});
+  tiles.on("tileerror",function(){failed++;if(!loaded&&failed>=4){var m=document.getElementById("msg");m.textContent="The map couldn't load. The list below still works.";m.style.display="flex"}});
   var markers={},bounds=[];
   D.points.forEach(function(p){
     var hosp=p.kind==="hospital";

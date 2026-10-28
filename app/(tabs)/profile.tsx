@@ -11,11 +11,11 @@ import { useAppTheme } from "../../hooks/useAppTheme";
 import { useAuth } from "../../hooks/useAuth";
 import { useUserProfile } from "../../hooks/useUserProfile";
 import { notificationService } from "../../services/notifications";
-import { CONDITION_OPTIONS, RELATIONSHIP_OPTIONS, Relationship, isValidNigerianPhone } from "../../services/profileSetup";
+import { CONDITION_OPTIONS, RELATIONSHIP_OPTIONS, Relationship, isValidName, isValidNigerianPhone } from "../../services/profileSetup";
 
 // Same screen as maternalert-web/src/app/(patient)/profile/page.tsx
 
-type Editing = null | "contact" | "pregnancy" | "clinic";
+type Editing = null | "me" | "contact" | "pregnancy" | "clinic";
 
 const relLabel = (r?: string | null) => RELATIONSHIP_OPTIONS.find((o) => o.value === r)?.label ?? "Emergency contact";
 const conditionLabel = (c: string) => CONDITION_OPTIONS.find((o) => o.value === c)?.label ?? c.replace(/_/g, " ").toLowerCase();
@@ -111,6 +111,8 @@ export default function ProfileScreen() {
   const [confirmLogout, setConfirmLogout] = useState(false);
   const [facility, setFacility] = useState<{ linked: boolean; facilityName?: string } | null>(null);
 
+  const [myName, setMyName] = useState("");
+  const [myPhone, setMyPhone] = useState("");
   const [rel, setRel] = useState<Relationship | null>(null);
   const [phone, setPhone] = useState("");
   const [weeks, setWeeks] = useState("");
@@ -150,6 +152,10 @@ export default function ProfileScreen() {
 
   const open = (what: Editing) => {
     setFormError(null);
+    if (what === "me") {
+      setMyName(profile?.fullName ?? "");
+      setMyPhone(profile?.phone ?? "");
+    }
     if (what === "contact") {
       setRel(profile?.emergencyContactRelationship ?? null);
       setPhone(profile?.emergencyContactPhone ?? "");
@@ -179,6 +185,12 @@ export default function ProfileScreen() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const saveMe = () => {
+    if (!isValidName(myName)) return setFormError("Please enter your name.");
+    if (myPhone.trim() && !isValidNigerianPhone(myPhone)) return setFormError("Please enter your full phone number, for example 0803 123 4567.");
+    save({ fullName: myName.trim(), phone: myPhone.trim() }, "Your details are saved.");
   };
 
   const saveContact = () => {
@@ -255,6 +267,59 @@ export default function ProfileScreen() {
   return (
     <Page>
       <AppHeader title="Profile" subtitle="Your details and settings" />
+
+      {/* You */}
+      <Card>
+        {editing === "me" ? (
+          <View style={{ gap: 16 }}>
+            <Text style={{ fontFamily: FONT.semibold, fontSize: 18, color: t.ink }}>About you</Text>
+            <Field label="Your name">
+              <TextInput
+                accessibilityLabel="Your name"
+                textContentType="name"
+                autoComplete="name"
+                autoCapitalize="words"
+                placeholder="For example, Amina Bello"
+                placeholderTextColor={t.muted}
+                maxLength={80}
+                value={myName}
+                onChangeText={setMyName}
+                style={inputStyle}
+              />
+            </Field>
+            <Field label="Your phone number" hint="Your clinic and emergency contact see this if you need help, so they can call you.">
+              <TextInput
+                accessibilityLabel="Your phone number"
+                keyboardType="phone-pad"
+                autoComplete="tel"
+                placeholder="0803 123 4567"
+                placeholderTextColor={t.muted}
+                value={myPhone}
+                onChangeText={setMyPhone}
+                style={inputStyle}
+              />
+            </Field>
+            {formError ? <Banner tone="red">{formError}</Banner> : null}
+            <Actions onSave={saveMe} />
+          </View>
+        ) : profile.fullName ? (
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
+            <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: t.mint, alignItems: "center", justifyContent: "center" }}>
+              <Ionicons name="person-outline" size={20} color={t.greenInk} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontFamily: FONT.semibold, fontSize: 16, color: t.ink }}>{profile.fullName}</Text>
+              <T variant="small">{profile.phone || "No phone number added"}</T>
+            </View>
+            <EditButton label="Edit your name and phone" onPress={() => open("me")} />
+          </View>
+        ) : (
+          <View style={{ gap: 12 }}>
+            <Banner tone="amber">Add your name so alerts tell your clinic and family who needs help.</Banner>
+            <Button onPress={() => open("me")}>Add your name and phone</Button>
+          </View>
+        )}
+      </Card>
 
       {/* Pregnancy */}
       <Card>

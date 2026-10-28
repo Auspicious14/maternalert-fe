@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -14,6 +14,7 @@ import {
   RELATIONSHIP_OPTIONS,
   Relationship,
   SETUP_STEPS,
+  isValidName,
   isValidNigerianPhone,
   weeksFromLastPeriod,
 } from "../services/profileSetup";
@@ -85,10 +86,15 @@ export default function ProfileSetupScreen() {
   const router = useRouter();
   const t = useTokens();
   const { createProfile, isCreatingProfile } = useUserProfile();
-  const { checkSession } = useAuthContext();
+  const { checkSession, user } = useAuthContext() as any;
   const scrollRef = useRef<ScrollView>(null);
 
   const [step, setStep] = useState(0);
+  const [fullName, setFullName] = useState("");
+  const [myPhone, setMyPhone] = useState<string>(() => (user?.phone as string | undefined) ?? "");
+  useEffect(() => {
+    if (user?.phone) setMyPhone((p) => p || user.phone);
+  }, [user?.phone]);
   const [ageRange, setAgeRange] = useState<AgeRange | null>(null);
   const [weeks, setWeeks] = useState("");
   const [useLmp, setUseLmp] = useState(false);
@@ -105,6 +111,10 @@ export default function ProfileSetupScreen() {
 
   const validate = (): string | null => {
     switch (current.id) {
+      case "you":
+        if (!isValidName(fullName)) return "Please enter your name.";
+        if (myPhone.trim() && !isValidNigerianPhone(myPhone)) return "Please enter your full phone number, for example 0803 123 4567.";
+        return null;
       case "age":
         return ageRange ? null : "Please choose your age range.";
       case "weeks":
@@ -138,6 +148,8 @@ export default function ProfileSetupScreen() {
     }
     try {
       await createProfile({
+        fullName: fullName.trim(),
+        ...(myPhone.trim() ? { phone: myPhone.trim() } : {}),
         ageRange: ageRange!,
         pregnancyWeeks: Math.round(weeksNum!),
         firstPregnancy: firstPregnancy!,
@@ -203,6 +215,41 @@ export default function ProfileSetupScreen() {
             </T>
             <T>{current.help}</T>
           </View>
+
+          {current.id === "you" ? (
+            <View style={{ gap: 16 }}>
+              <View style={{ gap: 8 }}>
+                <Text style={{ fontFamily: FONT.semibold, fontSize: 15, color: t.ink }}>Your name</Text>
+                <TextInput
+                  accessibilityLabel="Your name"
+                  textContentType="name"
+                  autoComplete="name"
+                  autoCapitalize="words"
+                  placeholder="For example, Amina Bello"
+                  placeholderTextColor={t.muted}
+                  maxLength={80}
+                  value={fullName}
+                  onChangeText={setFullName}
+                  style={inputStyle}
+                />
+              </View>
+              <View style={{ gap: 8 }}>
+                <Text style={{ fontFamily: FONT.semibold, fontSize: 15, color: t.ink }}>Your phone number</Text>
+                <TextInput
+                  accessibilityLabel="Your phone number"
+                  keyboardType="phone-pad"
+                  textContentType="telephoneNumber"
+                  autoComplete="tel"
+                  placeholder="0803 123 4567"
+                  placeholderTextColor={t.muted}
+                  value={myPhone}
+                  onChangeText={setMyPhone}
+                  style={inputStyle}
+                />
+                <T variant="small">So your clinic or family can call you back. Optional, but it helps.</T>
+              </View>
+            </View>
+          ) : null}
 
           {current.id === "age" ? (
             <View style={{ gap: 10 }}>

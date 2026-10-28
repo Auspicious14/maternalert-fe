@@ -26,8 +26,11 @@ export default function FacilityMap({
 
   // Rebuild only when the set of places or the user's spot changes.
   const key = points.map((p) => p.id).join("|") + (me ? `@${me.lat},${me.lng}` : "");
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const html = useMemo(() => buildMapHtml({ points, me, dark }), [key, dark]);
+  const html = useMemo(
+    () => buildMapHtml({ points, me, dark, tileUrl: process.env.EXPO_PUBLIC_MAP_TILE_URL, attribution: process.env.EXPO_PUBLIC_MAP_ATTRIBUTION }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [key, dark],
+  );
 
   useEffect(() => {
     if (focusId) ref.current?.postMessage(JSON.stringify({ type: "focus", id: focusId }));
@@ -41,6 +44,8 @@ export default function FacilityMap({
     >
       <WebView
         ref={ref}
+        // The base URL becomes the page's address, so tile requests carry a
+        // Referer (OpenStreetMap returns 403 without one).
         source={{ html, baseUrl: "https://maternalert.com.ng/" }}
         originWhitelist={["*"]}
         javaScriptEnabled

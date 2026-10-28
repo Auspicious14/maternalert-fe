@@ -10,6 +10,11 @@ export type AgeRange = "UNDER_18" | "AGE_18_34" | "AGE_35_PLUS";
 export type Relationship = "PARTNER" | "FAMILY_MEMBER" | "MIDWIFE" | "OTHER";
 
 export const SETUP_STEPS = [
+  {
+    id: "you",
+    title: "What's your name?",
+    help: "If you ever need help, your clinic and emergency contact will see this name and number.",
+  },
   { id: "age", title: "How old are you?", help: "We only ask for an age range, not your date of birth." },
   {
     id: "weeks",
@@ -67,4 +72,10 @@ export function isValidNigerianPhone(raw: string): boolean {
   if (/^0[789][01]\d{8}$/.test(digits)) return true;
   if (/^234[789][01]\d{8}$/.test(digits)) return true;
   return raw.trim().startsWith("+") && digits.length >= 10 && digits.length <= 15;
+}
+
+/** A real name: 2–80 characters with at least two letters. */
+export function isValidName(raw: string): boolean {
+  const t = raw.trim();
+  return t.length >= 2 && t.length <= 80 && (t.match(/\p{L}/gu) ?? []).length >= 2;
 }
