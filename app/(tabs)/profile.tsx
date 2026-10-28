@@ -10,6 +10,9 @@ import { useToast } from "../../components/ui/ToastProvider";
 import { useAppTheme } from "../../hooks/useAppTheme";
 import { useAuth } from "../../hooks/useAuth";
 import { useUserProfile } from "../../hooks/useUserProfile";
+import { useLang } from "../../hooks/useLang";
+import { LANGUAGES } from "../../services/i18n";
+import { chooseLang } from "../../services/langStorage";
 import { notificationService } from "../../services/notifications";
 import { CONDITION_OPTIONS, RELATIONSHIP_OPTIONS, Relationship, isValidName, isValidNigerianPhone } from "../../services/profileSetup";
 
@@ -104,6 +107,7 @@ export default function ProfileScreen() {
   const { preference, setPreference } = useAppTheme();
   const { logout } = useAuth() as any;
   const { showToast } = useToast();
+  const lang = useLang();
 
   const [editing, setEditing] = useState<Editing>(null);
   const [saving, setSaving] = useState(false);
@@ -525,6 +529,18 @@ export default function ProfileScreen() {
           <Chip key={v} role="radio" on={preference === v} label={l} onPress={() => setPreference(v)} />
         ))}
       </View>
+
+      <SectionHeader title="Language" />
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }} accessibilityRole="radiogroup">
+        {LANGUAGES.map((l) => (
+          <Chip key={l.code} role="radio" on={lang === l.code} label={l.native} onPress={() => chooseLang(l.code)} />
+        ))}
+      </View>
+      <T variant="small" style={{ marginTop: -4 }}>
+        {lang === "pcm"
+          ? "Pidgin dey for the main screens: danger signs, your BP result and emergency. Other screens still dey for English."
+          : "Pidgin covers the main screens: danger signs, BP results and emergency. Other screens stay in English for now."}
+      </T>
 
       {/* More */}
       <SectionHeader title="More" />

@@ -20,7 +20,9 @@ import { useTrends } from "../hooks/useTrends";
 import { getTier, getTierInfo, Tier } from "../services/escalation";
 import { enqueueReading, isNetworkError } from "../services/offlineQueue";
 import { notificationService } from "../services/notifications";
-import { BP_TIPS, readingLabel, readingResultTitle } from "../services/patientCopy";
+import { useLang } from "../hooks/useLang";
+import { bpTips, readingLabel, readingResultTitle } from "../services/patientCopy";
+import { tx } from "../services/pidgin";
 
 // Same screen as maternalert-web/src/app/(patient)/bp-entry/page.tsx
 
@@ -28,12 +30,12 @@ function getBPValidationError(systolic: string, diastolic: string): string | nul
   const sys = Number(systolic);
   const dia = Number(diastolic);
   if (!systolic.trim() || !diastolic.trim() || Number.isNaN(sys) || Number.isNaN(dia)) {
-    return "Enter both numbers from your BP machine.";
+    return tx("Enter both numbers from your BP machine.");
   }
-  if (!Number.isInteger(sys) || !Number.isInteger(dia)) return "Please enter whole numbers only.";
-  if (sys < 60 || sys > 260) return "The top number should be between 60 and 260.";
-  if (dia < 40 || dia > 160) return "The bottom number should be between 40 and 160.";
-  if (dia >= sys) return "The top number should be higher than the bottom number.";
+  if (!Number.isInteger(sys) || !Number.isInteger(dia)) return tx("Please enter whole numbers only.");
+  if (sys < 60 || sys > 260) return tx("The top number should be between 60 and 260.");
+  if (dia < 40 || dia > 160) return tx("The bottom number should be between 40 and 160.");
+  if (dia >= sys) return tx("The top number should be higher than the bottom number.");
   return null;
 }
 
@@ -43,6 +45,7 @@ export default function BPEntryScreen() {
   const { addBP, isAddingBP } = useHealthData();
   const { analyzeLatestTrends } = useTrends();
   const { showToast } = useToast();
+  useLang();
 
   // Start empty so a reading can't be saved without actually measuring.
   const [systolic, setSystolic] = useState("");
@@ -127,7 +130,7 @@ export default function BPEntryScreen() {
         console.error("Post-save BP processing failed", postSaveError);
       }
       if (tier === 1) {
-        showToast({ type: "success", message: "Saved. Your blood pressure looks normal." });
+        showToast({ type: "success", message: tx("Saved. Your blood pressure looks normal.") });
         router.back();
         return;
       }
@@ -138,7 +141,7 @@ export default function BPEntryScreen() {
         // No connection: keep it on this phone and send it automatically later.
         await enqueueReading({ systolic: sys, diastolic: dia, recordedAt: takenAt });
         if (tier === 1) {
-          showToast({ type: "success", message: "No internet. Saved on this phone. It will send automatically when you're back online." });
+          showToast({ type: "success", message: tx("No internet. Saved on this phone. It will send automatically when you're back online.") });
           router.back();
         } else {
           setResult({ tier, sys, dia, saved: "queued" });
@@ -146,7 +149,7 @@ export default function BPEntryScreen() {
         return;
       }
       if (tier === 1) {
-        showToast({ type: "error", message: "We couldn't save your reading. Check your internet and try again." });
+        showToast({ type: "error", message: tx("We couldn't save your reading. Check your internet and try again.") });
       } else {
         setResult({ tier, sys, dia, saved: false });
       }
@@ -172,16 +175,16 @@ export default function BPEntryScreen() {
   return (
     <>
       <Page>
-        <AppHeader title="Log blood pressure" subtitle="Takes less than a minute" onBack={() => router.back()} />
+        <AppHeader title={tx("Log blood pressure")} subtitle={tx("Takes less than a minute")} onBack={() => router.back()} />
 
         <Card>
           <View style={{ gap: 20 }}>
-            <T>Type the two numbers exactly as they show on your BP machine.</T>
+            <T>{tx("Type the two numbers exactly as they show on your BP machine.")}</T>
 
             <View style={{ flexDirection: "row", alignItems: "flex-end", gap: 12 }}>
               <View style={{ flex: 1, gap: 8 }}>
                 <T variant="title" style={{ fontSize: 15 }} nativeID="bp-sys-label">
-                  Top number
+                  {tx("Top number")}
                 </T>
                 <TextInput
                   accessibilityLabel="Top number, systolic"
@@ -201,7 +204,7 @@ export default function BPEntryScreen() {
                   style={inputStyle("sys")}
                 />
                 <T variant="small" style={{ fontSize: 13 }}>
-                  SYS · usually 90–140
+                  {tx("SYS · usually 90–140")}
                 </T>
               </View>
               <Text style={{ fontSize: 44, color: t.muted, paddingBottom: 34 }} accessible={false}>
@@ -209,7 +212,7 @@ export default function BPEntryScreen() {
               </Text>
               <View style={{ flex: 1, gap: 8 }}>
                 <T variant="title" style={{ fontSize: 15 }} nativeID="bp-dia-label">
-                  Bottom number
+                  {tx("Bottom number")}
                 </T>
                 <TextInput
                   ref={diaRef}
@@ -226,7 +229,7 @@ export default function BPEntryScreen() {
                   style={inputStyle("dia")}
                 />
                 <T variant="small" style={{ fontSize: 13 }}>
-                  DIA · usually 60–90
+                  {tx("DIA · usually 60–90")}
                 </T>
               </View>
             </View>
@@ -238,17 +241,17 @@ export default function BPEntryScreen() {
             ) : null}
 
             <Button size="lg" block onPress={handleSave} loading={isAddingBP}>
-              {isAddingBP ? "Saving…" : "Save reading"}
+              {isAddingBP ? tx("Saving…") : tx("Save reading")}
             </Button>
           </View>
         </Card>
 
         <Card flat>
           <T variant="h2" style={{ marginBottom: 12 }}>
-            For an accurate reading
+            {tx("For an accurate reading")}
           </T>
           <View style={{ gap: 10 }}>
-            {BP_TIPS.map((tip) => (
+            {bpTips().map((tip) => (
               <View key={tip} style={{ flexDirection: "row", gap: 10 }}>
                 <Ionicons name="checkmark" size={18} color={t.greenInk} style={{ marginTop: 3 }} />
                 <T style={{ flex: 1, fontSize: 15, lineHeight: 22 }}>{tip}</T>
@@ -258,8 +261,7 @@ export default function BPEntryScreen() {
         </Card>
 
         <Banner tone="amber" icon="information-circle-outline">
-          No BP machine? Ask at your clinic or a pharmacy. Don't guess the numbers, because a wrong reading can hide
-          a real problem.
+          {tx("No BP machine? Ask at your clinic or a pharmacy. Don't guess the numbers, because a wrong reading can hide a real problem.")}
         </Banner>
       </Page>
 
@@ -283,18 +285,18 @@ export default function BPEntryScreen() {
                 <T style={{ fontSize: 17 }}>{info.response}</T>
                 {result.tier >= 3 ? (
                   <T variant="small">
-                    Go now if you also have a severe headache, blurred vision, pain under the ribs, or fits.
+                    {tx("Go now if you also have a severe headache, blurred vision, pain under the ribs, or fits.")}
                   </T>
                 ) : null}
-                {result.tier >= 2 ? <T variant="small">We'll remind you to check again.</T> : null}
+                {result.tier >= 2 ? <T variant="small">{tx("We'll remind you to check again.")}</T> : null}
                 {result.saved === "queued" ? (
                   <Banner tone="amber">
-                    No internet, so your clinic hasn't seen this yet. It's saved on this phone and will send automatically. If you need help now, call your clinic.
+                    {tx("No internet, so your clinic hasn't seen this yet. It's saved on this phone and will send automatically. If you need help now, call your clinic.")}
                   </Banner>
                 ) : null}
                 {result.saved === false ? (
                   <Banner tone="red">
-                    This reading couldn't be saved, so your clinic hasn't seen it. Contact them directly.
+                    {tx("This reading couldn't be saved, so your clinic hasn't seen it. Contact them directly.")}
                   </Banner>
                 ) : null}
                 {result.tier === 4 ? (
@@ -308,7 +310,7 @@ export default function BPEntryScreen() {
                     }}
                     icon={(c) => <Ionicons name="alert-circle-outline" size={20} color={c} />}
                   >
-                    Get emergency help
+                    {tx("Get emergency help")}
                   </Button>
                 ) : null}
                 {result.tier === 3 ? (
@@ -321,7 +323,7 @@ export default function BPEntryScreen() {
                     }}
                     icon={(c) => <Ionicons name="location-outline" size={20} color={c} />}
                   >
-                    Find a clinic
+                    {tx("Find a clinic")}
                   </Button>
                 ) : null}
                 <Button
@@ -332,7 +334,7 @@ export default function BPEntryScreen() {
                     router.back();
                   }}
                 >
-                  Done
+                  {tx("Done")}
                 </Button>
               </View>
             </View>

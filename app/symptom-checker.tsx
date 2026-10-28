@@ -6,6 +6,8 @@ import { Pressable, Text, TextInput, View } from "react-native";
 import { AppHeader, Banner, Button, FONT, Page, T, useTokens } from "../components/ds";
 import { useToast } from "../components/ui/ToastProvider";
 import { useHealthData } from "../hooks/useHealthData";
+import { useLang } from "../hooks/useLang";
+import { tx } from "../services/pidgin";
 import { useMonitoringData } from "../hooks/useMonitoringData";
 
 // Same screen as maternalert-web/src/app/(patient)/symptom-checker/page.tsx
@@ -375,7 +377,7 @@ function SymTile({ sym, danger, on, onPress }: { sym: SymptomDef; danger: boolea
       onPress={onPress}
       accessibilityRole="button"
       accessibilityState={{ selected: on }}
-      accessibilityLabel={sym.subtitle ? `${sym.title}. ${sym.subtitle}` : sym.title}
+      accessibilityLabel={sym.subtitle ? `${tx(sym.title)}. ${tx(sym.subtitle)}` : tx(sym.title)}
       style={{
         flexBasis: "47%",
         flexGrow: 1,
@@ -404,10 +406,10 @@ function SymTile({ sym, danger, on, onPress }: { sym: SymptomDef; danger: boolea
       </View>
       <View style={{ flex: 1 }}>
         <Text style={{ fontFamily: FONT.semibold, fontSize: 15, lineHeight: 19, color: t.ink }}>
-          {sym.title.replace(/\s*\/\s*/g, " / ")}
+          {tx(sym.title).replace(/\s*\/\s*/g, " / ")}
         </Text>
         {sym.subtitle ? (
-          <Text style={{ fontFamily: FONT.regular, fontSize: 13, lineHeight: 17, color: t.muted }}>{sym.subtitle}</Text>
+          <Text style={{ fontFamily: FONT.regular, fontSize: 13, lineHeight: 17, color: t.muted }}>{tx(sym.subtitle)}</Text>
         ) : null}
       </View>
     </Pressable>
@@ -430,8 +432,8 @@ function YesNo({ value, set, label }: { value: boolean | null; set: (v: boolean 
         {label}
       </T>
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-        <Chip on={value === true} label="Yes" onPress={() => set(value === true ? null : true)} />
-        <Chip on={value === false} label="No" onPress={() => set(value === false ? null : false)} />
+        <Chip on={value === true} label={tx("Yes")} onPress={() => set(value === true ? null : true)} />
+        <Chip on={value === false} label={tx("No")} onPress={() => set(value === false ? null : false)} />
       </View>
     </View>
   );
@@ -443,6 +445,7 @@ export default function SymptomCheckerScreen() {
   const { revalidateMonitoring } = useMonitoringData();
   const t = useTokens();
   const { showToast } = useToast();
+  useLang();
 
   const [selected, setSelected] = useState<SymptomId[]>([]);
   const [otherSymptom, setOtherSymptom] = useState("");
@@ -485,7 +488,7 @@ export default function SymptomCheckerScreen() {
 
     const cleanedOtherSymptom = otherSymptom.trim().replace(/\s+/g, " ");
     if (selected.includes("OTHER") && !cleanedOtherSymptom) {
-      showToast({ type: "error", message: "Please type the other symptom you feel." });
+      showToast({ type: "error", message: tx("Please type the other symptom you feel.") });
       return;
     }
 
@@ -564,7 +567,7 @@ export default function SymptomCheckerScreen() {
       }
       showToast({
         type: "error",
-        message: "Failed to submit symptoms. Please try again.",
+        message: tx("We could not save your symptoms. Please try again."),
       });
     }
   };
@@ -592,13 +595,13 @@ export default function SymptomCheckerScreen() {
 
   return (
     <Page>
-      <AppHeader title="How are you feeling?" subtitle="Tap everything you feel right now" onBack={() => router.back()} />
+      <AppHeader title={tx("How are you feeling?")} subtitle={tx("Tap everything you feel right now")} onBack={() => router.back()} />
 
       <View style={{ gap: 10 }}>
         <T variant="h2" accessibilityRole="header">
-          Danger signs
+          {tx("Danger signs")}
         </T>
-        <T variant="small">If you have any of these, go to a health facility now, even before you finish here.</T>
+        <T variant="small">{tx("If you have any of these, go to a health facility now, even before you finish here.")}</T>
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
           {dangerSymptoms.map((sym) => (
             <SymTile key={sym.id} sym={sym} danger on={selected.includes(sym.id)} onPress={() => toggleSymptom(sym.id)} />
@@ -609,17 +612,17 @@ export default function SymptomCheckerScreen() {
       {anyDanger ? (
         <View style={{ gap: 10 }}>
           <Banner tone="red" icon="warning-outline">
-            This can be serious. Please go to a health facility now.
+            {tx("This can be serious. Please go to a health facility now.")}
           </Banner>
           <Button variant="danger" block onPress={() => router.push("/emergency")}>
-            Send an emergency alert
+            {tx("Send an emergency alert")}
           </Button>
         </View>
       ) : null}
 
       <View style={{ gap: 10 }}>
         <T variant="h2" accessibilityRole="header" style={{ marginTop: 8 }}>
-          Other symptoms
+          {tx("Other symptoms")}
         </T>
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
           {otherSymptoms.map((sym) => (
@@ -631,15 +634,15 @@ export default function SymptomCheckerScreen() {
       {hasOther ? (
         <Detail>
           <T variant="title" style={{ fontSize: 15 }}>
-            Describe what you feel
+            {tx("Describe what you feel")}
           </T>
           <TextInput
-            accessibilityLabel="Describe what you feel"
+            accessibilityLabel={tx("Describe what you feel")}
             value={otherSymptom}
             onChangeText={setOtherSymptom}
             maxLength={80}
             multiline
-            placeholder="For example: feeling dizzy when I stand up"
+            placeholder={tx("For example: feeling dizzy when I stand up")}
             placeholderTextColor={t.muted}
             style={[inputStyle, { minHeight: 80, textAlignVertical: "top" }]}
           />
@@ -652,19 +655,19 @@ export default function SymptomCheckerScreen() {
       {withDetails.map((sym) => (
         <Detail key={sym.id}>
           <T variant="h2" style={{ fontSize: 17 }}>
-            {sym.title}: tell us more
+            {tx("{symptom}: tell us more", { symptom: tx(sym.title) })}
           </T>
           {sym.groups!.map((group) => (
             <View key={group.name} style={{ gap: 8 }}>
               <T variant="title" style={{ fontSize: 15 }}>
-                {group.name}
+                {tx(group.name)}
               </T>
               <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
                 {group.options.map((opt) => (
                   <Chip
                     key={opt.id}
                     on={(subOptions[sym.id] ?? []).includes(opt.id)}
-                    label={opt.label}
+                    label={tx(opt.label)}
                     onPress={() => toggleSubOption(sym.id, opt.id)}
                   />
                 ))}
@@ -677,11 +680,11 @@ export default function SymptomCheckerScreen() {
       {selected.length > 0 ? (
         <Detail>
           <T variant="h2" style={{ fontSize: 17 }}>
-            A few more details (optional)
+            {tx("A few more details (optional)")}
           </T>
           <View style={{ gap: 8 }}>
             <T variant="title" style={{ fontSize: 15 }}>
-              How bad is it? 1 = mild, 10 = worst
+              {tx("How bad is it? 1 = mild, 10 = worst")}
             </T>
             <View style={{ flexDirection: "row", gap: 4 }}>
               {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => {
@@ -712,7 +715,7 @@ export default function SymptomCheckerScreen() {
           </View>
           <View style={{ gap: 8 }}>
             <T variant="title" style={{ fontSize: 15 }}>
-              Is it getting better or worse?
+              {tx("Is it getting better or worse?")}
             </T>
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
               {[
@@ -720,40 +723,40 @@ export default function SymptomCheckerScreen() {
                 { id: "WORSE", label: "Worse" },
                 { id: "UNCHANGED", label: "Same" },
               ].map((o) => (
-                <Chip key={o.id} on={trend === o.id} label={o.label} onPress={() => setTrend(trend === o.id ? "" : o.id)} />
+                <Chip key={o.id} on={trend === o.id} label={tx(o.label)} onPress={() => setTrend(trend === o.id ? "" : o.id)} />
               ))}
             </View>
           </View>
           <View style={{ gap: 8 }}>
             <T variant="title" style={{ fontSize: 15 }}>
-              How long has it lasted?
+              {tx("How long has it lasted?")}
             </T>
             <TextInput
-              accessibilityLabel="How long has it lasted?"
+              accessibilityLabel={tx("How long has it lasted?")}
               value={duration}
               onChangeText={setDuration}
               maxLength={80}
-              placeholder="e.g. 2 hours, 3 days"
+              placeholder={tx("e.g. 2 hours, 3 days")}
               placeholderTextColor={t.muted}
               style={inputStyle}
             />
           </View>
           <View style={{ gap: 8 }}>
             <T variant="title" style={{ fontSize: 15 }}>
-              When did it start?
+              {tx("When did it start?")}
             </T>
             <TextInput
-              accessibilityLabel="When did it start?"
+              accessibilityLabel={tx("When did it start?")}
               value={onset}
               onChangeText={setOnset}
               maxLength={80}
-              placeholder="e.g. this morning, yesterday"
+              placeholder={tx("e.g. this morning, yesterday")}
               placeholderTextColor={t.muted}
               style={inputStyle}
             />
           </View>
-          <YesNo value={hadBefore} set={setHadBefore} label="Has this happened before?" />
-          <YesNo value={medsTaken} set={setMedsTaken} label="Have you taken any medicine for it?" />
+          <YesNo value={hadBefore} set={setHadBefore} label={tx("Has this happened before?")} />
+          <YesNo value={medsTaken} set={setMedsTaken} label={tx("Have you taken any medicine for it?")} />
         </Detail>
       ) : null}
 
@@ -765,14 +768,14 @@ export default function SymptomCheckerScreen() {
         disabled={selected.length === 0 || (hasOther && !otherSymptom.trim())}
       >
         {isAddingSymptom
-          ? "Sending…"
+          ? tx("Sending…")
           : selected.length === 0
-            ? "Choose at least one symptom"
-            : `Send ${selected.length} symptom${selected.length === 1 ? "" : "s"}`}
+            ? tx("Choose at least one symptom")
+            : tx(selected.length === 1 ? "Send {n} symptom" : "Send {n} symptoms", { n: selected.length })}
       </Button>
 
       <Banner tone="green" icon="information-circle-outline">
-        Your answers go to your linked clinic. This is not a diagnosis.
+        {tx("Your answers go to your linked clinic. This is not a diagnosis.")}
       </Banner>
     </Page>
   );

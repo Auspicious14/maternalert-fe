@@ -18,6 +18,7 @@ import { ToastProvider } from "../components/ui/ToastProvider";
 import { Colors } from "../constants/theme";
 import { AuthProvider } from "../context/AuthContext";
 import { AppThemeProvider, useAppTheme } from "../hooks/useAppTheme";
+import { loadLang } from "../services/langStorage";
 import { useSession } from "../hooks/useSession";
 import { notificationService } from "../services/notifications";
 
@@ -135,6 +136,10 @@ export default function RootLayout() {
     "Outfit-SemiBold": require("../assets/fonts/Outfit-SemiBold.ttf"),
     "Outfit-Bold": require("../assets/fonts/Outfit-Bold.ttf"),
   });
+
+  useEffect(() => {
+    loadLang();
+  }, []);
 
   // ── Hide splash screen once fonts are loaded ──
   // Navigation and auth routing is handled entirely by AuthContext

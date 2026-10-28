@@ -10,6 +10,7 @@ import {
   EducationCategory,
   getSortedArticles,
 } from "../../constants/education";
+import { useLang } from "../../hooks/useLang";
 import { useUserProfile } from "../../hooks/useUserProfile";
 
 // Same screen as maternalert-web/src/app/(patient)/education/page.tsx
@@ -18,11 +19,13 @@ const CATEGORIES = Object.keys(CATEGORY_LABELS) as EducationCategory[];
 
 function ArticleCard({ article, onPress }: { article: EducationArticle; onPress: () => void }) {
   const t = useTokens();
+  const lang = useLang();
+  const text = lang === "pcm" && article.pcm ? article.pcm : article;
   return (
     <Pressable
       onPress={onPress}
       accessibilityRole="link"
-      accessibilityLabel={`${article.title}. ${article.summary}`}
+      accessibilityLabel={`${text.title}. ${text.summary}`}
       style={({ pressed }) => ({
         flexDirection: "row",
         alignItems: "center",
@@ -51,8 +54,8 @@ function ArticleCard({ article, onPress }: { article: EducationArticle; onPress:
             {CATEGORY_LABELS[article.category]}
           </Text>
         </View>
-        <Text style={{ fontFamily: FONT.semibold, fontSize: 17, lineHeight: 22, color: t.ink }}>{article.title}</Text>
-        <T variant="small">{article.summary}</T>
+        <Text style={{ fontFamily: FONT.semibold, fontSize: 17, lineHeight: 22, color: t.ink }}>{text.title}</Text>
+        <T variant="small">{text.summary}</T>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 2 }}>
           <Ionicons name="time-outline" size={14} color={t.muted} />
           <Text style={{ fontFamily: FONT.regular, fontSize: 13, color: t.muted }}>

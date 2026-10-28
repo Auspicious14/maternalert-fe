@@ -5,6 +5,8 @@ import { ActivityIndicator, Pressable, Text, View } from "react-native";
 
 import { AppHeader, Banner, Button, Card, FONT, Page, Row, T, useTokens } from "../components/ds";
 import { useHealthData } from "../hooks/useHealthData";
+import { useLang } from "../hooks/useLang";
+import { tx } from "../services/pidgin";
 import { useUserProfile } from "../hooks/useUserProfile";
 import {
   ALERT_SENT_MESSAGE,
@@ -31,11 +33,12 @@ export default function EmergencyScreen() {
   const { profile } = useUserProfile();
   const { latestBP } = useHealthData();
   const [alertState, setAlertState] = useState<AlertState>("idle");
+  useLang();
 
   const contactPhone = profile?.emergencyContactPhone ?? null;
   const contactName = profile?.emergencyContactRelationship
-    ? RELATIONSHIP[profile.emergencyContactRelationship] ?? "Emergency contact"
-    : "Emergency contact";
+    ? tx(RELATIONSHIP[profile.emergencyContactRelationship] ?? "Emergency contact")
+    : tx("Emergency contact");
 
   async function handleSendAlert() {
     if (alertState === "sending") return;
@@ -56,7 +59,7 @@ export default function EmergencyScreen() {
 
   return (
     <Page>
-      <AppHeader title="Emergency help" onBack={() => router.back()} />
+      <AppHeader title={tx("Emergency help")} onBack={() => router.back()} />
 
       <View style={{ alignItems: "center", gap: 18, paddingTop: 12, paddingBottom: 4 }}>
         <View style={{ padding: 12, borderRadius: 999, backgroundColor: ringColor }}>
@@ -64,7 +67,7 @@ export default function EmergencyScreen() {
             onPress={handleSendAlert}
             disabled={alertState === "sending"}
             accessibilityRole="button"
-            accessibilityLabel={sent ? "Alert sent" : "Send emergency alert"}
+            accessibilityLabel={sent ? tx("Alert sent") : "Send emergency alert"}
             accessibilityHint="Sends a message to your emergency contact and your clinic"
             style={({ pressed }) => ({
               width: 200,
@@ -82,29 +85,29 @@ export default function EmergencyScreen() {
               <Ionicons name={sent ? "checkmark-circle-outline" : "alert-circle-outline"} size={52} color="#FFFFFF" />
             )}
             <Text style={{ fontFamily: FONT.bold, fontSize: 20, color: "#FFFFFF" }}>
-              {alertState === "sending" ? "Sending…" : sent ? "Alert sent" : "Send alert"}
+              {alertState === "sending" ? tx("Sending…") : sent ? tx("Alert sent") : tx("Send alert")}
             </Text>
             {!sent && alertState !== "sending" ? (
-              <Text style={{ fontFamily: FONT.medium, fontSize: 14, color: "#FFFFFF", opacity: 0.9 }}>Tap once</Text>
+              <Text style={{ fontFamily: FONT.medium, fontSize: 14, color: "#FFFFFF", opacity: 0.9 }}>{tx("Tap once")}</Text>
             ) : null}
           </Pressable>
         </View>
         <T style={{ textAlign: "center", maxWidth: 420 }}>
           {sent
-            ? ALERT_SENT_MESSAGE
-            : "Sends a WhatsApp or text message to your emergency contact and your clinic, saying you need help now."}
+            ? tx(ALERT_SENT_MESSAGE)
+            : tx("Sends a WhatsApp or text message to your emergency contact and your clinic, saying you need help now.")}
         </T>
       </View>
 
       {alertState === "failed" ? (
         <Banner tone="red">
-          The alert couldn't be sent. Call or text your contact below, or call {EMERGENCY_LINE}.
+          {tx("The alert couldn't be sent. Call or text your contact below, or call {line}.", { line: EMERGENCY_LINE })}
         </Banner>
       ) : null}
 
       <Card>
         <T variant="h2" style={{ marginBottom: 4 }}>
-          Call for help yourself
+          {tx("Call for help yourself")}
         </T>
         {contactPhone ? (
           <>
@@ -112,7 +115,7 @@ export default function EmergencyScreen() {
             <View style={{ flexDirection: "row", gap: 10, marginTop: 6 }}>
               <View style={{ flex: 1 }}>
                 <Button block href={`tel:${contactPhone}`} icon={(c) => <Ionicons name="call-outline" size={18} color={c} />}>
-                  Call
+                  {tx("Call")}
                 </Button>
               </View>
               <View style={{ flex: 1 }}>
@@ -122,16 +125,16 @@ export default function EmergencyScreen() {
                   onPress={() => textNumber(contactPhone)}
                   icon={(c) => <Ionicons name="chatbubble-outline" size={18} color={c} />}
                 >
-                  Text
+                  {tx("Text")}
                 </Button>
               </View>
             </View>
           </>
         ) : (
           <View style={{ gap: 12, marginTop: 8 }}>
-            <T>You haven't added an emergency contact yet.</T>
+            <T>{tx("You haven't added an emergency contact yet.")}</T>
             <Button variant="secondary" href="/(tabs)/profile">
-              Add an emergency contact
+              {tx("Add an emergency contact")}
             </Button>
           </View>
         )}
@@ -142,7 +145,7 @@ export default function EmergencyScreen() {
             href={`tel:${EMERGENCY_LINE}`}
             icon={(c) => <Ionicons name="call-outline" size={18} color={c} />}
           >
-            {`Call ${EMERGENCY_LINE} (emergency line)`}
+            {tx("Call {line} (emergency line)", { line: EMERGENCY_LINE })}
           </Button>
         </View>
       </Card>
@@ -150,12 +153,12 @@ export default function EmergencyScreen() {
       <Card flat>
         <Row
           icon="location-outline"
-          title="Nearest health facility"
-          subtitle="Directions and phone numbers"
+          title={tx("Nearest health facility")}
+          subtitle={tx("Directions and phone numbers")}
           last
           trailing={
             <Button size="sm" variant="secondary" href="/clinic-finder">
-              Open
+              {tx("Open")}
             </Button>
           }
         />
@@ -163,7 +166,7 @@ export default function EmergencyScreen() {
 
       {latestBP ? (
         <T variant="small" style={{ textAlign: "center" }}>
-          Your last blood pressure: {latestBP.systolic}/{latestBP.diastolic} mmHg. Show this to the health worker.
+          {tx("Your last blood pressure: {bp} mmHg. Show this to the health worker.", { bp: `${latestBP.systolic}/${latestBP.diastolic}` })}
         </T>
       ) : null}
     </Page>

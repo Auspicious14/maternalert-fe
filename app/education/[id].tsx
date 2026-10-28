@@ -5,6 +5,8 @@ import { Linking, Pressable, Text, View } from "react-native";
 
 import { AppHeader, Banner, Button, FONT, Page, Pill, T, useTokens } from "../../components/ds";
 import { Block, CATEGORY_LABELS, getArticleById } from "../../constants/education";
+import { useLang } from "../../hooks/useLang";
+import { tx } from "../../services/pidgin";
 
 // Same screen as maternalert-web/src/app/(patient)/education/[id]/page.tsx
 
@@ -40,6 +42,7 @@ export default function ArticleScreen() {
   const t = useTokens();
   const { id } = useLocalSearchParams<{ id: string }>();
   const article = id ? getArticleById(Array.isArray(id) ? id[0] : id) : undefined;
+  const lang = useLang();
 
   if (!article) {
     return (
@@ -50,6 +53,8 @@ export default function ArticleScreen() {
     );
   }
 
+  // Pidgin version when there is one.
+  const text = lang === "pcm" && article.pcm ? article.pcm : article;
   const [y, m] = article.updated.split("-").map(Number);
   const updated = new Date(y, (m || 1) - 1, 1).toLocaleDateString("en-GB", { month: "long", year: "numeric" });
 
@@ -58,15 +63,15 @@ export default function ArticleScreen() {
       <AppHeader title={CATEGORY_LABELS[article.category]} onBack={() => router.back()} />
 
       <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
-        {article.urgent ? <Pill tone="red">Important</Pill> : null}
+        {article.urgent ? <Pill tone="red">{tx("Important")}</Pill> : null}
         <Pill>{`${article.readTimeMinutes} min read`}</Pill>
       </View>
       <T variant="h1" accessibilityRole="header">
-        {article.title}
+        {text.title}
       </T>
-      <T style={{ fontSize: 18, lineHeight: 27, color: t.ink }}>{article.summary}</T>
+      <T style={{ fontSize: 18, lineHeight: 27, color: t.ink }}>{text.summary}</T>
 
-      {article.body.map((b, i) => (
+      {text.body.map((b, i) => (
         <BlockView key={i} block={b} />
       ))}
 
@@ -78,7 +83,7 @@ export default function ArticleScreen() {
           href="/emergency"
           icon={(c) => <Ionicons name="alert-circle-outline" size={20} color={c} />}
         >
-          Get emergency help
+          {tx("Get emergency help")}
         </Button>
       ) : null}
 

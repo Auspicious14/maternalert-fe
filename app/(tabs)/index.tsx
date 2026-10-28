@@ -29,6 +29,7 @@ import {
   useTokens,
 } from "../../components/ds";
 import { useHealthData } from "../../hooks/useHealthData";
+import { useLang } from "../../hooks/useLang";
 import { FollowUpTaskResponse, useMonitoringData } from "../../hooks/useMonitoringData";
 import { useNotifications } from "../../hooks/useNotifications";
 import { useUserProfile } from "../../hooks/useUserProfile";
@@ -288,6 +289,7 @@ export default function HomeScreen() {
   const { calculatedPregnancyWeeks } = useUserProfile();
   const { unreadCount } = useNotifications();
 
+  useLang();
   const status = statusCopy(monitoringState?.currentState);
   const guidance = useMemo(() => getPersonalizedGuidance(recentSymptoms || []), [recentSymptoms]);
   const reading = latestBP ? readingLabel(getTier(latestBP.systolic, latestBP.diastolic)) : null;

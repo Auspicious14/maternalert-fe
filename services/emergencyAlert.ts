@@ -1,4 +1,5 @@
 import { Alert, AlertButton, Linking, Platform } from "react-native";
+import { tx } from "./pidgin";
 import apiClient from "@/api/client";
 
 /**
@@ -66,23 +67,23 @@ export function showEmergencyFallback(
 ) {
   const buttons: AlertButton[] = contactPhone
     ? [
-        { text: "Call contact", onPress: () => callNumber(contactPhone) },
-        { text: "Text contact", onPress: () => textNumber(contactPhone) },
-        { text: `Call ${EMERGENCY_LINE}`, onPress: () => callNumber(EMERGENCY_LINE) },
+        { text: tx("Call contact"), onPress: () => callNumber(contactPhone) },
+        { text: tx("Text contact"), onPress: () => textNumber(contactPhone) },
+        { text: tx("Call {line}", { line: EMERGENCY_LINE }), onPress: () => callNumber(EMERGENCY_LINE) },
       ]
     : [
-        { text: `Call ${EMERGENCY_LINE}`, onPress: () => callNumber(EMERGENCY_LINE) },
+        { text: tx("Call {line}", { line: EMERGENCY_LINE }), onPress: () => callNumber(EMERGENCY_LINE) },
         ...(onAddContact
-          ? [{ text: "Add a contact", onPress: onAddContact } as AlertButton]
+          ? [{ text: tx("Add a contact"), onPress: onAddContact } as AlertButton]
           : []),
-        { text: "Close", style: "cancel" },
+        { text: tx("Close"), style: "cancel" },
       ];
 
   Alert.alert(
-    "Alert could not be sent",
+    tx("Alert could not be sent"),
     contactPhone
-      ? "We could not reach our server. Call or text your emergency contact directly from your phone now, or call the emergency line."
-      : "We could not reach our server and you have no emergency contact saved. Call the emergency line or go to the nearest health facility now.",
+      ? tx("We could not reach our server. Call or text your emergency contact directly from your phone now, or call the emergency line.")
+      : tx("We could not reach our server and you have no emergency contact saved. Call the emergency line or go to the nearest health facility now."),
     buttons,
     { cancelable: true },
   );

@@ -5,6 +5,8 @@ import { Text, View } from "react-native";
 
 import { AppHeader, Button, Card, FONT, Page, Pill, StatusHero, Steps, T, prettySymptom, useTokens } from "../components/ds";
 import { useHealthData } from "../hooks/useHealthData";
+import { useLang } from "../hooks/useLang";
+import { tx } from "../services/pidgin";
 import { useUserProfile } from "../hooks/useUserProfile";
 import { getTier } from "../services/escalation";
 import { EMERGENCY_LINE } from "../services/emergencyAlert";
@@ -21,6 +23,7 @@ export default function NurseSummaryScreen() {
 
   const { latestBP, recentSymptoms } = useHealthData();
   const { profile, pregnancyTimeline } = useUserProfile();
+  const lang = useLang();
   const copy = symptomResultCopy(level);
   const contactPhone = profile?.emergencyContactPhone;
   const now = new Date();
@@ -41,22 +44,22 @@ export default function NurseSummaryScreen() {
 
   return (
     <Page>
-      <AppHeader title="What to do now" onBack={() => router.back()} />
+      <AppHeader title={tx("What to do now")} onBack={() => router.back()} />
 
       <StatusHero
         tone={copy.tone}
         kicker={copy.kicker}
         title={copy.title}
-        message={params.msg || copy.message}
+        message={lang === "en" ? params.msg || copy.message : copy.message}
         icon="warning-outline"
         actions={
           level === "urgent" ? (
             <Button variant="white" href="/clinic-finder" icon={(c) => <Ionicons name="location-outline" size={18} color={c} />}>
-              Find a clinic
+              {tx("Find a clinic")}
             </Button>
           ) : (
             <Button variant="white" href="/emergency" icon={(c) => <Ionicons name="alert-circle-outline" size={18} color={c} />}>
-              Send emergency alert
+              {tx("Send emergency alert")}
             </Button>
           )
         }
@@ -65,7 +68,7 @@ export default function NurseSummaryScreen() {
       <Steps steps={copy.steps} />
 
       <Card>
-        <T variant="label">Show this to the nurse or doctor</T>
+        <T variant="label">{tx("Show this to the nurse or doctor")}</T>
         <View style={{ marginTop: 4 }}>
           <Line label="Blood pressure">
             {latestBP ? (
@@ -99,19 +102,19 @@ export default function NurseSummaryScreen() {
       <View style={{ gap: 10 }}>
         {contactPhone ? (
           <Button variant="secondary" block href={`tel:${contactPhone}`} icon={(c) => <Ionicons name="call-outline" size={18} color={c} />}>
-            Call my emergency contact
+            {tx("Call my emergency contact")}
           </Button>
         ) : null}
         <Button variant="secondary" block href={`tel:${EMERGENCY_LINE}`} icon={(c) => <Ionicons name="call-outline" size={18} color={c} />}>
-          {`Call ${EMERGENCY_LINE}`}
+          {tx("Call {line}", { line: EMERGENCY_LINE })}
         </Button>
         {level !== "urgent" ? (
           <Button variant="secondary" block href="/clinic-finder" icon={(c) => <Ionicons name="location-outline" size={18} color={c} />}>
-            Find the nearest hospital
+            {tx("Find the nearest hospital")}
           </Button>
         ) : null}
         <Button variant="secondary" block href="/(tabs)">
-          Back to home
+          {tx("Back to home")}
         </Button>
       </View>
     </Page>

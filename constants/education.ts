@@ -46,6 +46,8 @@ export interface EducationArticle {
   sources: { title: string; url: string }[];
   updated: string; // YYYY-MM
   reviewedBy?: string;
+  /** Nigerian Pidgin version, shown when the app language is Pidgin. */
+  pcm?: { title: string; summary: string; body: Block[] };
 }
 
 export const CATEGORY_LABELS: Record<EducationCategory, string> = {
@@ -135,6 +137,51 @@ export const EDUCATION_CONTENT: EducationArticle[] = [
     ],
     sources: [WHO_ANC, PE_FOUNDATION],
     updated: "2026-10",
+    pcm: {
+      title: "Danger signs for pregnancy: go now now",
+      summary: "If you get any of these, go hospital sharp sharp. No wait to see if e go pass.",
+      body: [
+        {
+          type: "alert",
+          tone: "red",
+          text: "Go hospital now now, or call 112, if you get any sign wey dey below. Make person carry you go. No go alone if you fit.",
+        },
+        { type: "h", text: "Go now now if" },
+        {
+          type: "list",
+          items: [
+            "Blood dey comot from your private part, even small",
+            "You dey jerk (fits), or you faint",
+            "Strong headache wey no gree go, mostly if your eye dey blur or you dey see spots or light dey flash",
+            "Pain for upper belle, under your ribs for right side, or strong belle pain anywhere",
+            "You no fit breathe well, or your chest dey pain you",
+            "Fever, and your body weak reach say you no fit commot from bed",
+            "Your water break (water dey leak from your private part) before labour start",
+            "Your baby no dey move like before, or e don stop to move",
+            "Your face or hand swell sudden",
+          ],
+        },
+        { type: "h", text: "Go your clinic today if" },
+        {
+          type: "list",
+          items: [
+            "You get fever, even if you still fit waka",
+            "Pain or burning when you dey urinate",
+            "You dey vomit tire, anything you chop or drink e dey comot",
+            "Discharge from your private part wey dey smell bad, dey scratch, or e be green or grey",
+            "You dey sad well well or you no get hope most days",
+          ],
+        },
+        {
+          type: "p",
+          text: "Leg wey swell for evening and to dey urinate plenty times dey common for pregnancy, and e normal. But swelling wey come sudden, or swelling for your face and hand, no be normal.",
+        },
+        {
+          type: "p",
+          text: "If you no sure, go make dem check you. Health workers prefer to see you for nothing pass to see you when e don late.",
+        },
+      ],
+    },
   },
   {
     id: "bleeding-after-birth",
