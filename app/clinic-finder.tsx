@@ -425,7 +425,7 @@ export default function ClinicFinderScreen() {
           <T>
             {query
               ? `Nothing found for "${query}". Try the name of your town or LGA.`
-              : "No facilities found within 10 km. Search your town or the nearest big town."}
+              : "No facilities found near you. Search your town or the nearest big town."}
           </T>
         </View>
       ) : null}

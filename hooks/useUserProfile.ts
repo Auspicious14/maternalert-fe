@@ -29,6 +29,7 @@ export interface UserProfile {
     | "FAMILY_MEMBER"
     | "OTHER";
   emergencyContactPhone?: string;
+  emergencyContactName?: string | null;
   clinicName?: string;
   clinicAddress?: string;
   clinicPhone?: string;

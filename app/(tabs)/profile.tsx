@@ -119,6 +119,7 @@ export default function ProfileScreen() {
   const [myPhone, setMyPhone] = useState("");
   const [rel, setRel] = useState<Relationship | null>(null);
   const [phone, setPhone] = useState("");
+  const [contactName, setContactName] = useState("");
   const [weeks, setWeeks] = useState("");
   const [first, setFirst] = useState(false);
   const [conds, setConds] = useState<string[]>([]);
@@ -163,6 +164,7 @@ export default function ProfileScreen() {
     if (what === "contact") {
       setRel(profile?.emergencyContactRelationship ?? null);
       setPhone(profile?.emergencyContactPhone ?? "");
+      setContactName(profile?.emergencyContactName ?? "");
     }
     if (what === "pregnancy") {
       setWeeks(String(pregnancyTimeline?.currentWeek ?? profile?.pregnancyWeeks ?? ""));
@@ -200,7 +202,10 @@ export default function ProfileScreen() {
   const saveContact = () => {
     if (!rel) return setFormError("Please choose who this person is.");
     if (!isValidNigerianPhone(phone)) return setFormError("Please enter a full phone number, for example 0803 123 4567.");
-    save({ emergencyContactRelationship: rel, emergencyContactPhone: phone.trim() }, "Emergency contact saved.");
+    save(
+      { emergencyContactRelationship: rel, emergencyContactPhone: phone.trim(), emergencyContactName: contactName.trim() },
+      "Emergency contact saved.",
+    );
   };
 
   const savePregnancy = () => {
@@ -402,6 +407,18 @@ export default function ProfileScreen() {
                 ))}
               </View>
             </Field>
+            <Field label="Their name (optional)" hint="So your clinic knows who they are calling.">
+              <TextInput
+                accessibilityLabel="Emergency contact name"
+                placeholder="For example, Musa Bello"
+                placeholderTextColor={t.muted}
+                autoCapitalize="words"
+                maxLength={80}
+                value={contactName}
+                onChangeText={setContactName}
+                style={inputStyle}
+              />
+            </Field>
             <Field label="Phone number" hint="Use a number with WhatsApp if possible. We also send an SMS.">
               <TextInput
                 accessibilityLabel="Emergency contact phone number"
@@ -424,7 +441,7 @@ export default function ProfileScreen() {
                 <Ionicons name="person-outline" size={20} color={t.ink2} />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={{ fontFamily: FONT.semibold, fontSize: 16, color: t.ink }}>{relLabel(profile.emergencyContactRelationship)}</Text>
+                <Text style={{ fontFamily: FONT.semibold, fontSize: 16, color: t.ink }}>{profile.emergencyContactName ? `${profile.emergencyContactName} · ${relLabel(profile.emergencyContactRelationship)}` : relLabel(profile.emergencyContactRelationship)}</Text>
                 <T variant="small">{profile.emergencyContactPhone}</T>
               </View>
               <EditButton label="Edit emergency contact" onPress={() => open("contact")} />
