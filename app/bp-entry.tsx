@@ -23,6 +23,7 @@ import { notificationService } from "../services/notifications";
 import { useLang } from "../hooks/useLang";
 import { bpTips, readingLabel, readingResultTitle } from "../services/patientCopy";
 import { tx } from "../services/pidgin";
+import { tr } from "../services/i18n";
 
 // Same screen as maternalert-web/src/app/(patient)/bp-entry/page.tsx
 
@@ -130,7 +131,21 @@ export default function BPEntryScreen() {
         console.error("Post-save BP processing failed", postSaveError);
       }
       if (tier === 1) {
-        showToast({ type: "success", message: tx("Saved. Your blood pressure looks normal.") });
+        // The reading is normal, but her overall status can still be urgent
+        // because of symptoms she reported recently. Say so (same as web).
+        const overall = (savedReading as any)?.monitoringState;
+        showToast(
+          overall === "EMERGENCY" || overall === "URGENT"
+            ? {
+                type: "info",
+                message: tr({
+                  en: "Saved. This reading is normal, but the symptoms you reported still need a health worker to check you.",
+                  pcm: "E don save. This reading dey normal, but the sickness wey you report still need health worker check.",
+                  yo: "A ti fipamọ́. Ìwọ̀n yìí dára, ṣùgbọ́n àwọn àìsàn tí o sọ ṣì nílò kí òṣìṣẹ́ ìlera yẹ̀ ọ́ wò.",
+                }),
+              }
+            : { type: "success", message: tx("Saved. Your blood pressure looks normal.") },
+        );
         router.back();
         return;
       }

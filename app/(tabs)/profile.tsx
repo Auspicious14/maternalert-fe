@@ -466,8 +466,17 @@ export default function ProfileScreen() {
           title={facility?.linked ? facility.facilityName ?? "Your clinic" : "Not linked to a clinic"}
           subtitle={facility?.linked ? "Sees your readings and gets your alerts" : "Link so your midwife can see your readings"}
           onPress={() => router.push("/facility-linking")}
-          last
+          last={!facility?.linked}
         />
+        {facility?.linked ? (
+          <LinkRow
+            icon="clipboard-outline"
+            title="Your health history"
+            subtitle="Past pregnancies, your health and family, for your clinic"
+            onPress={() => router.push("/my-history")}
+            last
+          />
+        ) : null}
         {editing === "clinic" ? (
           <View style={{ gap: 16, marginTop: 12 }}>
             <T variant="small">If your clinic isn't on MaternAlert yet, save its details here so you have them in an emergency.</T>

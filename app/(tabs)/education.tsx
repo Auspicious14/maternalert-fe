@@ -11,6 +11,8 @@ import {
   getSortedArticles,
 } from "../../constants/education";
 import { useLang } from "../../hooks/useLang";
+import { categoryLabel } from "../../services/educationLabels";
+import { tr } from "../../services/i18n";
 import { useUserProfile } from "../../hooks/useUserProfile";
 
 // Same screen as maternalert-web/src/app/(patient)/education/page.tsx
@@ -51,7 +53,7 @@ function ArticleCard({ article, onPress }: { article: EducationArticle; onPress:
               color: article.urgent ? t.redInk : t.greenInk,
             }}
           >
-            {CATEGORY_LABELS[article.category]}
+            {categoryLabel(article.category)}
           </Text>
         </View>
         <Text style={{ fontFamily: FONT.semibold, fontSize: 17, lineHeight: 22, color: t.ink }}>{text.title}</Text>
@@ -59,7 +61,7 @@ function ArticleCard({ article, onPress }: { article: EducationArticle; onPress:
         <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 2 }}>
           <Ionicons name="time-outline" size={14} color={t.muted} />
           <Text style={{ fontFamily: FONT.regular, fontSize: 13, color: t.muted }}>
-            {article.readTimeMinutes} min read
+            {tr({ en: `${article.readTimeMinutes} min read`, pcm: `${article.readTimeMinutes} min to read`, yo: `Ìṣẹ́jú ${article.readTimeMinutes} láti kà` })}
           </Text>
         </View>
       </View>
@@ -102,7 +104,10 @@ export default function EducationScreen() {
 
   return (
     <Page>
-      <AppHeader title="Learn" subtitle="Short, trusted guides for pregnancy and after birth" />
+      <AppHeader
+        title={tr({ en: "Learn", pcm: "Learn", yo: "Kẹ́kọ̀ọ́" })}
+        subtitle={tr({ en: "Short, trusted guides for pregnancy and after birth", pcm: "Short guide wey you fit trust, for pregnancy and after you born", yo: "Ìtọ́sọ́nà kúkúrú tó ṣeé gbẹ́kẹ̀lé fún oyún àti lẹ́yìn ìbímọ" })}
+      />
 
       {weeks ? (
         <Pressable
@@ -125,17 +130,17 @@ export default function EducationScreen() {
             <Ionicons name="happy-outline" size={20} color={t.greenInk} />
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={{ fontFamily: FONT.semibold, fontSize: 17, color: t.ink }}>{`Your baby at ${weeks} weeks`}</Text>
-            <T variant="small">How your baby is growing this week</T>
+            <Text style={{ fontFamily: FONT.semibold, fontSize: 17, color: t.ink }}>{tr({ en: `Your baby at ${weeks} weeks`, pcm: `Your pikin for ${weeks} weeks`, yo: `Ọmọ rẹ ní ọ̀sẹ̀ ${weeks}` })}</Text>
+            <T variant="small">{tr({ en: "How your baby is growing this week", pcm: "How your pikin dey grow this week", yo: "Bí ọmọ rẹ ṣe ń dàgbà ní ọ̀sẹ̀ yìí" })}</T>
           </View>
           <Ionicons name="chevron-forward" size={20} color={t.muted} />
         </Pressable>
       ) : null}
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
-        <Chip id="ALL" label="All" />
+        <Chip id="ALL" label={tr({ en: "All", pcm: "All", yo: "Gbogbo rẹ̀" })} />
         {CATEGORIES.map((c) => (
-          <Chip key={c} id={c} label={CATEGORY_LABELS[c]} />
+          <Chip key={c} id={c} label={categoryLabel(c)} />
         ))}
       </ScrollView>
 
@@ -150,8 +155,11 @@ export default function EducationScreen() {
       </View>
 
       <T variant="small" style={{ textAlign: "center" }}>
-        Based on World Health Organization guidance. General information only. Your health worker knows your situation
-        best.
+        {tr({
+          en: "Based on World Health Organization guidance. General information only. Your health worker knows your situation best.",
+          pcm: "E base on World Health Organization guide. Na general information. Your health worker sabi your matter pass.",
+          yo: "Ó dá lórí ìtọ́sọ́nà Àjọ Ìlera Àgbáyé. Ìmọ̀ gbogbogbò ni. Òṣìṣẹ́ ìlera rẹ ló mọ ipò rẹ jù.",
+        })}
       </T>
     </Page>
   );

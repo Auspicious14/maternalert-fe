@@ -42,6 +42,9 @@ import {
   triggerEmergencyAlert,
 } from "../../services/emergencyAlert";
 import PendingReadingsBanner from "../../components/PendingReadingsBanner";
+import { SymptomsClearedCard } from "../../components/SymptomsClearedCard";
+import { useMyHistory } from "../../hooks/useMyHistory";
+import { tr } from "../../services/i18n";
 
 // ─── FLOATING EMERGENCY BUTTON ────────────────────────────────────────────────
 // Rendered outside <Screen> so it stays fixed above the tab bar while the
@@ -288,6 +291,7 @@ export default function HomeScreen() {
   const { latestBP, recentSymptoms, isLoadingLatestBP, isLoadingRecentSymptoms } = useHealthData();
   const { calculatedPregnancyWeeks } = useUserProfile();
   const { unreadCount } = useNotifications();
+  const { data: myHistory } = useMyHistory();
 
   useLang();
   const status = statusCopy(monitoringState?.currentState);
@@ -295,6 +299,12 @@ export default function HomeScreen() {
   const reading = latestBP ? readingLabel(getTier(latestBP.systolic, latestBP.diastolic)) : null;
   const pendingTasks = (followUpTasks ?? []).filter((task) => task.status !== "COMPLETED");
   const lightHero = status.tone === "green" || status.tone === "amber";
+  // Normal BP but still urgent/emergency: it's her recent symptoms. Say so.
+  const symptomDriven =
+    (monitoringState?.currentState === "EMERGENCY" || monitoringState?.currentState === "URGENT") &&
+    latestBP != null &&
+    getTier(latestBP.systolic, latestBP.diastolic) === 1 &&
+    (recentSymptoms?.length ?? 0) > 0;
 
   return (
     <View style={{ flex: 1 }}>
@@ -346,6 +356,8 @@ export default function HomeScreen() {
           />
         )}
 
+        {symptomDriven && latestBP ? <SymptomsClearedCard bp={latestBP} /> : null}
+
         {/* 2. Things she has been asked to do */}
         {!isLoadingFollowUpTasks && pendingTasks.length > 0 ? (
           <Card>
@@ -370,6 +382,22 @@ export default function HomeScreen() {
                 }
               />
             ))}
+          </Card>
+        ) : null}
+
+        {myHistory?.linked && !myHistory.submittedAt ? (
+          <Card>
+            <T variant="h2" style={{ marginBottom: 6 }}>
+              {tr({ en: "Help your clinic know you", pcm: "Help your clinic know you well", yo: "Ran kílíníìkì rẹ lọ́wọ́ láti mọ̀ ọ́" })}
+            </T>
+            <T variant="body" style={{ marginBottom: 12 }}>
+              {tr({
+                en: "Answer a few questions about past pregnancies, your health and your family. About 3 minutes.",
+                pcm: "Answer some questions about pregnancy wey you don get before, your health and your family. Like 3 minutes.",
+                yo: "Dáhùn ìbéèrè díẹ̀ nípa àwọn oyún ti tẹ́lẹ̀, ìlera rẹ àti ẹbí rẹ. Nǹkan bí ìṣẹ́jú mẹ́ta.",
+              })}
+            </T>
+            <Button href="/my-history">{tr({ en: "Answer now", pcm: "Answer now", yo: "Dáhùn báyìí" })}</Button>
           </Card>
         ) : null}
 

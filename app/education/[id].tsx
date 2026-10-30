@@ -6,6 +6,8 @@ import { Linking, Pressable, Text, View } from "react-native";
 import { AppHeader, Banner, Button, FONT, Page, Pill, T, useTokens } from "../../components/ds";
 import { Block, CATEGORY_LABELS, getArticleById } from "../../constants/education";
 import { useLang } from "../../hooks/useLang";
+import { categoryLabel } from "../../services/educationLabels";
+import { tr } from "../../services/i18n";
 import { tx } from "../../services/pidgin";
 
 // Same screen as maternalert-web/src/app/(patient)/education/[id]/page.tsx
@@ -60,11 +62,11 @@ export default function ArticleScreen() {
 
   return (
     <Page>
-      <AppHeader title={CATEGORY_LABELS[article.category]} onBack={() => router.back()} />
+      <AppHeader title={categoryLabel(article.category)} onBack={() => router.back()} />
 
       <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
         {article.urgent ? <Pill tone="red">{tx("Important")}</Pill> : null}
-        <Pill>{`${article.readTimeMinutes} min read`}</Pill>
+        <Pill>{tr({ en: `${article.readTimeMinutes} min read`, pcm: `${article.readTimeMinutes} min to read`, yo: `Ìṣẹ́jú ${article.readTimeMinutes} láti kà` })}</Pill>
       </View>
       <T variant="h1" accessibilityRole="header">
         {text.title}
@@ -88,7 +90,7 @@ export default function ArticleScreen() {
       ) : null}
 
       <View style={{ backgroundColor: t.surface, borderColor: t.border, borderWidth: 1, borderRadius: 20, padding: 16, gap: 8 }}>
-        <T variant="label">Sources</T>
+        <T variant="label">{tr({ en: "Sources", pcm: "Where we get am", yo: "Orísun" })}</T>
         {article.sources.map((s) => (
           <Pressable key={s.url} onPress={() => Linking.openURL(s.url)} accessibilityRole="link" style={{ minHeight: 32 }}>
             <Text style={{ fontFamily: FONT.medium, fontSize: 15, lineHeight: 21, color: t.greenInk, textDecorationLine: "underline" }}>
@@ -97,7 +99,11 @@ export default function ArticleScreen() {
           </Pressable>
         ))}
         <T variant="small" style={{ marginTop: 4 }}>
-          {`Updated ${updated}. General information, not a diagnosis. Your health worker knows your situation best.`}
+          {tr({
+            en: `Updated ${updated}. General information, not a diagnosis. Your health worker knows your situation best.`,
+            pcm: `Last update: ${updated}. Na general information, e no be diagnosis. Your health worker sabi your matter pass.`,
+            yo: `Àtúnṣe tó kẹ́yìn: ${updated}. Ìmọ̀ gbogbogbò ni, kì í ṣe àyẹ̀wò àìsàn. Òṣìṣẹ́ ìlera rẹ ló mọ ipò rẹ jù.`,
+          })}
         </T>
       </View>
     </Page>

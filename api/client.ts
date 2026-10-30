@@ -66,7 +66,8 @@ apiClient.interceptors.response.use(
     if (
       error.response?.status === 401 &&
       !originalRequest._retry &&
-      !originalRequest.url?.includes("/auth/")
+      // /auth/me must refresh too: it's the first call when the app opens.
+      !/\/auth\/(login|register|refresh|logout|forgot|reset|verify)/.test(originalRequest.url ?? "")
     ) {
       originalRequest._retry = true;
 

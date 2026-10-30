@@ -81,12 +81,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           }
           throw profileError;
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error("Session check failed (not clearing tokens):", error);
-        return null;
+        // Only a real "not signed in" logs her out. Slow server / no
+        // internet is retried instead.
+        const st = error?.response?.status;
+        if (st === 401 || st === 403) return null;
+        throw error;
       }
     },
-    retry: false,
+    retry: (count, error: any) => {
+      const st = error?.response?.status;
+      return st !== 401 && st !== 403 && count < 5;
+    },
+    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 15000),
     staleTime: 1000 * 60 * 5,
   });
 
