@@ -1,9 +1,9 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useMemo, useState } from "react";
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { ScrollView, Text, View } from "react-native";
 
-import { AppHeader, FONT, Page, T, useTokens } from "../../components/ds";
+import { Pressable, AppHeader, FONT, Page, T, useTokens } from "../../components/ds";
 import {
   CATEGORY_LABELS,
   EducationArticle,

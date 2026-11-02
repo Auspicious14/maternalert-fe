@@ -1,9 +1,9 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
-import { ActivityIndicator, Pressable, Text, View } from "react-native";
+import { ActivityIndicator, Text, View } from "react-native";
 
-import { AppHeader, Banner, Button, Card, FONT, Page, Row, T, useTokens } from "../components/ds";
+import { Pressable, AppHeader, Banner, Button, Card, FONT, Page, Row, T, useTokens } from "../components/ds";
 import { useHealthData } from "../hooks/useHealthData";
 import { useLang } from "../hooks/useLang";
 import { tx } from "../services/pidgin";

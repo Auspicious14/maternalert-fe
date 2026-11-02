@@ -6,12 +6,13 @@
 
 import { Ionicons } from "@expo/vector-icons";
 import { Href, useRouter } from "expo-router";
-import React, { createContext, useContext } from "react";
+import React, { createContext, useContext, useState } from "react";
 import {
   ActivityIndicator,
   Image,
   Linking,
-  Pressable,
+  Pressable as RNPressable,
+  PressableProps,
   StyleProp,
   StyleSheet,
   Text,
@@ -23,6 +24,33 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useColorScheme } from "../../hooks/use-color-scheme";
 import { tx } from "../../services/pidgin";
+
+// ── Pressable ───────────────────────────────────────────────────────────────
+// NativeWind (jsxImportSource) drops Pressable's style *function*
+// (style={({ pressed }) => ...}), so buttons built that way lost their
+// background: green buttons showed white with white text. This keeps the
+// pressed state ourselves and always passes a plain style.
+
+export function Pressable({ style, children, onPressIn, onPressOut, ...rest }: PressableProps) {
+  const [pressed, setPressed] = useState(false);
+  const state = { pressed, hovered: false } as any;
+  return (
+    <RNPressable
+      {...rest}
+      onPressIn={(e) => {
+        setPressed(true);
+        onPressIn?.(e);
+      }}
+      onPressOut={(e) => {
+        setPressed(false);
+        onPressOut?.(e);
+      }}
+      style={typeof style === "function" ? style(state) : style}
+    >
+      {typeof children === "function" ? children(state) : children}
+    </RNPressable>
+  );
+}
 
 // ── Tokens (same values as patient-ds.css) ──────────────────────────────────
 

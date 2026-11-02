@@ -1,9 +1,9 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useMemo, useState } from "react";
-import { Pressable, Text, View } from "react-native";
+import { Text, View } from "react-native";
 
-import { AppHeader, Banner, Button, Card, FONT, Page, Skeleton, T, timeAgo, useTokens } from "../components/ds";
+import { Pressable, AppHeader, Banner, Button, Card, FONT, Page, Skeleton, T, timeAgo, useTokens } from "../components/ds";
 import { Notification, useNotifications } from "../hooks/useNotifications";
 import { notificationMeta } from "../services/appointmentCopy";
 
