@@ -92,8 +92,20 @@ export const useUserProfile = () => {
 
   const createProfileMutation = useMutation({
     mutationFn: async (profileData: any) => {
-      const response = await apiClient.post("/user-profile", profileData);
-      return response.data;
+      // A sleeping server or a dropped connection shouldn't cost her the
+      // whole form: try again a couple of times. Safe because the server
+      // treats a repeat save as an update.
+      for (let attempt = 0; ; attempt++) {
+        try {
+          const response = await apiClient.post("/user-profile", profileData);
+          return response.data;
+        } catch (e: any) {
+          const st = e?.response?.status;
+          const transient = !st || st >= 500 || st === 408 || st === 429;
+          if (!transient || attempt >= 2) throw e;
+          await new Promise((r) => setTimeout(r, 2000 * (attempt + 1)));
+        }
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["user-profile"] });

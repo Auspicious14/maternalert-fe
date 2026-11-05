@@ -379,6 +379,8 @@ export const YO: Record<string, string> = {
   "Please enter a full phone number, for example 0803 123 4567.": "Jọ̀wọ́ kọ nọ́mbà fóònù ní kíkún, bí àpẹẹrẹ 0803 123 4567.",
   "Please choose who this person is.": "Jọ̀wọ́ yan ẹni tí ẹni yìí jẹ́.",
   "We couldn't save your profile. Check your internet and try again.": "A kò lè fi àlàyé rẹ pamọ́. Ṣàyẹ̀wò íńtánẹ́ẹ̀tì rẹ kí o tún gbìyànjú.",
+  "No internet connection. Check your data or Wi-Fi and try again.": "Kò sí íńtánẹ́ẹ̀tì. Ṣàyẹ̀wò dátà tàbí Wi-Fi rẹ kí o tún gbìyànjú.",
+  "We couldn't save your profile just now. Your answers are still here; please try again.": "A kò lè fi àlàyé rẹ pamọ́ báyìí. Àwọn ìdáhùn rẹ ṣì wà níbí; jọ̀wọ́ tún gbìyànjú.",
   // ── Set or reset password ─────────────────────────────────────────────────────
   "Use at least 8 characters.": "Lo ó kéré tán ohun mẹ́jọ.",
   "The two passwords are not the same.": "Ọ̀rọ̀ aṣínà méjèèjì kò jọra.",

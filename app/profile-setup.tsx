@@ -163,7 +163,7 @@ export default function ProfileSetupScreen() {
       router.replace({ pathname: "/facility-linking", params: { from: "setup" } });
     } catch (err) {
       console.error("[PROFILE_SETUP] Failed to create profile:", err);
-      setError(tx("We couldn't save your profile. Check your internet and try again."));
+      setError(saveErrorMessage(err));
     }
   };
 
@@ -410,4 +410,14 @@ export default function ProfileSetupScreen() {
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
+}
+
+/** What to tell her when saving fails: the server's own reason for a form
+ * problem, otherwise a plain "try again". */
+function saveErrorMessage(err: any): string {
+  const st = err?.response?.status;
+  const m = err?.response?.data?.message;
+  if (st === 400 && m) return Array.isArray(m) ? m.join(". ") : String(m);
+  if (!st) return tx("No internet connection. Check your data or Wi-Fi and try again.");
+  return tx("We couldn't save your profile just now. Your answers are still here; please try again.");
 }

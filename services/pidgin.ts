@@ -381,6 +381,8 @@ export const PCM: Record<string, string> = {
   "Please enter a full phone number, for example 0803 123 4567.": "Abeg put full phone number, like 0803 123 4567.",
   "Please choose who this person is.": "Abeg choose who this person be.",
   "We couldn't save your profile. Check your internet and try again.": "We no fit save your profile. Check your network and try again.",
+  "No internet connection. Check your data or Wi-Fi and try again.": "Network no dey. Check your data or Wi-Fi and try again.",
+  "We couldn't save your profile just now. Your answers are still here; please try again.": "We no fit save your profile now. Your answers still dey here; abeg try again.",
   // ── Set or reset password ─────────────────────────────────────────────────────
   "Use at least 8 characters.": "Use at least 8 letters or numbers.",
   "The two passwords are not the same.": "The two passwords no be the same.",

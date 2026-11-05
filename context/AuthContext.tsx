@@ -282,7 +282,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
     // Set query data and ensure it's in a success state
     // We now get the user object directly from the login/register response
-    queryClient.setQueryData(["user-session"], userData);
+    // Sign-in only returns the account. Check for her profile too, or a
+    // mother whose profile setup failed lands on Home with no profile
+    // instead of being sent back to finish it.
+    let session: User = userData;
+    if (userData.needsProfile === undefined) {
+      try {
+        const profile = await apiClient.get("/user-profile");
+        session = { ...userData, ...profile.data };
+      } catch (e: any) {
+        if (e?.response?.status === 404) session = { ...userData, needsProfile: true };
+      }
+    }
+    queryClient.setQueryData(["user-session"], session); // guard() reacts to this
     console.log(
       "[AUTH] queryClient data set:",
       !!queryClient.getQueryData(["user-session"]),
