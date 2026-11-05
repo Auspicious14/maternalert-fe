@@ -43,6 +43,9 @@ import {
 } from "../../services/emergencyAlert";
 import PendingReadingsBanner from "../../components/PendingReadingsBanner";
 import { SymptomsClearedCard } from "../../components/SymptomsClearedCard";
+import { DailyInsights, DayStrip, PregnancyHero } from "../../components/pregnancy/PregnancyHero";
+import { pregnancyOnDate, sameDay } from "../../services/pregnancy/pregnancyDay";
+import { dailyInsights } from "../../services/pregnancy/dailyInsights";
 import { useMyHistory } from "../../hooks/useMyHistory";
 import { tr } from "../../services/i18n";
 
@@ -289,7 +292,8 @@ export default function HomeScreen() {
   const { monitoringState, followUpTasks, isLoadingMonitoringState, isLoadingFollowUpTasks } =
     useMonitoringData();
   const { latestBP, recentSymptoms, isLoadingLatestBP, isLoadingRecentSymptoms } = useHealthData();
-  const { calculatedPregnancyWeeks } = useUserProfile();
+  const { calculatedPregnancyWeeks, profile, isLoadingProfile } = useUserProfile();
+  const [selectedDay, setSelectedDay] = useState(() => new Date());
   const { unreadCount } = useNotifications();
   const { data: myHistory } = useMyHistory();
 
@@ -306,13 +310,35 @@ export default function HomeScreen() {
     getTier(latestBP.systolic, latestBP.diastolic) === 1 &&
     (recentSymptoms?.length ?? 0) > 0;
 
+  // Same as web: her pregnancy on the chosen day, and that day's cards.
+  const isToday = sameDay(selectedDay, new Date());
+  const preg = useMemo(
+    () => pregnancyOnDate(profile?.pregnancyWeeks, profile?.pregnancyReferenceDate, selectedDay),
+    [profile?.pregnancyWeeks, profile?.pregnancyReferenceDate, selectedDay],
+  );
+  const bpToday = latestBP && sameDay(new Date(latestBP.recordedAt), new Date()) ? latestBP : null;
+  const insights = useMemo(
+    () => (preg ? dailyInsights(preg, { isToday, bpToday }) : []),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [preg, isToday, bpToday?.systolic, bpToday?.diastolic],
+  );
+  const statusFirst = monitoringState?.currentState === "EMERGENCY" || monitoringState?.currentState === "URGENT";
+  const pregnancyBlock = isLoadingProfile ? (
+    <Skeleton height={380} radius={28} />
+  ) : preg ? (
+    <View style={{ gap: 14 }}>
+      <DayStrip selected={selectedDay} onSelect={setSelectedDay} />
+      <PregnancyHero p={preg} isToday={isToday} />
+    </View>
+  ) : null;
+
   return (
     <View style={{ flex: 1 }}>
       <Page>
         <AppHeader
           leading={<LogoMark height={34} />}
           title={greeting()}
-          subtitle={calculatedPregnancyWeeks ? `Week ${calculatedPregnancyWeeks} of your pregnancy` : undefined}
+          subtitle={!preg && calculatedPregnancyWeeks ? `Week ${calculatedPregnancyWeeks} of your pregnancy` : undefined}
           actions={
             <>
               <IconButton
@@ -330,6 +356,8 @@ export default function HomeScreen() {
         />
 
         <PendingReadingsBanner />
+
+        {statusFirst ? null : pregnancyBlock}
 
         {/* 1. What matters right now */}
         {isLoadingMonitoringState ? (
@@ -357,6 +385,23 @@ export default function HomeScreen() {
         )}
 
         {symptomDriven && latestBP ? <SymptomsClearedCard bp={latestBP} /> : null}
+
+        {statusFirst ? pregnancyBlock : null}
+
+        {insights.length ? (
+          <DailyInsights
+            items={insights}
+            label={
+              isToday
+                ? tr({ en: "Your day · Today", pcm: "Your day · Today", yo: "Ọjọ́ rẹ · Òní" })
+                : tr({
+                    en: `Your day · ${selectedDay.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "short" })}`,
+                    pcm: `Your day · ${selectedDay.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "short" })}`,
+                    yo: `Ọjọ́ rẹ · ${selectedDay.toLocaleDateString("en-GB", { day: "numeric", month: "short" })}`,
+                  })
+            }
+          />
+        ) : null}
 
         {/* 2. Things she has been asked to do */}
         {!isLoadingFollowUpTasks && pendingTasks.length > 0 ? (

@@ -12,7 +12,7 @@ import { useOfflineSync } from "../../hooks/useOfflineSync";
 
 const TABS: { name: string; title: string; icon: keyof typeof Ionicons.glyphMap; iconActive: keyof typeof Ionicons.glyphMap }[] = [
   { name: "index", title: "Home", icon: "home-outline", iconActive: "home" },
-  { name: "tracking", title: "Readings", icon: "pulse-outline", iconActive: "pulse" },
+  { name: "tracking", title: "Tracking", icon: "pulse-outline", iconActive: "pulse" },
   { name: "education", title: "Learn", icon: "book-outline", iconActive: "book" },
   { name: "profile", title: "Profile", icon: "person-outline", iconActive: "person" },
 ];

@@ -24,6 +24,8 @@ import { useUserProfile } from "../../hooks/useUserProfile";
 import { getTier } from "../../services/escalation";
 import { readingLabel } from "../../services/patientCopy";
 import PendingReadingsBanner from "../../components/PendingReadingsBanner";
+import { PregnancyProgressCard } from "../../components/pregnancy/PregnancyHero";
+import { pregnancyOnDate } from "../../services/pregnancy/pregnancyDay";
 
 // Same screen as maternalert-web/src/app/(patient)/tracking/page.tsx
 
@@ -165,7 +167,8 @@ export default function ReadingsScreen() {
   const router = useRouter();
   const t = useTokens();
   const { bpHistory, isLoadingBP, recentSymptoms } = useHealthData();
-  const { pregnancyTimeline } = useUserProfile();
+  const { profile } = useUserProfile();
+  const preg = useMemo(() => pregnancyOnDate(profile?.pregnancyWeeks, profile?.pregnancyReferenceDate), [profile?.pregnancyWeeks, profile?.pregnancyReferenceDate]);
   const { trendAlerts } = useTrends();
   const [showAll, setShowAll] = useState(false);
 
@@ -200,7 +203,6 @@ export default function ReadingsScreen() {
     return out;
   }, [newestFirst, showAll]);
 
-  const tl = pregnancyTimeline?.isValid ? pregnancyTimeline : null;
   const latestLabel = latest ? readingLabel(getTier(latest.systolic, latest.diastolic)) : null;
 
   const Stat = ({ value, label }: { value: string; label: string }) => (
@@ -213,8 +215,8 @@ export default function ReadingsScreen() {
   return (
     <Page>
       <AppHeader
-        title="Readings"
-        subtitle="Your blood pressure over time"
+        title="Tracking"
+        subtitle="Pregnancy and BP"
         actions={
           <Button size="sm" href="/bp-entry" icon={(c) => <Ionicons name="add" size={18} color={c} />}>
             Log BP
@@ -223,6 +225,8 @@ export default function ReadingsScreen() {
       />
 
       <PendingReadingsBanner />
+
+      {preg ? <PregnancyProgressCard p={preg} /> : null}
 
       {isLoadingBP ? (
         <View style={{ gap: 12 }}>
@@ -347,26 +351,6 @@ export default function ReadingsScreen() {
         </Pressable>
       </Card>
 
-      {tl ? (
-        <Card flat>
-          <View style={{ flexDirection: "row", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
-            <Text style={{ fontFamily: FONT.semibold, fontSize: 16, color: t.ink }}>
-              {`${tl.currentWeek} weeks · ${tl.trimesterLabel}`}
-            </Text>
-            <T variant="small">
-              {`Due ${new Date(tl.estimatedDueDate).toLocaleDateString("en-GB", { day: "numeric", month: "long" })}`}
-            </T>
-          </View>
-          <View
-            accessibilityRole="progressbar"
-            accessibilityLabel="Weeks of pregnancy"
-            accessibilityValue={{ min: 0, max: 40, now: Math.min(tl.currentWeek, 40) }}
-            style={{ height: 8, borderRadius: 999, backgroundColor: t.surface2, overflow: "hidden", marginTop: 12 }}
-          >
-            <View style={{ height: "100%", width: `${Math.min((tl.currentWeek / 40) * 100, 100)}%`, backgroundColor: t.green, borderRadius: 999 }} />
-          </View>
-        </Card>
-      ) : null}
     </Page>
   );
 }
