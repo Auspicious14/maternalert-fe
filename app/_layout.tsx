@@ -117,7 +117,8 @@ function RootNavigation() {
           <Stack.Screen name="appointment-create" />
           <Stack.Screen name="facility-linking" />
           <Stack.Screen name="emergency-button" />
-          <Stack.Screen name="education/[id]"/>
+          <Stack.Screen name="education/[id]" />
+          <Stack.Screen name="education/topic/[category]" />
           <Stack.Screen name="fetal-development" />
           <Stack.Screen name="my-health-records" />
           <Stack.Screen name="my-history" />

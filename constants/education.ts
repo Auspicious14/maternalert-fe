@@ -29,7 +29,7 @@ export type EducationCategory =
 export type Block =
   | { type: "p"; text: string }
   | { type: "h"; text: string }
-  | { type: "list"; items: string[] }
+  | { type: "list"; items: string[]; /** red = go now, amber = see your clinic today */ tone?: "red" | "amber" }
   | { type: "alert"; tone: "red" | "amber" | "green"; text: string };
 
 export interface EducationArticle {
@@ -104,7 +104,7 @@ export const EDUCATION_CONTENT: EducationArticle[] = [
       },
       { type: "h", text: "Go now for" },
       {
-        type: "list",
+        type: "list", tone: "red",
         items: [
           "Bleeding from the vagina, any amount",
           "Fits (convulsions), or fainting",
@@ -119,7 +119,7 @@ export const EDUCATION_CONTENT: EducationArticle[] = [
       },
       { type: "h", text: "See your clinic today for" },
       {
-        type: "list",
+        type: "list", tone: "amber",
         items: [
           "Fever, even if you feel strong enough to walk",
           "Pain or burning when you pass urine",
@@ -150,7 +150,7 @@ export const EDUCATION_CONTENT: EducationArticle[] = [
         },
         { type: "h", text: "Go now now if" },
         {
-          type: "list",
+          type: "list", tone: "red",
           items: [
             "Blood dey comot from your private part, even small",
             "You dey jerk (fits), or you faint",
@@ -165,7 +165,7 @@ export const EDUCATION_CONTENT: EducationArticle[] = [
         },
         { type: "h", text: "Go your clinic today if" },
         {
-          type: "list",
+          type: "list", tone: "amber",
           items: [
             "You get fever, even if you still fit waka",
             "Pain or burning when you dey urinate",
@@ -195,7 +195,7 @@ export const EDUCATION_CONTENT: EducationArticle[] = [
         },
         { type: "h", text: "Lọ ní báyìí tí" },
         {
-          type: "list",
+          type: "list", tone: "red",
           items: [
             "Ẹ̀jẹ̀ ń jáde láti ojú ara, bó ti wù kí ó kéré tó",
             "Gìrì (ara ń gbọ̀n), tàbí o dákú",
@@ -210,7 +210,7 @@ export const EDUCATION_CONTENT: EducationArticle[] = [
         },
         { type: "h", text: "Lọ sí kílíníìkì rẹ lónìí tí" },
         {
-          type: "list",
+          type: "list", tone: "amber",
           items: [
             "Ara rẹ gbóná, kódà tí o bá ṣì lè rìn",
             "Ìrora tàbí jíjó nígbà tí o bá ń tọ̀",
@@ -249,7 +249,7 @@ export const EDUCATION_CONTENT: EducationArticle[] = [
       },
       { type: "h", text: "Get help immediately if" },
       {
-        type: "list",
+        type: "list", tone: "red",
         items: [
           "Blood soaks through a pad in an hour or less",
           "You pass clots the size of an egg or bigger",
@@ -288,7 +288,7 @@ export const EDUCATION_CONTENT: EducationArticle[] = [
         { type: "p", text: "Small bleeding after you born dey normal. E go heavy first, then e go dey reduce, and the colour go change from red to brown to yellow-white for some weeks." },
         { type: "p", text: "Too much bleeding (postpartum haemorrhage) fit turn danger inside few minutes. Na the main thing wey dey kill mothers for childbirth for Nigeria and the whole world, and most of these deaths no suppose happen if care reach quick." },
         { type: "h", text: "Find help now now if" },
-        { type: "list", items: [
+        { type: "list", tone: "red", items: [
           "Blood soak one pad finish inside one hour or less",
           "Blood clot wey big reach egg or pass dey comot",
           "Bleeding suddenly heavy again after e don reduce before",
@@ -314,7 +314,7 @@ export const EDUCATION_CONTENT: EducationArticle[] = [
         { type: "p", text: "Ẹ̀jẹ̀ díẹ̀ lẹ́yìn ìbímọ jẹ́ ohun tó wọ́pọ̀. Ó máa ń pọ̀ ní àkọ́kọ́, lẹ́yìn náà ó máa dín kù, àwọ̀ rẹ̀ á sì yí padà láti pupa sí àwọ̀ ilẹ̀ sí funfun-òféèfé láàrin ọ̀sẹ̀ díẹ̀." },
         { type: "p", text: "Ẹ̀jẹ̀ tó pọ̀ jù (postpartum haemorrhage) lè di ewu láàrin ìṣẹ́jú díẹ̀. Òun ni ohun tó ń pa àwọn ìyá jù nígbà ìbímọ ní Nàìjíríà àti ní gbogbo àgbáyé, ṣùgbọ́n a lè dènà ọ̀pọ̀lọpọ̀ ikú yìí pẹ̀lú ìtọ́jú kíákíá." },
         { type: "h", text: "Wá ìrànlọ́wọ́ lẹ́sẹ̀kẹsẹ̀ tí" },
-        { type: "list", items: [
+        { type: "list", tone: "red", items: [
           "Ẹ̀jẹ̀ bá rin pádì kan tán láàrin wákàtí kan tàbí kí ó dín",
           "Ẹ̀jẹ̀ dídì tó tóbi tó ẹyin tàbí jù bẹ́ẹ̀ lọ bá ń jáde",
           "Ẹ̀jẹ̀ bá tún pọ̀ sí i lójijì lẹ́yìn tí ó ti dín kù",
@@ -1265,7 +1265,7 @@ export const EDUCATION_CONTENT: EducationArticle[] = [
       },
       { type: "h", text: "See a health worker the same day for" },
       {
-        type: "list",
+        type: "list", tone: "amber",
         items: [
           "Headache that doesn't get better with paracetamol, or headache with blurred vision. Pre-eclampsia can start after birth",
           "Blood pressure of 140/90 or more",
@@ -1295,7 +1295,7 @@ export const EDUCATION_CONTENT: EducationArticle[] = [
         ] },
         { type: "alert", tone: "red", text: "Go now now if: plenty bleeding (pad soak inside one hour, or clot wey big reach egg), fits, chest pain, you no fit breathe well, or you dey think to harm yourself or your pikin." },
         { type: "h", text: "See health worker that same day if" },
-        { type: "list", items: [
+        { type: "list", tone: "amber", items: [
           "Headache wey no gree go with paracetamol, or headache with eye wey dey blur. Pre-eclampsia fit start after you born",
           "BP of 140/90 or pass",
           "Fever (38°C or pass), or something wey dey smell dey comot from your private part",
@@ -1319,7 +1319,7 @@ export const EDUCATION_CONTENT: EducationArticle[] = [
         ] },
         { type: "alert", tone: "red", text: "Lọ ní báyìí fún: ẹ̀jẹ̀ púpọ̀ (pádì tó rin láàrin wákàtí kan, tàbí ẹ̀jẹ̀ dídì tó tóbi tó ẹyin), gìrì, ìrora àyà, ìṣòro mímí, tàbí èrò láti pa ara rẹ tàbí ọmọ rẹ lára." },
         { type: "h", text: "Rí òṣìṣẹ́ ìlera lọ́jọ́ náà fún" },
-        { type: "list", items: [
+        { type: "list", tone: "amber", items: [
           "Ẹ̀fọ́rí tí kò sàn pẹ̀lú paracetamol, tàbí ẹ̀fọ́rí pẹ̀lú ojú tó ń ṣú. Pre-eclampsia lè bẹ̀rẹ̀ lẹ́yìn ìbímọ",
           "Ìfúnpá 140/90 tàbí jù bẹ́ẹ̀ lọ",
           "Ibà (38°C tàbí jù bẹ́ẹ̀ lọ), tàbí ohun tó ń rùn tó ń jáde láti ojú ara",
@@ -1493,7 +1493,7 @@ export const EDUCATION_CONTENT: EducationArticle[] = [
         text: "Take your baby to a health facility now if you notice any sign below.",
       },
       {
-        type: "list",
+        type: "list", tone: "red",
         items: [
           "Not feeding well, or stopped feeding",
           "Fits (convulsions)",
@@ -1521,7 +1521,7 @@ export const EDUCATION_CONTENT: EducationArticle[] = [
       summary: "New born pikin dey sick quick. Carry your pikin go hospital straight if you see any of these.",
       body: [
         { type: "alert", tone: "red", text: "Carry your pikin go hospital now if you notice any sign wey dey below." },
-        { type: "list", items: [
+        { type: "list", tone: "red", items: [
           "E no dey suck well, or e don stop to suck",
           "Fits (e dey jerk)",
           "E dey breathe fast fast, or the chest dey pull inside every time e breathe",
@@ -1543,7 +1543,7 @@ export const EDUCATION_CONTENT: EducationArticle[] = [
       summary: "Àìsàn máa ń yára mú ọmọ tuntun. Gbé ọmọ rẹ lọ sí ilé ìwòsàn lẹ́sẹ̀kẹsẹ̀ tí o bá rí èyíkéyìí nínú ìwọ̀nyí.",
       body: [
         { type: "alert", tone: "red", text: "Gbé ọmọ rẹ lọ sí ilé ìwòsàn ní báyìí tí o bá kíyèsí àmì èyíkéyìí nísàlẹ̀ yìí." },
-        { type: "list", items: [
+        { type: "list", tone: "red", items: [
           "Kò mu ọmú dáadáa, tàbí ó ti dẹ́kun mímu ọmú",
           "Gìrì",
           "Ó ń mí kíákíá, tàbí àyà rẹ̀ ń wọnú pẹ̀lú èémí kọ̀ọ̀kan",

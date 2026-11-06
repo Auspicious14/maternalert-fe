@@ -101,7 +101,7 @@ export function DayStrip({ selected, onSelect }: { selected: Date; onSelect: (d:
 }
 
 /** 40 dots around the fruit: one per week, filled up to now. */
-function WeekRing({ progress, children }: { progress: number; children: React.ReactNode }) {
+export function WeekRing({ progress, children }: { progress: number; children: React.ReactNode }) {
   const t = useTokens();
   const size = 196;
   const r = 90;

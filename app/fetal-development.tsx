@@ -1,27 +1,51 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import React, { useEffect, useState } from "react";
-import { Pressable, Text, View } from "react-native";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { ScrollView, Text, View } from "react-native";
 
-import { AppHeader, Banner, Card, FONT, IconButton, Page, T, useTokens } from "../components/ds";
-import { getTrimesterLabel, getWeekData } from "../constants/fetal-development";
+import { FONT, Page, Pressable, T, useTokens } from "../components/ds";
+import { DangerCard, Kicker, RoundButton, Spot, useTone } from "../components/learn/LearnBits";
+import { FruitArt, WeekRing } from "../components/pregnancy/PregnancyHero";
+import { FETAL_DEVELOPMENT, getWeekData } from "../constants/fetal-development";
 import { useUserProfile } from "../hooks/useUserProfile";
+import { tr } from "../services/i18n";
+import { fruitFor, pregnancyOnDate } from "../services/pregnancy/pregnancyDay";
 
 // Same screen as maternalert-web/src/app/(patient)/fetal-development/page.tsx
 
 const MIN_WEEK = 4;
 const MAX_WEEK = 42;
+const WEEKS = Array.from({ length: MAX_WEEK - MIN_WEEK + 1 }, (_, i) => MIN_WEEK + i);
+const PILL = 54 + 8;
 
-function Bullets({ items }: { items: string[] }) {
+// One stop per new baby-size picture: "how baby has grown".
+const JOURNEY = Object.keys(FETAL_DEVELOPMENT)
+  .map(Number)
+  .sort((a, b) => a - b)
+  .map((w) => ({ week: w, kind: fruitFor(FETAL_DEVELOPMENT[w].size) }))
+  .filter((s, i, all) => i === 0 || all[i - 1].kind !== s.kind);
+
+function Facts({ title, items, tone, art }: { title: string; items: string[]; tone: "lavender" | "peach"; art: "baby" | "mama" }) {
   const t = useTokens();
+  const c = useTone(tone);
   return (
-    <View style={{ gap: 8 }}>
-      {items.map((b) => (
-        <View key={b} style={{ flexDirection: "row", gap: 10 }}>
-          <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: t.green, marginTop: 10 }} />
-          <T style={{ flex: 1 }}>{b}</T>
-        </View>
-      ))}
+    <View style={{ padding: 18, borderRadius: 28, backgroundColor: c.bg }}>
+      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+        <Text accessibilityRole="header" style={{ fontFamily: FONT.bold, fontSize: 19, color: t.ink }}>
+          {title}
+        </Text>
+        <Spot art={art} size={52} style={{ marginVertical: -8, marginRight: -4 }} />
+      </View>
+      <View style={{ gap: 12, marginTop: 10 }}>
+        {items.map((b, i) => (
+          <View key={b} style={{ flexDirection: "row", gap: 12 }}>
+            <View style={{ width: 28, height: 28, borderRadius: 10, backgroundColor: c.edge, alignItems: "center", justifyContent: "center" }}>
+              <Text style={{ fontFamily: FONT.bold, fontSize: 13, color: c.ink }}>{i + 1}</Text>
+            </View>
+            <Text style={{ flex: 1, fontFamily: FONT.regular, fontSize: 16, lineHeight: 23, color: t.ink }}>{b}</Text>
+          </View>
+        ))}
+      </View>
     </View>
   );
 }
@@ -29,121 +53,177 @@ function Bullets({ items }: { items: string[] }) {
 export default function FetalDevelopmentScreen() {
   const router = useRouter();
   const t = useTokens();
-  const { profile, pregnancyTimeline } = useUserProfile() as any;
-  const current: number | null = pregnancyTimeline?.isValid
-    ? pregnancyTimeline.currentWeek
-    : typeof profile?.pregnancyWeeks === "number"
-      ? profile.pregnancyWeeks
-      : null;
+  const mint = useTone("mint");
+  const butter = useTone("butter");
+  const { profile } = useUserProfile() as any;
+  const p = useMemo(
+    () => pregnancyOnDate(profile?.pregnancyWeeks, profile?.pregnancyReferenceDate),
+    [profile?.pregnancyWeeks, profile?.pregnancyReferenceDate],
+  );
+  const current = p ? Math.min(Math.max(p.week, MIN_WEEK), MAX_WEEK) : null;
 
   const [week, setWeek] = useState<number>(current ?? 12);
   useEffect(() => {
-    if (current) setWeek(Math.min(Math.max(current, MIN_WEEK), MAX_WEEK));
+    if (current) setWeek(current);
   }, [current]);
+
+  const strip = useRef<ScrollView>(null);
+  useEffect(() => {
+    const x = Math.max(0, (week - MIN_WEEK) * PILL - 140);
+    strip.current?.scrollTo({ x, animated: true });
+  }, [week]);
 
   const data = getWeekData(week);
   const isNow = current === week;
 
   return (
     <Page>
-      <AppHeader title="Your baby week by week" onBack={() => router.back()} />
-
-      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-        <View style={{ opacity: week <= MIN_WEEK ? 0.35 : 1 }}>
-          <IconButton label="Previous week" onPress={() => setWeek((w) => Math.max(MIN_WEEK, w - 1))}>
-            <Ionicons name="chevron-back" size={22} color={t.ink} />
-          </IconButton>
-        </View>
-        <View style={{ alignItems: "center" }} accessibilityLiveRegion="polite">
-          <Text style={{ fontFamily: FONT.bold, fontSize: 24, color: t.ink }}>{`Week ${week}`}</Text>
-          <T variant="small">{isNow ? "You are here" : getTrimesterLabel(week)}</T>
-        </View>
-        <View style={{ opacity: week >= MAX_WEEK ? 0.35 : 1 }}>
-          <IconButton label="Next week" onPress={() => setWeek((w) => Math.min(MAX_WEEK, w + 1))}>
-            <Ionicons name="chevron-forward" size={22} color={t.ink} />
-          </IconButton>
-        </View>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+        <RoundButton icon="arrow-back" label={tr({ en: "Back", pcm: "Go back", yo: "Padà" })} onPress={() => router.back()} />
+        <Text accessibilityRole="header" style={{ flexShrink: 1, fontFamily: FONT.bold, fontSize: 22, color: t.ink }}>
+          {tr({ en: "Your baby, week by week", pcm: "Your pikin, week by week", yo: "Ọmọ rẹ, ọ̀sẹ̀ dé ọ̀sẹ̀" })}
+        </Text>
       </View>
-      {current && !isNow ? (
-        <Pressable onPress={() => setWeek(current)} accessibilityRole="button" style={{ alignSelf: "center", minHeight: 44, justifyContent: "center" }}>
-          <Text style={{ fontFamily: FONT.semibold, fontSize: 15, color: t.greenInk }}>{`Back to this week (${current})`}</Text>
-        </Pressable>
-      ) : null}
+
+      <ScrollView
+        ref={strip}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={{ marginHorizontal: -20 }}
+        contentContainerStyle={{ paddingHorizontal: 20, gap: 8 }}
+        accessibilityLabel={tr({ en: "Choose a week", pcm: "Choose week", yo: "Yan ọ̀sẹ̀ kan" })}
+      >
+        {WEEKS.map((w) => {
+          const on = w === week;
+          return (
+            <Pressable
+              key={w}
+              onPress={() => setWeek(w)}
+              accessibilityRole="button"
+              accessibilityState={{ selected: on }}
+              style={{
+                width: 54,
+                height: 66,
+                borderRadius: 20,
+                borderWidth: 1,
+                borderColor: on ? t.green : t.border,
+                backgroundColor: on ? t.green : t.surface,
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Text style={{ fontFamily: FONT.semibold, fontSize: 11, color: on ? "#E3F2EC" : t.muted }}>
+                {w === current ? tr({ en: "Now", pcm: "Now", yo: "Báyìí" }) : tr({ en: "Week", pcm: "Week", yo: "Ọ̀sẹ̀" })}
+              </Text>
+              <Text style={{ fontFamily: FONT.bold, fontSize: 20, color: on ? "#FFFFFF" : t.ink }}>{w}</Text>
+            </Pressable>
+          );
+        })}
+      </ScrollView>
 
       {week >= MAX_WEEK - 1 ? (
-        <Banner tone="amber" icon="warning-outline">
-          Past 41 weeks your clinic will want to see you. If you haven't spoken to them, contact them today.
-        </Banner>
+        <View style={{ flexDirection: "row", gap: 12, padding: 16, borderRadius: 22, backgroundColor: t.amberBg }}>
+          <Ionicons name="alert-circle-outline" size={22} color={t.amberInk} />
+          <Text style={{ flex: 1, fontFamily: FONT.semibold, fontSize: 16, lineHeight: 23, color: t.amberInk }}>
+            {tr({
+              en: "Past 41 weeks your clinic will want to see you. If you haven't spoken to them, contact them today.",
+              pcm: "After 41 weeks your clinic go wan see you. If you never talk to them, call them today.",
+              yo: "Lẹ́yìn ọ̀sẹ̀ 41 kílíníìkì rẹ yóò fẹ́ rí ọ. Tí o kò bá tíì bá wọn sọ̀rọ̀, kàn sí wọn lónìí.",
+            })}
+          </Text>
+        </View>
       ) : null}
 
-      {!data ? (
-        <Card>
-          <T>Week-by-week information starts at week 4. Come back soon.</T>
-        </Card>
-      ) : (
+      {data ? (
         <>
-          <View style={{ backgroundColor: t.mint, borderRadius: 24, padding: 20, gap: 6 }}>
-            <Text style={{ fontSize: 44, lineHeight: 52 }} accessible={false}>
-              {data.sizeEmoji}
+          <View accessibilityLiveRegion="polite" style={{ borderRadius: 36, padding: 22, paddingBottom: 24, alignItems: "center", backgroundColor: mint.bg }}>
+            <WeekRing progress={Math.min(1, week / 40)}>
+              <FruitArt kind={fruitFor(data.size)} size={128} bob />
+            </WeekRing>
+            <Kicker color={mint.ink}>
+              {isNow ? tr({ en: "You are here", pcm: "You dey here", yo: "O wà níbí" }) : tr({ en: `Week ${week}`, pcm: `Week ${week}`, yo: `Ọ̀sẹ̀ ${week}` })}
+            </Kicker>
+            <Text style={{ fontFamily: FONT.bold, fontSize: 26, lineHeight: 30, color: t.ink, textAlign: "center", marginTop: 6 }}>
+              {tr({ en: `About the size of ${/^[aeiou]/i.test(data.size) ? "an" : "a"} ${data.size}`, pcm: `Size of ${data.size}`, yo: `Ó tó ${data.size}` })}
             </Text>
-            <Text style={{ fontFamily: FONT.semibold, fontSize: 13, letterSpacing: 0.8, textTransform: "uppercase", color: t.greenInk }}>
-              {`About the size of ${/^[aeiou]/i.test(data.size) ? "an" : "a"} ${data.size}`}
-            </Text>
-            <Text style={{ fontFamily: FONT.bold, fontSize: 22, lineHeight: 28, color: t.ink }} accessibilityRole="header">
-              {data.headline}
-            </Text>
-            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 24, marginTop: 10 }}>
-              {[
-                ["Length", data.length],
-                ["Weight", data.weight],
-                ...(pregnancyTimeline?.isValid && isNow
-                  ? [["Due in", `${Math.max(0, pregnancyTimeline.weeksRemaining)} week${pregnancyTimeline.weeksRemaining === 1 ? "" : "s"}`]]
-                  : []),
-              ].map(([k, v]) => (
-                <View key={k}>
-                  <T variant="small">{k}</T>
-                  <Text style={{ fontFamily: FONT.bold, fontSize: 18, color: t.ink }}>{v}</Text>
-                </View>
-              ))}
-            </View>
+            <Text style={{ fontFamily: FONT.regular, fontSize: 15, lineHeight: 21, color: mint.ink, textAlign: "center", marginTop: 8 }}>{data.headline}</Text>
           </View>
 
-          <Card>
-            <T variant="h2" style={{ marginBottom: 10 }}>
-              Your baby
-            </T>
-            <Bullets items={data.babyDevelopment} />
-          </Card>
-          <Card>
-            <T variant="h2" style={{ marginBottom: 10 }}>
-              Your body
-            </T>
-            <Bullets items={data.motherChanges} />
-          </Card>
+          <View style={{ flexDirection: "row", gap: 8 }}>
+            {[
+              [data.weight, tr({ en: "Weight", pcm: "Weight", yo: "Ìwúwo" })],
+              [data.length, tr({ en: "Length", pcm: "Length", yo: "Gígùn" })],
+              ...(isNow && p && p.daysToGo >= 0 ? [[String(p.daysToGo), tr({ en: "Days to go", pcm: "Days remain", yo: "Ọjọ́ tó kù" })]] : []),
+            ].map(([v, l]) => (
+              <View key={l} style={{ flex: 1, padding: 12, paddingHorizontal: 8, borderRadius: 20, borderWidth: 1, borderColor: t.border, backgroundColor: t.surface, alignItems: "center" }}>
+                <Text style={{ fontFamily: FONT.bold, fontSize: 20, color: t.ink }}>{v}</Text>
+                <Text style={{ fontFamily: FONT.semibold, fontSize: 12, color: t.muted }}>{l}</Text>
+              </View>
+            ))}
+          </View>
 
-          <Banner tone="green" icon="bulb-outline">
-            {`This week: ${data.tip}`}
-          </Banner>
+          <Facts title={tr({ en: "Baby this week", pcm: "Pikin this week", yo: "Ọmọ ní ọ̀sẹ̀ yìí" })} items={data.babyDevelopment} tone="lavender" art="baby" />
+          <Facts title={tr({ en: "Your body this week", pcm: "Your body this week", yo: "Ara rẹ ní ọ̀sẹ̀ yìí" })} items={data.motherChanges} tone="peach" art="mama" />
+
+          <View style={{ flexDirection: "row", gap: 12, padding: 18, borderRadius: 28, backgroundColor: butter.bg }}>
+            <Ionicons name="bulb-outline" size={24} color={butter.ink} />
+            <View style={{ flex: 1 }}>
+              <Kicker color={butter.ink}>{tr({ en: "Tip for this week", pcm: "Tip for this week", yo: "Ìmọ̀ràn ọ̀sẹ̀ yìí" })}</Kicker>
+              <Text style={{ fontFamily: FONT.regular, fontSize: 16, lineHeight: 24, color: t.ink, marginTop: 4 }}>{data.tip}</Text>
+            </View>
+          </View>
         </>
-      )}
+      ) : null}
 
-      <Pressable
-        onPress={() => router.push({ pathname: "/education/[id]", params: { id: "danger-signs" } })}
-        accessibilityRole="link"
-        style={{ flexDirection: "row", alignItems: "center", gap: 14, padding: 16, borderRadius: 20, borderWidth: 1, borderColor: t.border, backgroundColor: t.surface }}
-      >
-        <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: t.redBg, alignItems: "center", justifyContent: "center" }}>
-          <Ionicons name="warning-outline" size={20} color={t.redInk} />
-        </View>
-        <View style={{ flex: 1 }}>
-          <Text style={{ fontFamily: FONT.semibold, fontSize: 17, color: t.ink }}>Danger signs in pregnancy</Text>
-          <T variant="small">Know when to go to a health facility straight away</T>
-        </View>
-        <Ionicons name="chevron-forward" size={20} color={t.muted} />
-      </Pressable>
+      <Text accessibilityRole="header" style={{ fontFamily: FONT.bold, fontSize: 20, color: t.ink, marginTop: 8 }}>
+        {tr({ en: "How baby grows", pcm: "How pikin dey grow", yo: "Bí ọmọ ṣe ń dàgbà" })}
+      </Text>
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10, rowGap: 12 }}>
+        {JOURNEY.map((s) => {
+          const on = getWeekData(week)?.week === s.week;
+          const later = !!current && s.week > current;
+          return (
+            <Pressable
+              key={s.week}
+              onPress={() => setWeek(s.week)}
+              accessibilityRole="button"
+              accessibilityState={{ selected: on }}
+              style={{ width: 58, alignItems: "center", gap: 4, opacity: later ? 0.5 : 1 }}
+            >
+              <View
+                style={{
+                  width: 56,
+                  height: 56,
+                  borderRadius: 28,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  borderWidth: on ? 2 : 1,
+                  borderColor: on ? t.green : t.border,
+                  backgroundColor: on ? t.mint : t.surface,
+                }}
+              >
+                <FruitArt kind={s.kind} size={42} />
+              </View>
+              <Text style={{ fontFamily: FONT.bold, fontSize: 12, color: on ? t.greenInk : t.muted }}>
+                {tr({ en: `Wk ${s.week}`, pcm: `Wk ${s.week}`, yo: `Ọ̀sẹ̀ ${s.week}` })}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </View>
+
+      <DangerCard
+        title={tr({ en: "Danger signs in pregnancy", pcm: "Danger signs for pregnancy", yo: "Àwọn àmì ewu nínú oyún" })}
+        sub={tr({ en: "Know when to go straight away", pcm: "Know when to go sharp sharp", yo: "Mọ ìgbà tí o gbọ́dọ̀ lọ lẹ́sẹ̀kẹsẹ̀" })}
+        onPress={() => router.push("/education/danger-signs")}
+      />
 
       <T variant="small" style={{ textAlign: "center" }}>
-        Sizes are averages. Every baby grows at their own pace; your clinic checks your baby's growth at each visit.
+        {tr({
+          en: "Sizes are averages. Every baby grows at their own pace; your clinic checks your baby's growth at each visit.",
+          pcm: "Na average size be this. Every pikin dey grow for their own pace; your clinic dey check am every visit.",
+          yo: "Ìwọ̀n àpapọ̀ ni wọ̀nyí. Ọmọ kọ̀ọ̀kan ń dàgbà ní ìwọ̀n tirẹ̀; kílíníìkì rẹ ń wò ó ní ìbẹ̀wò kọ̀ọ̀kan.",
+        })}
       </T>
     </Page>
   );
