@@ -324,6 +324,14 @@ class NotificationService {
           this.router.push("/medicines");
           break;
         }
+        if (type === "NUTRITION_TIP") {
+          this.router.push("/education/eating-well");
+          break;
+        }
+        if (type === "EDUCATIONAL") {
+          this.router.push("/(tabs)/education");
+          break;
+        }
         this.router.push("/(tabs)/index");
     }
   }
