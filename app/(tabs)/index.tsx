@@ -492,6 +492,14 @@ export default function HomeScreen() {
             <Tile href="/(tabs)/tracking" icon="pulse-outline" label="My readings" hint="Trends and history" />
             <Tile href="/(tabs)/education" icon="book-outline" label="Learn" hint="Week-by-week tips" />
           </View>
+          <View style={{ flexDirection: "row", gap: 12 }}>
+            <Tile
+              href="/medicines"
+              icon="medical-outline"
+              label={tr({ en: "Medicines", pcm: "Medicine", yo: "Àwọn oògùn" })}
+              hint={tr({ en: "Reminders and refills", pcm: "Reminder and refill", yo: "Ìránnilétí àti àtúnrà" })}
+            />
+          </View>
         </View>
 
         {/* 5. A tip based on what she reported */}

@@ -320,6 +320,10 @@ class NotificationService {
         this.router.push("/login");
         break;
       default:
+        if (type === "MEDICATION_REMINDER" || type === "MEDICATION_REFILL" || type === "IPTP_DUE") {
+          this.router.push("/medicines");
+          break;
+        }
         this.router.push("/(tabs)/index");
     }
   }
