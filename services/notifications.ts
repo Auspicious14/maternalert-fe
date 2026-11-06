@@ -324,6 +324,14 @@ class NotificationService {
           this.router.push("/medicines");
           break;
         }
+        if (type === "SUPPORTER_ALERT" || type === "SUPPORTER_APPOINTMENT") {
+          this.router.push("/supporting" as any);
+          break;
+        }
+        if (type === "SUPPORTER_JOINED") {
+          this.router.push("/partners" as any);
+          break;
+        }
         if (type === "NUTRITION_TIP") {
           this.router.push("/education/eating-well");
           break;

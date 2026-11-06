@@ -17,7 +17,15 @@ interface User {
   email: string;
   name?: string;
   needsProfile?: boolean;
+  /** "SUPPORTER" = a partner or family member following a mother (read-only). */
+  role?: string;
+  displayName?: string | null;
 }
+
+// A partner or family member only sees these.
+const SUPPORTER_ROUTES = ["supporting", "supporting-account", "education", "notifications", "join", "clinic-finder"];
+// A new account picks "my pregnancy" or "supporting someone" here first.
+const CHOOSER_ROUTES = ["welcome", "profile-setup", "join"];
 
 interface AuthContextType {
   user: User | null;
@@ -239,15 +247,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         }
       } else if (user) {
         // CASE C: Authenticated
-        if (user.needsProfile && rootSegment !== "profile-setup") {
-          console.log(
-            "[AUTH-GUARD] Missing profile — redirecting to /profile-setup",
-          );
-          router.replace("/profile-setup");
+        if (user.role === "SUPPORTER") {
+          // Learn's list lives in the tabs group: "(tabs)/education".
+          const where = rootSegment === "(tabs)" ? (segments[1] as string | undefined) : rootSegment;
+          if (!where || !SUPPORTER_ROUTES.includes(where)) router.replace("/supporting" as any);
+        } else if (user.needsProfile && (!rootSegment || !CHOOSER_ROUTES.includes(rootSegment))) {
+          console.log("[AUTH-GUARD] Missing profile — asking who they are");
+          router.replace("/welcome" as any);
         } else if (
           !user.needsProfile &&
           (isPublicRoute ||
             rootSegment === "profile-setup" ||
+            rootSegment === "welcome" ||
             !rootSegment ||
             rootSegment === "index")
         ) {

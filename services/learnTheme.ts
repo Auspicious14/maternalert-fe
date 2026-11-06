@@ -8,7 +8,7 @@ import { EDUCATION_CONTENT, type EducationArticle, type EducationCategory } from
 import { tr } from "./i18n";
 
 export type LearnTone = "mint" | "peach" | "lavender" | "sky" | "butter" | "rose";
-export type SpotArt = "mama" | "bp" | "food" | "meds" | "bag" | "baby" | "mamababy" | "alert";
+export type SpotArt = "mama" | "bp" | "food" | "meds" | "bag" | "baby" | "mamababy" | "alert" | "couple" | "paircode";
 
 /** Light-mode colours (the app draws its own dark-mode versions). */
 export const TONES: Record<LearnTone, { bg: string; edge: string; ink: string }> = {

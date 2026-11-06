@@ -122,6 +122,11 @@ function RootNavigation() {
           <Stack.Screen name="fetal-development" />
           <Stack.Screen name="pregnancy-status" />
           <Stack.Screen name="medicines" />
+          <Stack.Screen name="welcome" />
+          <Stack.Screen name="join" />
+          <Stack.Screen name="supporting" />
+          <Stack.Screen name="supporting-account" />
+          <Stack.Screen name="partners" />
           <Stack.Screen name="my-health-records" />
           <Stack.Screen name="my-history" />
           <Stack.Screen name="+not-found" />

@@ -22,6 +22,8 @@ const SPOTS: Record<SpotArt, any> = {
   baby: require("../../assets/spots/baby.png"),
   mamababy: require("../../assets/spots/mamababy.png"),
   alert: require("../../assets/spots/alert.png"),
+  couple: require("../../assets/spots/couple.png"),
+  paircode: require("../../assets/spots/paircode.png"),
 };
 
 /** A drawn illustration. Decorative: the words next to it say what it is. */

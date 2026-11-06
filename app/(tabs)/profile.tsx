@@ -585,6 +585,8 @@ export default function ProfileScreen() {
       {/* More */}
       <SectionHeader title="More" />
       <Card>
+        <LinkRow icon="heart-circle-outline" title="Partner or family" subtitle="Let up to 2 people follow your pregnancy" onPress={() => router.push("/partners" as any)} />
+        <LinkRow icon="medkit-outline" title="Medicines" onPress={() => router.push("/medicines" as any)} />
         <LinkRow icon="document-text-outline" title="Health records" subtitle="Scans, visits and notes from your clinic" onPress={() => router.push("/my-health-records")} />
         <LinkRow icon="calendar-outline" title="Appointments" onPress={() => router.push("/appointments")} />
         <LinkRow icon="notifications-outline" title="Notifications" onPress={() => router.push("/notifications")} />
