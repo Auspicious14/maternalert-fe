@@ -112,3 +112,31 @@ export const readTime = (m: number) =>
 
 export const guidesCount = (n: number) =>
   tr({ en: `${n} guide${n === 1 ? "" : "s"}`, pcm: `${n} guide${n === 1 ? "" : "s"}`, yo: `Ìtọ́sọ́nà ${n}` });
+
+// ── After the pregnancy ────────────────────────────────────────────────────
+// Once she has had her baby, Learn leads with after-birth guides. After a
+// loss it shows no baby content at all.
+
+type Status = "ONGOING" | "DELIVERED" | "ENDED";
+
+const AFTER_BIRTH_PICKS = ["after-birth", "breastfeeding", "feelings-after-birth", "newborn-danger-signs"];
+
+export function picksFor(status: Status, weeks: number | null, n = 3): EducationArticle[] {
+  if (status === "ENDED") return [];
+  if (status === "DELIVERED") {
+    return AFTER_BIRTH_PICKS.map((id) => EDUCATION_CONTENT.find((a) => a.id === id)!)
+      .filter(Boolean)
+      .slice(0, n);
+  }
+  return pickedForWeek(weeks, n);
+}
+
+export function tilesFor(status: Status): EducationCategory[] {
+  if (status === "ENDED") return TILE_TOPICS.filter((c) => c !== "BIRTH" && c !== "BABY");
+  if (status === "DELIVERED") return ["AFTER_BIRTH", "BABY", ...TILE_TOPICS.filter((c) => c !== "AFTER_BIRTH" && c !== "BABY" && c !== "BIRTH")];
+  return TILE_TOPICS;
+}
+
+/** The urgent guide Learn puts first: pregnancy danger signs, or bleeding after birth. */
+export const dangerGuideFor = (status: Status) =>
+  status === "ONGOING" ? "danger-signs" : status === "DELIVERED" ? "bleeding-after-birth" : null;

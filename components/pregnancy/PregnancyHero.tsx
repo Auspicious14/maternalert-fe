@@ -8,8 +8,9 @@ import { getWeekData } from "../../constants/fetal-development";
 import { useColorScheme } from "../../hooks/use-color-scheme";
 import { tr } from "../../services/i18n";
 import type { Insight } from "../../services/pregnancy/dailyInsights";
-import { fruitFor, prettyDate, sameDay, weekDays, type FruitKind, type PregnancyDay } from "../../services/pregnancy/pregnancyDay";
+import { aSize, fruitFor, prettyDate, sameDay, weekDays, type FruitKind, type PregnancyDay } from "../../services/pregnancy/pregnancyDay";
 import { FONT, Pressable, useTokens } from "../ds";
+import { Spot } from "../learn/LearnBits";
 
 // Same screens as maternalert-web/src/components/pregnancy/PregnancyHero.tsx.
 
@@ -30,6 +31,12 @@ const FRUITS: Record<FruitKind, any> = {
   coconut: require("../../assets/fruits/coconut.png"),
   melon: require("../../assets/fruits/melon.png"),
   watermelon: require("../../assets/fruits/watermelon.png"),
+  groundnut: require("../../assets/fruits/groundnut.png"),
+  kola: require("../../assets/fruits/kola.png"),
+  date: require("../../assets/fruits/date.png"),
+  agbalumo: require("../../assets/fruits/agbalumo.png"),
+  pawpaw: require("../../assets/fruits/pawpaw.png"),
+  pineapple: require("../../assets/fruits/pineapple.png"),
 };
 
 export function FruitArt({ kind, size = 132, bob = false }: { kind: FruitKind; size?: number; bob?: boolean }) {
@@ -171,7 +178,7 @@ export function PregnancyHero({ p, isToday }: { p: PregnancyDay; isToday: boolea
         <View style={{ flexDirection: "row", alignItems: "center", gap: 4, marginTop: 4 }}>
           <Text style={{ fontFamily: FONT.regular, fontSize: 15, color: t.ink2, textAlign: "center", flexShrink: 1 }}>
             {tr({ en: "Due", pcm: "Due", yo: "Ọjọ́ ìbí" })} {prettyDate(p.dueDate)}
-            {data ? ` · ${tr({ en: `size of a ${data.size}`, pcm: `size of ${data.size}`, yo: `bí ${data.size}` })}` : ""}
+            {data ? ` · ${tr({ en: `size of ${aSize(data.size)}`, pcm: `size of ${data.size}`, yo: `bí ${data.size}` })}` : ""}
           </Text>
           <Ionicons name="chevron-forward" size={16} color={t.ink2} />
         </View>
@@ -337,3 +344,61 @@ const styles = StyleSheet.create({
   card: { padding: 18, borderRadius: 24, borderWidth: 1 },
   tri: { fontFamily: FONT.regular, fontSize: 12 },
 });
+
+/**
+ * Home, once she is no longer pregnant. After birth: congratulations and the
+ * after-birth guides. After a loss: no baby content, a kind word, and the
+ * signs that still need a hospital.
+ */
+export function AfterPregnancyCard({ status }: { status: "DELIVERED" | "ENDED" }) {
+  const t = useTokens();
+  const router = useRouter();
+  const dark = useColorScheme() === "dark";
+  const body = { fontFamily: FONT.regular, fontSize: 15, lineHeight: 21, color: t.ink2, marginTop: 6 } as const;
+  if (status === "DELIVERED") {
+    return (
+      <View style={{ flexDirection: "row", gap: 14, alignItems: "center", padding: 18, borderRadius: 28, backgroundColor: dark ? "#3A2419" : "#FDE9DF" }}>
+        <Spot art="mamababy" size={88} />
+        <View style={{ flex: 1 }}>
+          <Text accessibilityRole="header" style={{ fontFamily: FONT.bold, fontSize: 20, color: t.ink }}>
+            {tr({ en: "Congratulations on your baby", pcm: "Congratulations for your pikin", yo: "Ẹ kú oríire ọmọ tuntun" })}
+          </Text>
+          <Text style={body}>
+            {tr({
+              en: "The 6 weeks after birth still matter. Keep checking your blood pressure and know the warning signs.",
+              pcm: "The 6 weeks after you born still important. Dey check your BP and know the danger signs.",
+              yo: "Ọ̀sẹ̀ mẹ́fà lẹ́yìn ìbímọ ṣì ṣe pàtàkì. Máa wọn ìfúnpá rẹ, kí o sì mọ àwọn àmì ewu.",
+            })}
+          </Text>
+          <Pressable onPress={() => router.push("/education/topic/after_birth")} accessibilityRole="link" style={{ flexDirection: "row", alignItems: "center", gap: 4, minHeight: 44, marginTop: 4 }}>
+            <Text style={{ fontFamily: FONT.bold, fontSize: 15, color: t.greenInk }}>
+              {tr({ en: "After-birth guides", pcm: "Guide for after you born", yo: "Ìtọ́sọ́nà lẹ́yìn ìbímọ" })}
+            </Text>
+            <Ionicons name="chevron-forward" size={16} color={t.greenInk} />
+          </Pressable>
+        </View>
+      </View>
+    );
+  }
+  return (
+    <View style={{ padding: 18, borderRadius: 28, borderWidth: 1, borderColor: t.border, backgroundColor: t.surface }}>
+      <Text accessibilityRole="header" style={{ fontFamily: FONT.bold, fontSize: 20, color: t.ink }}>
+        {tr({ en: "We're so sorry", pcm: "We dey sorry well well", yo: "Ẹ kú àdánù, a bá ọ kẹ́dùn" })}
+      </Text>
+      <Text style={body}>
+        {tr({
+          en: "Take the time you need. Your clinic is still here for you, so please go for your check-up.",
+          pcm: "Take your time. Your clinic still dey for you, abeg go for your check-up.",
+          yo: "Fún ara rẹ ní àsìkò tí o nílò. Kílíníìkì rẹ ṣì wà fún ọ, jọ̀wọ́ lọ fún àyẹ̀wò rẹ.",
+        })}
+      </Text>
+      <Text style={[body, { fontFamily: FONT.semibold }]}>
+        {tr({
+          en: "Go to a hospital now if you have heavy bleeding, a fever, or very bad belly pain.",
+          pcm: "Go hospital now now if you dey bleed plenty, you get fever, or your belle dey pain you well well.",
+          yo: "Lọ sí ilé ìwòsàn ní báyìí tí ẹ̀jẹ̀ bá ń jáde púpọ̀, tí o bá ní ibà, tàbí ìrora ikùn tó le gan-an.",
+        })}
+      </Text>
+    </View>
+  );
+}

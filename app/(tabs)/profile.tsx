@@ -11,7 +11,8 @@ import { useAppTheme } from "../../hooks/useAppTheme";
 import { useAuth } from "../../hooks/useAuth";
 import { useUserProfile } from "../../hooks/useUserProfile";
 import { useLang } from "../../hooks/useLang";
-import { LANGUAGES } from "../../services/i18n";
+import { LANGUAGES, tr } from "../../services/i18n";
+import { pregnancyStatusOf } from "../../services/pregnancy/pregnancyDay";
 import { chooseLang } from "../../services/langStorage";
 import { notificationService } from "../../services/notifications";
 import { CONDITION_OPTIONS, RELATIONSHIP_OPTIONS, Relationship, isValidName, isValidNigerianPhone } from "../../services/profileSetup";
@@ -372,7 +373,11 @@ export default function ProfileScreen() {
               <View style={{ flex: 1, gap: 4 }}>
                 <T variant="label">Your pregnancy</T>
                 <Text style={{ fontFamily: FONT.bold, fontSize: 19, color: t.ink }}>
-                  {`${tl ? tl.currentWeek : profile.pregnancyWeeks} weeks`}
+                  {pregnancyStatusOf(profile) === "DELIVERED"
+                    ? tr({ en: "You've had your baby", pcm: "You don born", yo: "O ti bímọ" })
+                    : pregnancyStatusOf(profile) === "ENDED"
+                      ? tr({ en: "Your pregnancy has ended", pcm: "Your pregnancy don end", yo: "Oyún rẹ ti parí" })
+                      : `${tl ? tl.currentWeek : profile.pregnancyWeeks} weeks`}
                   {tl ? <Text style={{ fontFamily: FONT.regular, fontSize: 14, color: t.muted }}>{` · ${tl.trimesterLabel}`}</Text> : null}
                 </Text>
                 {tl ? (
@@ -391,6 +396,13 @@ export default function ProfileScreen() {
                 </Pill>
               ))}
             </View>
+            <Pressable onPress={() => router.push("/pregnancy-status")} accessibilityRole="link" style={{ minHeight: 44, justifyContent: "center", marginTop: 6 }}>
+              <Text style={{ fontFamily: FONT.semibold, fontSize: 15, color: t.greenInk }}>
+                {pregnancyStatusOf(profile) === "ONGOING"
+                  ? tr({ en: "Had your baby, or pregnancy ended? Tell us", pcm: "You don born, or pregnancy don end? Tell us", yo: "O ti bímọ, tàbí oyún ti parí? Sọ fún wa" })
+                  : tr({ en: "Change this", pcm: "Change am", yo: "Yí èyí padà" })}
+              </Text>
+            </Pressable>
           </>
         )}
       </Card>

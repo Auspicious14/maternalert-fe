@@ -9,7 +9,7 @@ import { FruitArt, WeekRing } from "../components/pregnancy/PregnancyHero";
 import { FETAL_DEVELOPMENT, getWeekData } from "../constants/fetal-development";
 import { useUserProfile } from "../hooks/useUserProfile";
 import { tr } from "../services/i18n";
-import { fruitFor, pregnancyOnDate } from "../services/pregnancy/pregnancyDay";
+import { aSize, fruitFor, pregnancyFor, pregnancyStatusOf } from "../services/pregnancy/pregnancyDay";
 
 // Same screen as maternalert-web/src/app/(patient)/fetal-development/page.tsx
 
@@ -57,8 +57,8 @@ export default function FetalDevelopmentScreen() {
   const butter = useTone("butter");
   const { profile } = useUserProfile() as any;
   const p = useMemo(
-    () => pregnancyOnDate(profile?.pregnancyWeeks, profile?.pregnancyReferenceDate),
-    [profile?.pregnancyWeeks, profile?.pregnancyReferenceDate],
+    () => pregnancyFor(profile),
+    [profile?.pregnancyWeeks, profile?.pregnancyReferenceDate, profile?.pregnancyStatus],
   );
   const current = p ? Math.min(Math.max(p.week, MIN_WEEK), MAX_WEEK) : null;
 
@@ -75,6 +75,22 @@ export default function FetalDevelopmentScreen() {
 
   const data = getWeekData(week);
   const isNow = current === week;
+
+  if (profile && pregnancyStatusOf(profile) !== "ONGOING") {
+    // Not pregnant any more: no baby-size pages, especially after a loss.
+    return (
+      <Page>
+        <RoundButton icon="arrow-back" label={tr({ en: "Back", pcm: "Go back", yo: "Padà" })} onPress={() => router.back()} />
+        <T>
+          {tr({
+            en: "Week-by-week baby updates are switched off because you told us your pregnancy has ended.",
+            pcm: "We don off the week-by-week baby update because you tell us say your pregnancy don end.",
+            yo: "A ti pa ìròyìn ọmọ ọ̀sẹ̀ dé ọ̀sẹ̀ nítorí o sọ fún wa pé oyún rẹ ti parí.",
+          })}
+        </T>
+      </Page>
+    );
+  }
 
   return (
     <Page>
@@ -144,7 +160,7 @@ export default function FetalDevelopmentScreen() {
               {isNow ? tr({ en: "You are here", pcm: "You dey here", yo: "O wà níbí" }) : tr({ en: `Week ${week}`, pcm: `Week ${week}`, yo: `Ọ̀sẹ̀ ${week}` })}
             </Kicker>
             <Text style={{ fontFamily: FONT.bold, fontSize: 26, lineHeight: 30, color: t.ink, textAlign: "center", marginTop: 6 }}>
-              {tr({ en: `About the size of ${/^[aeiou]/i.test(data.size) ? "an" : "a"} ${data.size}`, pcm: `Size of ${data.size}`, yo: `Ó tó ${data.size}` })}
+              {tr({ en: `About the size of ${aSize(data.size)}`, pcm: `Size of ${data.size}`, yo: `Ó tó ${data.size}` })}
             </Text>
             <Text style={{ fontFamily: FONT.regular, fontSize: 15, lineHeight: 21, color: mint.ink, textAlign: "center", marginTop: 8 }}>{data.headline}</Text>
           </View>

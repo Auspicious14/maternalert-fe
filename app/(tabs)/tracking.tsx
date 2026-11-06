@@ -25,7 +25,7 @@ import { getTier } from "../../services/escalation";
 import { readingLabel } from "../../services/patientCopy";
 import PendingReadingsBanner from "../../components/PendingReadingsBanner";
 import { PregnancyProgressCard } from "../../components/pregnancy/PregnancyHero";
-import { pregnancyOnDate } from "../../services/pregnancy/pregnancyDay";
+import { pregnancyFor } from "../../services/pregnancy/pregnancyDay";
 
 // Same screen as maternalert-web/src/app/(patient)/tracking/page.tsx
 
@@ -168,7 +168,7 @@ export default function ReadingsScreen() {
   const t = useTokens();
   const { bpHistory, isLoadingBP, recentSymptoms } = useHealthData();
   const { profile } = useUserProfile();
-  const preg = useMemo(() => pregnancyOnDate(profile?.pregnancyWeeks, profile?.pregnancyReferenceDate), [profile?.pregnancyWeeks, profile?.pregnancyReferenceDate]);
+  const preg = useMemo(() => pregnancyFor(profile), [profile?.pregnancyWeeks, profile?.pregnancyReferenceDate, profile?.pregnancyStatus]);
   const { trendAlerts } = useTrends();
   const [showAll, setShowAll] = useState(false);
 

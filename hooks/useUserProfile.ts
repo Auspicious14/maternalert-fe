@@ -21,6 +21,9 @@ export interface UserProfile {
    * createdAt is the DB row creation timestamp and is not a clinical reference date.
    */
   pregnancyReferenceDate: string;
+  /** ONGOING while pregnant; DELIVERED after birth; ENDED after a loss. */
+  pregnancyStatus?: "ONGOING" | "DELIVERED" | "ENDED";
+  pregnancyEndedAt?: string | null;
   firstPregnancy: boolean;
   knownConditions: string[];
   emergencyContactRelationship?:
@@ -74,7 +77,8 @@ export const useUserProfile = () => {
    * local calendar days rather than UTC milliseconds.
    */
   const calculatedPregnancyWeeks = useMemo(() => {
-    if (!profile.data) return null;
+    // No week count once she has had her baby or the pregnancy has ended.
+    if (!profile.data || ((profile.data as any).pregnancyStatus ?? "ONGOING") !== "ONGOING") return null;
     return calculateCurrentWeek(
       profile.data.pregnancyWeeks,
       profile.data.pregnancyReferenceDate,
@@ -83,7 +87,7 @@ export const useUserProfile = () => {
 
   /** Full pregnancy timeline — use this instead of manual week calculations in screens. */
   const pregnancyTimeline = useMemo((): PregnancyTimeline | null => {
-    if (!profile.data) return null;
+    if (!profile.data || ((profile.data as any).pregnancyStatus ?? "ONGOING") !== "ONGOING") return null;
     return buildPregnancyTimeline(
       profile.data.pregnancyWeeks,
       profile.data.pregnancyReferenceDate,

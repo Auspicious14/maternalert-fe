@@ -75,10 +75,23 @@ export type FruitKind =
   | "corn"
   | "coconut"
   | "melon"
-  | "watermelon";
+  | "watermelon"
+  // Local comparisons Nigerian mothers know well
+  | "groundnut"
+  | "kola"
+  | "date"
+  | "agbalumo"
+  | "pawpaw"
+  | "pineapple";
 
 export function fruitFor(size: string | undefined | null): FruitKind {
   const s = (size ?? "").toLowerCase();
+  if (s.includes("groundnut")) return "groundnut";
+  if (s.includes("kola")) return "kola";
+  if (s.includes("dabino") || s.startsWith("date")) return "date";
+  if (s.includes("agbalumo")) return "agbalumo";
+  if (s.includes("pawpaw") || s.includes("papaya")) return "pawpaw";
+  if (s.includes("pineapple")) return "pineapple";
   if (s.includes("poppy") || s.includes("sesame")) return "seed";
   if (s.includes("lentil") || s.includes("kidney bean")) return "bean";
   if (s.includes("blueberry")) return "berry";
@@ -98,5 +111,26 @@ export function fruitFor(size: string | undefined | null): FruitKind {
   return "lime";
 }
 
+/** "a pawpaw", "an agbalumo": the size with the right English article. */
+export const aSize = (size: string) => `${/^[aeiou]/i.test(size) ? "an" : "a"} ${size}`;
+
 /** "14 Mar 2027" style date in the app's locale. */
 export const prettyDate = (d: Date) => d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+
+// ── Still pregnant? ────────────────────────────────────────────────────────
+// She tells the app in Profile when she has had her baby, or if her
+// pregnancy has ended. Countdown, baby-size and weekly baby content then stop.
+
+export type PregnancyStatus = "ONGOING" | "DELIVERED" | "ENDED";
+
+export const pregnancyStatusOf = (profile: { pregnancyStatus?: string | null } | null | undefined): PregnancyStatus =>
+  profile?.pregnancyStatus === "DELIVERED" || profile?.pregnancyStatus === "ENDED" ? profile.pregnancyStatus : "ONGOING";
+
+/** pregnancyOnDate for her profile, or null when she is no longer pregnant. */
+export function pregnancyFor(
+  profile: { pregnancyWeeks?: number | null; pregnancyReferenceDate?: string | Date | null; pregnancyStatus?: string | null } | null | undefined,
+  date: Date = new Date(),
+): PregnancyDay | null {
+  if (!profile || pregnancyStatusOf(profile) !== "ONGOING") return null;
+  return pregnancyOnDate(profile.pregnancyWeeks, profile.pregnancyReferenceDate, date);
+}

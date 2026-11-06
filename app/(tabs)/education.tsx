@@ -19,14 +19,15 @@ import {
   articleTone,
   greeting,
   guidesCount,
-  pickedForWeek,
+  dangerGuideFor,
+  picksFor,
+  tilesFor,
   readTime,
   searchArticles,
-  TILE_TOPICS,
   TOPIC_THEME,
   topicArticles,
 } from "../../services/learnTheme";
-import { fruitFor, pregnancyOnDate } from "../../services/pregnancy/pregnancyDay";
+import { aSize, fruitFor, pregnancyFor, pregnancyStatusOf } from "../../services/pregnancy/pregnancyDay";
 
 // Same screen as maternalert-web/src/app/(patient)/education/page.tsx
 
@@ -41,16 +42,18 @@ export default function EducationScreen() {
   const mint = useTone("mint");
 
   const p = useMemo(
-    () => pregnancyOnDate(profile?.pregnancyWeeks, profile?.pregnancyReferenceDate),
-    [profile?.pregnancyWeeks, profile?.pregnancyReferenceDate],
+    () => pregnancyFor(profile),
+    [profile?.pregnancyWeeks, profile?.pregnancyReferenceDate, profile?.pregnancyStatus],
   );
   // About two weeks past the due date she has most likely had her baby.
   const pregnant = !!p && p.week >= 4 && p.daysToGo > -14;
   const week = pregnant ? p!.week : null;
   const data = week ? getWeekData(week) : null;
-  const picks = useMemo(() => pickedForWeek(week), [week]);
+  const status = pregnancyStatusOf(profile);
+  const picks = useMemo(() => picksFor(status, week), [status, week]);
   const results = useMemo(() => searchArticles(query, lang), [query, lang]);
-  const danger = getArticleById("danger-signs");
+  const dangerId = dangerGuideFor(status);
+  const danger = dangerId ? getArticleById(dangerId) : undefined;
 
   return (
     <Page>
@@ -146,7 +149,7 @@ export default function EducationScreen() {
                   <Text style={{ fontFamily: FONT.bold, fontSize: 12, color: mint.ink }}>{tr({ en: `Week ${week}`, pcm: `Week ${week}`, yo: `Ọ̀sẹ̀ ${week}` })}</Text>
                 </View>
                 <Text style={{ fontFamily: FONT.bold, fontSize: 25, lineHeight: 29, color: t.ink, marginTop: 14 }}>
-                  {tr({ en: `Baby is about the size of a ${data.size}`, pcm: `Pikin don reach size of ${data.size}`, yo: `Ọmọ ti tó ${data.size}` })}
+                  {tr({ en: `Baby is about the size of ${aSize(data.size)}`, pcm: `Pikin don reach size of ${data.size}`, yo: `Ọmọ ti tó ${data.size}` })}
                 </Text>
                 <Text style={{ fontFamily: FONT.semibold, fontSize: 14, color: mint.ink, marginTop: 10 }}>
                   {data.weight} · {data.length}
@@ -159,10 +162,14 @@ export default function EducationScreen() {
             </Pressable>
           ) : null}
 
-          {danger ? <DangerCard title={articleText(danger, lang).title} onPress={() => router.push("/education/danger-signs")} /> : null}
+          {danger ? <DangerCard title={articleText(danger, lang).title} onPress={() => router.push(`/education/${danger.id}`)} /> : null}
 
+          {picks.length ? (
+          <>
           <Text accessibilityRole="header" style={{ fontFamily: FONT.bold, fontSize: 20, color: t.ink, marginTop: 8 }}>
-            {week
+            {status === "DELIVERED"
+              ? tr({ en: "For you and your baby", pcm: "For you and your pikin", yo: "Fún ìwọ àti ọmọ rẹ" })
+              : week
               ? tr({ en: `Picked for week ${week}`, pcm: `For your week ${week}`, yo: `Fún ọ̀sẹ̀ ${week}` })
               : tr({ en: "Picked for you", pcm: "For you", yo: "Fún ọ" })}
           </Text>
@@ -171,12 +178,14 @@ export default function EducationScreen() {
               <PickCard key={a.id} a={a} />
             ))}
           </ScrollView>
+          </>
+          ) : null}
 
           <Text accessibilityRole="header" style={{ fontFamily: FONT.bold, fontSize: 20, color: t.ink, marginTop: 8 }}>
             {tr({ en: "Topics", pcm: "Topics", yo: "Àwọn àkòrí" })}
           </Text>
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
-            {TILE_TOPICS.map((c) => (
+            {tilesFor(status).map((c) => (
               <TopicTile key={c} c={c} />
             ))}
           </View>

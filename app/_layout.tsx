@@ -120,6 +120,7 @@ function RootNavigation() {
           <Stack.Screen name="education/[id]" />
           <Stack.Screen name="education/topic/[category]" />
           <Stack.Screen name="fetal-development" />
+          <Stack.Screen name="pregnancy-status" />
           <Stack.Screen name="my-health-records" />
           <Stack.Screen name="my-history" />
           <Stack.Screen name="+not-found" />

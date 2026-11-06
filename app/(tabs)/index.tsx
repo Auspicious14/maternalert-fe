@@ -43,8 +43,8 @@ import {
 } from "../../services/emergencyAlert";
 import PendingReadingsBanner from "../../components/PendingReadingsBanner";
 import { SymptomsClearedCard } from "../../components/SymptomsClearedCard";
-import { DailyInsights, DayStrip, PregnancyHero } from "../../components/pregnancy/PregnancyHero";
-import { pregnancyOnDate, sameDay } from "../../services/pregnancy/pregnancyDay";
+import { AfterPregnancyCard, DailyInsights, DayStrip, PregnancyHero } from "../../components/pregnancy/PregnancyHero";
+import { pregnancyFor, pregnancyStatusOf, sameDay } from "../../services/pregnancy/pregnancyDay";
 import { dailyInsights } from "../../services/pregnancy/dailyInsights";
 import { useMyHistory } from "../../hooks/useMyHistory";
 import { tr } from "../../services/i18n";
@@ -313,8 +313,8 @@ export default function HomeScreen() {
   // Same as web: her pregnancy on the chosen day, and that day's cards.
   const isToday = sameDay(selectedDay, new Date());
   const preg = useMemo(
-    () => pregnancyOnDate(profile?.pregnancyWeeks, profile?.pregnancyReferenceDate, selectedDay),
-    [profile?.pregnancyWeeks, profile?.pregnancyReferenceDate, selectedDay],
+    () => pregnancyFor(profile, selectedDay),
+    [profile?.pregnancyWeeks, profile?.pregnancyReferenceDate, profile?.pregnancyStatus, selectedDay],
   );
   const bpToday = latestBP && sameDay(new Date(latestBP.recordedAt), new Date()) ? latestBP : null;
   const insights = useMemo(
@@ -330,6 +330,8 @@ export default function HomeScreen() {
       <DayStrip selected={selectedDay} onSelect={setSelectedDay} />
       <PregnancyHero p={preg} isToday={isToday} />
     </View>
+  ) : profile && pregnancyStatusOf(profile) !== "ONGOING" ? (
+    <AfterPregnancyCard status={pregnancyStatusOf(profile) as "DELIVERED" | "ENDED"} />
   ) : null;
 
   return (

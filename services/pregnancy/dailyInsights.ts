@@ -7,7 +7,7 @@
  */
 import { getWeekData } from "../../constants/fetal-development";
 import { tr } from "../i18n";
-import { fruitFor, type FruitKind, type PregnancyDay } from "./pregnancyDay";
+import { aSize, fruitFor, type FruitKind, type PregnancyDay } from "./pregnancyDay";
 
 export type InsightTone = "mint" | "peach" | "lavender" | "sky" | "butter" | "rose";
 
@@ -49,7 +49,7 @@ export function dailyInsights(
       id: "baby",
       tone: "mint",
       kicker: tr({ en: `Your baby · week ${p.week}`, pcm: `Your pikin · week ${p.week}`, yo: `Ọmọ rẹ · ọ̀sẹ̀ ${p.week}` }),
-      title: tr({ en: `Size of a ${data.size}`, pcm: `Size of ${data.size}`, yo: `Bí ${data.size} ṣe tóbi` }),
+      title: tr({ en: `Size of ${aSize(data.size)}`, pcm: `Size of ${data.size}`, yo: `Bí ${data.size} ṣe tóbi` }),
       cta: tr({ en: "See how baby is growing", pcm: "See how pikin dey grow", yo: "Wo bí ọmọ ṣe ń dàgbà" }),
       href: "/fetal-development",
       fruit: fruitFor(data.size),
